@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><title>시청 클라이언트</title></head>
+<body>
+    <h1>WebRTC P2P - 시청자</h1>
+    <video id="remoteVideo" width="480" autoplay playsinline></video>
+    <script>
+        const remoteVideo = document.getElementById('remoteVideo');
+        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+        let pc;
+        
+        ws.onmessage = async (event) => {
+            const message = JSON.parse(event.data);
+            console.log('서버로부터 메시지 수신:', message);
+
+            if (message.offer) {
+                pc = new RTCPeerConnection();
+                
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        console.log('ICE Candidate 생성:', event.candidate);
+                        ws.send(JSON.stringify({ candidate: event.candidate }));
+                    }
+                };
+                
+                pc.ontrack = (event) => {
+                    remoteVideo.srcObject = event.streams[0];
+                };
+
+                await pc.setRemoteDescription(new RTCSessionDescription(message.offer));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+
+                console.log('Answer 생성 및 서버로 전송:', answer);
+                ws.send(JSON.stringify({ answer: answer }));
+
+            } else if (message.candidate) {
+                await pc.addIceCandidate(new RTCIceCandidate(message.candidate));
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+sequenceDiagram
+    participant Robot as "로봇"
+    participant HomeHub as "IoT 홈 허브"
+    participant Backend as "백엔드 서버 (시그널링 & 미디어 중계)"
+    participant FE as "FE (관리자 웹)"
+
+    Note over Robot, HomeHub: 로봇은 홈 허브로 실시간 영상을 전송 중 (예: RTSP)
+
+    %% 1. FE에서 영상 요청 시작
+    FE->>Backend: 1. 특정 로봇 영상 스트림 요청 (API or WebSocket)
+    activate Backend
+
+    %% 2. 백엔드와 홈 허브 간의 WebRTC 연결 (Backend가 영상 수신)
+    Backend->>HomeHub: 2. WebRTC 연결 요청 (Publish)
+    activate HomeHub
+    HomeHub->>HomeHub: 3. PeerConnection 생성 & 로봇 영상 트랙 추가
+    HomeHub->>Backend: 4. SDP Offer 전송
+    deactivate HomeHub
+    
+    Backend->>Backend: 5. 수신용 PeerConnection에 Offer 설정
+    Backend->>HomeHub: 6. SDP Answer 생성 및 회신
+    activate HomeHub
+    HomeHub->>HomeHub: 7. Answer 설정 및 ICE Candidate 교환
+    deactivate HomeHub
+    
+    Note over HomeHub, Backend: 미디어 스트림 연결 수립 (영상: Hub -> Backend)
+
+    %% 3. 백엔드와 FE 간의 WebRTC 연결 (Backend가 영상 송신)
+    Backend->>Backend: 8. 송신용 PeerConnection 생성 & 수신한 영상 트랙 추가
+    Backend->>FE: 9. 새로운 SDP Offer 전송 (Subscribe)
+    deactivate Backend
+    
+    activate FE
+    FE->>FE: 10. PeerConnection 생성 및 Offer 설정
+    FE->>Backend: 11. SDP Answer 생성 및 회신
+    activate Backend
+    Backend->>Backend: 12. Answer 설정 및 ICE Candidate 교환
+    deactivate Backend
+    
+    Note over Backend, FE: 미디어 스트림 연결 수립 (영상: Backend -> FE)
+    deactivate FE
+
+    Note over Robot, FE: 최종 영상 흐름: 로봇 -> 홈 허브 -> 백엔드 -> FE
