@@ -24,13 +24,6 @@ erDiagram
         int senior_id PK, FK "어르신 ID"
     }
 
-    STAFF_MEMO {
-        int memo_id PK "메모 고유 ID"
-        int map_id FK "맵 고유 ID"
-        string content "메모 내용"
-        datetime created_at "생성일"
-    }
-
     IOT_HUBS {
         int hub_id PK "홈 허브 고유 ID"
         int senior_id FK "연결된 어르신 ID"
@@ -89,5 +82,4 @@ erDiagram
     SENIORS ||--|{ AI_WEIGHTS : "has personal"
     SENIORS ||--|{ EMERGENCY_LOGS : "has"
     
-    STAFF_SENIOR_MAP ||--|{ STAFF_MEMO : "records"
     STAFF_SENIOR_MAP ||--|{ VISIT_SCHEDULES : "schedules"
