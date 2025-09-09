@@ -52,7 +52,7 @@ erDiagram
         datetime resolved_at "조치 완료 시각"
     }
 
-    VISIT_SCHEDULES {
+    VISIT_SCHEDULES_DEPRECATED {
     int visit_id PK "방문 스케줄 ID"
     int map_id FK "관리 관계 ID (STAFF_SENIOR_MAP)"
     datetime visit_datetime "방문 예정 일시"
@@ -66,10 +66,10 @@ erDiagram
     %% 아래는 개념적 표현이며, 실제 테이블은 관계형 DB에 존재하지 않습니다.
     SENSOR_LOGS {
         datetime timestamp "타임스탬프"
-        string sensor_id "센서 위치/ID"
-        string event_content "이벤트 내용"
+        enum sensor_type "센서 종류 및 위치"
+        string event_description "이벤트 내용"
         boolean sensor_value "센서 값 (True/False)"
-        int hub_id "로그를 전송한 홈 허브 ID"
+        int senior_id "로그를 남긴 어르신 ID"
     }
 
 
@@ -82,4 +82,4 @@ erDiagram
     SENIORS ||--|{ AI_WEIGHTS : "has personal"
     SENIORS ||--|{ EMERGENCY_LOGS : "has"
     
-    STAFF_SENIOR_MAP ||--|{ VISIT_SCHEDULES : "schedules"
+    STAFF_SENIOR_MAP ||--|{ VISIT_SCHEDULES_DEPRECATED : "schedules"
