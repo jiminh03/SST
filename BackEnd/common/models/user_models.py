@@ -12,8 +12,8 @@ class StaffSeniorMap(SQLModel, table=True):
     __tablename__ = "staff_senior_map"
     
     map_id: int = Field(default=None, primary_key=True, index=True)
-    staff_id: int = Field(foreign_key="staffs.staff_id", primary_key=True)
-    senior_id: int = Field(foreign_key="seniors.senior_id", primary_key=True)
+    staff_id: int = Field(foreign_key="staffs.staff_id", primary_key=False)
+    senior_id: int = Field(foreign_key="seniors.senior_id", primary_key=False)
 
     # 이 테이블을 통해 생성될 방문 일정 목록
     visit_schedules: List["VisitSchedule"] = Relationship(back_populates="staff_senior_map")

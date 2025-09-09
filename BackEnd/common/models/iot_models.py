@@ -3,7 +3,7 @@ import datetime
 from typing import Optional
 
 from sqlmodel import Field, Relationship, SQLModel
-from enums import SensorTypeEnum
+from .enums import SensorTypeEnum
 
 class IoTHub(SQLModel, table=True):
     """어르신 댁에 설치된 IoT 허브 기기 정보를 저장하는 테이블"""

@@ -32,6 +32,4 @@ class VisitSchedule(SQLModel, table=True):
     )
 
     # 어느 직원-어르신 관계에 대한 방문 일정인지 명시
-    staff_id: int = Field(foreign_key="staff_senior_map.staff_id")
-    senior_id: int = Field(foreign_key="staff_senior_map.senior_id")
     staff_senior_map: "StaffSeniorMap" = Relationship(back_populates="visit_schedules")
