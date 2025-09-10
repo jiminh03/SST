@@ -149,16 +149,32 @@ components:
     SensorEventLog:
       type: object
       properties:
-        hub_id:
+        api_key:
           type: string
         sensor_data:
           type: array
           items:
             type: object
             properties:
-              sensor_id:
+              sensor_type:
                 type: string
-              value:
+                enum: [
+                  "door_bedroom",
+                  "door_bathroom",
+                  "door_livingroom",
+                  "door_entrance",
+                  "door_fridge",
+                  "pir_bedroom",
+                  "pir_livingroom",
+                  "pir_bathroom",
+                  "light_bedroom",
+                  "light_livingroom",
+                  "light_bathroom",
+                  "power_tv",
+                ]
+              sensor_value:
+                type: boolean
+              event_description:
                 type: string
               timestamp:
                 type: string
