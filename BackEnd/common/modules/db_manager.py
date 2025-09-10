@@ -2,6 +2,7 @@ from sqlmodel import SQLModel, create_engine, inspect
 from sqlalchemy.exc import OperationalError
 import os
 from dotenv import load_dotenv
+from typing import AsyncGenerator
 
 # --- 여기에 이전에 작성한 모든 SQLModel 클래스를 붙여넣으세요 ---
 # 예: Staff, Senior, StaffSeniorMap, IoTHub, AIWeight, 
@@ -13,6 +14,7 @@ from common.models import *
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
 from sqlmodel import SQLModel
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 # 이 코드는 SQLModel과 SQLAlchemy가 설치되어 있어야 합니다.
 # 예시를 위해 SQLModel, SensorLog 클래스가 있다고 가정합니다.
@@ -30,6 +32,8 @@ class PostgressqlSessionManager:
 
         self.db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         self.engine = create_engine(self.db_url, echo=False)
+        # SessionMaker를 모듈 레벨에서 한 번만 생성합니다.
+        self.AsyncSessionMaker = async_sessionmaker(self.engine, class_=AsyncSession, expire_on_commit=False)
 
     def create_db_and_tables(self):
         """
@@ -78,7 +82,7 @@ class PostgressqlSessionManager:
             force (bool): True로 설정해야만 실제 삭제 작업을 수행합니다.
         """
         if not force:
-            print("\n⚠️ 경고: 모든 테이블의 데이터를 삭제하는 위험한 작업입니다.")
+            print("\n 경고: 모든 테이블의 데이터를 삭제하는 위험한 작업입니다.")
             print("실행을 원하시면 메서드 호출 시 `force=True` 인자를 전달해주세요.")
             print("예: db_session.clear_all_tables(force=True)")
             return
@@ -89,7 +93,7 @@ class PostgressqlSessionManager:
             table_names = inspector.get_table_names()
 
             if not table_names:
-                print("ℹ️ 데이터베이스에 테이블이 존재하지 않습니다. 작업을 중단합니다.")
+                print("ℹ 데이터베이스에 테이블이 존재하지 않습니다. 작업을 중단합니다.")
                 return
 
             with self.engine.connect() as connection:
@@ -103,10 +107,15 @@ class PostgressqlSessionManager:
                     print(f"다음 테이블들의 데이터를 삭제합니다: {table_names}")
                     connection.execute(sql_command)
                     transaction.commit()
-                    print("✅ 모든 테이블의 데이터가 성공적으로 삭제되었습니다.")
+                    print(" 모든 테이블의 데이터가 성공적으로 삭제되었습니다.")
                 except Exception as e:
-                    print(f"❌ 데이터 삭제 중 오류가 발생하여 롤백합니다: {e}")
+                    print(f" 데이터 삭제 중 오류가 발생하여 롤백합니다: {e}")
                     transaction.rollback()
 
         except Exception as e:
-            print(f"❌ 데이터베이스 스키마 조회 중 오류가 발생했습니다: {e}")
+            print(f" 데이터베이스 스키마 조회 중 오류가 발생했습니다: {e}")
+
+    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+        """FastAPI 의존성 주입을 위한 비동기 데이터베이스 세션 생성기"""
+        async with self.AsyncSessionMaker() as session:
+            yield session
