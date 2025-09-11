@@ -21,12 +21,12 @@ async def test_add_api_key_and_check_duplication(get_session: AsyncSession):
     new_api_key, new_hashed_key = key_manager.generate_api_key()
 
     # Act & Assert (실행 및 검증) - 1: 추가 전에는 중복이 아니어야 함
-    is_duplicated_before = await key_repo.check_key_duplicated(new_api_key)
+    is_duplicated_before = await key_repo.check_key_duplicated(new_hashed_key)
     assert not is_duplicated_before
 
     # Act & Assert (실행 및 검증) - 2: 키를 추가하고, 추가 후에는 중복으로 확인되어야 함
     await key_repo.save_hash_for_hub(new_hashed_key, hub_id)
-    is_duplicated_after = await key_repo.check_key_duplicated(new_api_key)
+    is_duplicated_after = await key_repo.check_key_duplicated(new_hashed_key)
     assert is_duplicated_after
 
 
@@ -67,8 +67,7 @@ async def test_verify_fails_with_wrong_hub_id(get_session: AsyncSession):
     await key_repo.save_hash_for_hub(new_hashed_key, correct_hub_id)
 
     # Act (실행)
-    hashed_key = ApiKeyManager.hash_api_key(new_api_key)
-    is_correct = await key_repo.is_correct_key(hashed_key, wrong_hub_id)
+    is_correct = await key_repo.is_correct_key(new_api_key, wrong_hub_id)
 
     # Assert (검증)
     assert is_correct is False
@@ -86,10 +85,9 @@ async def test_verify_fails_with_wrong_api_key(get_session: AsyncSession):
     hub_id = 13
     correct_api_key = key_manager.generate_api_key()
     wrong_api_key = "this-is-a-wrong-api-key"
-    wrong_hashed_key = ApiKeyManager.hash_api_key(wrong_api_key)
     await key_repo.save_hash_for_hub(correct_api_key, hub_id)
     # Act (실행)
-    is_correct = await key_repo.is_correct_key(wrong_hashed_key, hub_id)
+    is_correct = await key_repo.is_correct_key(wrong_api_key, hub_id)
 
     # Assert (검증)
     assert is_correct is False

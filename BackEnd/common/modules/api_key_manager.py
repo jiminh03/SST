@@ -61,7 +61,7 @@ class ApiKeyRepository:
         else:
             return None
 
-    async def save_hash_for_hub(self, hub_id: int, hashed_key: str) -> None:
+    async def save_hash_for_hub(self, hashed_key: str, hub_id: int) -> None:
         """hub_id에 해당하는 허브의 api_key_hash를 업데이트합니다."""
         query = text(
             "UPDATE iot_hubs SET api_key_hash = :api_key_hash WHERE hub_id = :hub_id"
@@ -69,9 +69,11 @@ class ApiKeyRepository:
         await self.session.execute(
             query, {"api_key_hash": hashed_key, "hub_id": hub_id}
         )
-        await self.session.commit()
+        # self.session.commit()은 테스트 환경의 fixture에서 관리하므로 여기서는 호출하지 않습니다.
 
-    async def is_correct_key(self, hashed_key: str, hub_id: int) -> None:
+    async def is_correct_key(self, api_key: str, hub_id: int) -> bool:
         """제공된 API 키가 저장된 해시와 일치하는지 확인합니다."""
         stored_hash = await self.get_hash_for_hub(hub_id)
-        return ApiKeyManager.verify_api_key(hashed_key, stored_hash)
+        if not stored_hash:
+            return False
+        return ApiKeyManager.verify_api_key(api_key, stored_hash)

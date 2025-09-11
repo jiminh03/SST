@@ -10,3 +10,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 # 본인의 프로젝트에 맞는 실제 패키지 폴더 이름을 배열 안에 적어주세요.
 packages = ["common", "web"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

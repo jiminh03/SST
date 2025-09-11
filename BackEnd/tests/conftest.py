@@ -11,7 +11,7 @@ from common.modules.db_manager import PostgressqlSessionManager
 
 # --- Fixture 설정 ---
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def db_manager():
     """
     [세션 스코프] 전체 테스트 세션 동안 단 한 번만 실행됩니다.
@@ -37,16 +37,11 @@ def db_manager():
     # 테스트 세션 시작 시 한 번만 모든 테이블을 생성합니다.
     manager.create_db_and_tables()
     
-    # TimescaleDB를 사용하는 경우 하이퍼테이블 전환 (필요 시 주석 해제)
-    # manager.convert_to_hypertable("sensor_logs", "timestamp")
+    manager.convert_to_hypertable("sensor_logs", "timestamp")
 
     yield manager # 테스트 세션 동안 manager 객체를 유지합니다.
 
-    print("\n---  teardown test database session ---")
-    # (선택 사항) 모든 테스트가 끝난 후 데이터베이스의 모든 테이블을 삭제할 수 있습니다.
-    # 하지만 보통 테스트 DB는 그대로 두거나 컨테이너를 내리는 경우가 많습니다.
-    # print("Clearing all tables after test session...")
-    # manager.clear_all_tables(force=True)
+    manager.clear_all_tables(force=True)
 
 
 @pytest_asyncio.fixture(scope="function")  # 2. 데코레이터를 변경합니다.
