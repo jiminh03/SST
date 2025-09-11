@@ -30,8 +30,8 @@ class PostgressqlSessionManager:
         self.db_port = db_port
         self.db_name = db_name
 
-        self.db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-        self.engine = create_engine(self.db_url, echo=False)
+        self.db_url = f"postgresql+asyncpg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        self.engine = create_async_engine(self.db_url, echo=False)
         # SessionMaker를 모듈 레벨에서 한 번만 생성합니다.
         self.AsyncSessionMaker = async_sessionmaker(self.engine, class_=AsyncSession, expire_on_commit=False)
 

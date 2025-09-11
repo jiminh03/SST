@@ -9,6 +9,8 @@ servers:
     description: "로컬 개발 서버"
   - url: "https://your-domain.com/api/v1"
     description: "프로덕션 서버"
+  - url: "http://j13a503.p.ssafy.io:8000"
+    description: "테스트 서버"
 
 tags:
   - name: "인증"

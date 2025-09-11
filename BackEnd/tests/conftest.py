@@ -1,7 +1,9 @@
 import pytest
+import pytest_asyncio
 import os
 from dotenv import load_dotenv
-from sqlmodel import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import AsyncGenerator
 
 # 프로젝트 구조에 맞게 db_manager.py의 경로를 수정해주세요.
 # 예: from src.database.db_manager import PostgressqlSessionManager
@@ -22,13 +24,13 @@ def db_manager():
     
     # .env 파일에서 테스트용 DB 접속 정보 로드
     # 프로젝트 루트에 .env.test 파일이 있다고 가정합니다.
-    load_dotenv(dotenv_path=".env.test")
+    load_dotenv(dotenv_path=".env")
 
     manager = PostgressqlSessionManager(
-        db_user=os.getenv("TEST_DB_USER"),
-        db_password=os.getenv("TEST_DB_PASSWORD"),
-        db_host=os.getenv("TEST_DB_HOST"),
-        db_port=os.getenv("TEST_DB_PORT"),
+        db_user=os.getenv("DB_ROOT_USER"),
+        db_password=os.getenv("DB_ROOT_PW"),
+        db_host=os.getenv("DB_HOST"),
+        db_port=os.getenv("POSTGRES_PORT"),
         db_name=os.getenv("TEST_DB_NAME"),
     )
 
@@ -47,16 +49,13 @@ def db_manager():
     # manager.clear_all_tables(force=True)
 
 
-@pytest.fixture(scope="function")
-def db_session_manager(db_manager: PostgressqlSessionManager):
+@pytest_asyncio.fixture(scope="function")  # 2. 데코레이터를 변경합니다.
+async def get_session(db_manager: PostgressqlSessionManager) -> AsyncGenerator[AsyncSession, None]:
     """
-    [함수 스코프] 각 테스트 함수가 실행될 때마다 실행됩니다.
-    1. 세션 스코프의 db_manager fixture를 주입받습니다.
-    2. 각 테스트가 독립적으로 실행되도록, 테스트 시작 전 모든 테이블을 초기화합니다.
-    3. 테스트 함수에 깨끗한 상태의 manager 객체를 제공합니다.
+    [함수 스코프] 각 테스트 함수마다 독립적인 트랜잭션을 생성하고,
+    테스트 종료 시 롤백하여 완벽한 격리를 보장합니다.
     """
-    # 각 테스트 함수 실행 전에 모든 테이블의 데이터를 삭제하여 격리 환경을 보장합니다.
-    db_manager.clear_all_tables(force=True)
-    yield db_manager
 
-
+    async with db_manager.AsyncSessionMaker() as async_session:
+        async with async_session.begin() as transaction:
+            yield async_session

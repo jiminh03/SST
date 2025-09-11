@@ -1,41 +1,77 @@
+import os
+from dotenv import load_dotenv
+import hashlib
+import secrets
+
+from sqlmodel import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+load_dotenv(dotenv_path=".env")
+API_KEY_LENGTH = int(os.getenv("API_KEY_LEN"))
+
+
 class ApiKeyManager:
-    def __init__(self):
-        # 실제 환경에서는 데이터베이스나 안전한 저장소에서 API 키를 관리해야 합니다.
-        # 여기서는 간단한 예시를 위해 메모리에 저장합니다.
-        self.api_keys = {}  # {hub_id: api_key_hash}
+    """
+    API 키 생성 및 검증을 위한 유틸리티 메서드를 제공하는 클래스.
+    모든 메서드는 정적 메서드이므로 인스턴스화할 필요가 없습니다.
+    """
 
-    def generate_api_key(self, hub_id: int) -> str:
-        """새로운 API 키를 생성하고 해시하여 저장합니다."""
-        api_key = self._generate_random_key()
-        api_key_hash = self._hash_api_key(api_key)
-        self.api_keys[hub_id] = api_key_hash
-        return api_key
+    @staticmethod
+    def generate_api_key() -> tuple[str, str]:
+        """새로운 API 키(key)와 해시된 키(hash)를 생성합니다."""
+        api_key = ApiKeyManager._generate_random_key()
+        api_key_hash = ApiKeyManager.hash_api_key(api_key)
+        return api_key, api_key_hash
 
-    def verify_api_key(self, hub_id: int, api_key: str) -> bool:
-        """제공된 API 키가 유효한지 확인합니다."""
-        if hub_id not in self.api_keys:
-            return False
-        stored_hash = self.api_keys[hub_id]
-        return self._hash_api_key(api_key) == stored_hash
+    @staticmethod
+    def verify_api_key(api_key: str, stored_hash: str) -> bool:
+        """제공된 API 키가 저장된 해시와 일치하는지 확인합니다."""
+        return ApiKeyManager.hash_api_key(api_key) == stored_hash
 
-    def _generate_random_key(self, length: int = 32) -> str:
-        """랜덤한 문자열 API 키를 생성합니다."""
-        import secrets
+    @staticmethod
+    def _generate_random_key(length: int = API_KEY_LENGTH) -> str:
+        """랜덤한 URL-safe 문자열 API 키를 생성합니다."""
         return secrets.token_urlsafe(length)
 
-    def _hash_api_key(self, api_key: str) -> str:
-        """API 키를 해시합니다."""
-        import hashlib
+    @staticmethod
+    def hash_api_key(api_key: str) -> str:
+        """API 키를 SHA256으로 해시합니다."""
         return hashlib.sha256(api_key.encode()).hexdigest()
 
-# 사용 예시 (선택 사항)
-if __name__ == "__main__":
-    key_manager = ApiKeyManager()
+class ApiKeyRepository:
+    def __init__(self, session: AsyncSession): # DB 세션을 주입받음
+        self.session = session
 
-    hub_id_1 = 1
-    new_key_1 = key_manager.generate_api_key(hub_id_1)
-    print(f"Hub {hub_id_1}을 위한 새 API 키: {new_key_1}")
+    async def check_key_duplicated(self, hashed_key: str) -> bool:
+        """key 중복을 확인하는 메서드"""
+        query = text("SELECT COUNT(*) FROM iot_hubs WHERE api_key_hash = :hashed_key")
+    
+        result = await self.session.execute(query, {"hashed_key": hashed_key})
 
-    hub_id_2 = 2
-    new_key_2 = key_manager.generate_api_key(hub_id_2)
-    print(f"Hub {hub_id_2}을 위한 새 API 키: {new_key_2}")
+        count = result.scalar_one()
+
+        return count > 0
+
+    async def get_hash_for_hub(self, hub_id: int) -> str | None:
+        query = text("SELECT hub_id, api_key_hash FROM iot_hubs WHERE hub_id = :hub_id")
+        result = await self.session.execute(query, {"hub_id": hub_id})
+        row = result.fetchone()
+        if row:
+            return row.api_key_hash
+        else:
+            return None
+
+    async def save_hash_for_hub(self, hub_id: int, hashed_key: str) -> None:
+        """hub_id에 해당하는 허브의 api_key_hash를 업데이트합니다."""
+        query = text(
+            "UPDATE iot_hubs SET api_key_hash = :api_key_hash WHERE hub_id = :hub_id"
+        )
+        await self.session.execute(
+            query, {"api_key_hash": hashed_key, "hub_id": hub_id}
+        )
+        await self.session.commit()
+
+    async def is_correct_key(self, hashed_key: str, hub_id: int) -> None:
+        """제공된 API 키가 저장된 해시와 일치하는지 확인합니다."""
+        stored_hash = await self.get_hash_for_hub(hub_id)
+        return ApiKeyManager.verify_api_key(hashed_key, stored_hash)

@@ -3,7 +3,8 @@ import json
 import cv2
 import numpy as np
 from aiohttp import ClientSession
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, RTCIceServer, RTCConfiguration
 from av import VideoFrame
 
 class CameraStreamTrack(VideoStreamTrack):
@@ -29,13 +30,21 @@ class CameraStreamTrack(VideoStreamTrack):
         return video_frame
 
 async def run_broadcaster():
-    pc = RTCPeerConnection()
+    # ICE servers configuration
+    config = RTCConfiguration(
+        iceServers=[
+            RTCIceServer(urls=["stun:stun.l.google.com:19302"])
+        ]
+    )
+
+    # Create RTCPeerConnection object with the configuration
+    pc = RTCPeerConnection(configuration=config)
     
-    # 카메라 비디오 트랙 추가
+    # Add camera video track
     video_track = CameraStreamTrack()
     pc.addTrack(video_track)
 
-    # Offer 생성 및 Local description으로 설정
+    # Create offer and set as local description
     offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
 
@@ -44,22 +53,56 @@ async def run_broadcaster():
         "type": pc.localDescription.type
     }
 
-    # 시그널링 서버에 offer 전송 및 answer 수신
+    # --- Start of Corrected Signaling Logic ---
     async with ClientSession() as session:
+        # Step 1: Send the offer to the signaling server
         print("Sending offer to signaling server...")
-        async with session.post('http://localhost:8080/offer', json=offer_data) as response:
-            if response.status == 200:
-                answer_data = await response.json()
-                print("Received answer from signaling server.")
-                answer = RTCSessionDescription(sdp=answer_data["sdp"], type=answer_data["type"])
-                await pc.setRemoteDescription(answer)
-            else:
-                print(f"Error: {response.status}")
-                return
+        try:
+            async with session.post('http://j13a503.p.ssafy.io:8080/offer', json=offer_data) as response:
+                if response.status != 200:
+                    print(f"Failed to send offer, status code: {response.status}")
+                    await pc.close()
+                    return
+                print("Offer sent successfully.")
+        except Exception as e:
+            print(f"Error sending offer: {e}")
+            await pc.close()
+            return
 
-    print("Streaming video... Press Ctrl+C to stop.")
+        # Step 2: Poll the server for the answer
+        print("Waiting for answer...")
+        answer_data = None
+        while True:
+            try:
+                async with session.get('http://j13a503.p.ssafy.io:8080/answer') as response:
+                    if response.status == 200:
+                        answer_data = await response.json()
+                        print("Received answer from signaling server.")
+                        break  # Exit the loop once the answer is received
+                    elif response.status == 404:
+                        # 404 is expected until the viewer sends the answer
+                        await asyncio.sleep(1)
+                    else:
+                        print(f"Error polling for answer, status: {response.status}")
+                        await asyncio.sleep(2)
+            except Exception as e:
+                print(f"Error while polling for answer: {e}")
+                await asyncio.sleep(5) # Wait longer if there's a connection issue
+
+    # --- End of Corrected Signaling Logic ---
+
+    # Set the remote description with the received answer
+    if answer_data:
+        answer = RTCSessionDescription(sdp=answer_data["sdp"], type=answer_data["type"])
+        await pc.setRemoteDescription(answer)
+        print("Remote description set. Streaming video... Press Ctrl+C to stop.")
+    else:
+        print("Could not get an answer. Closing.")
+        await pc.close()
+        return
+
     try:
-        # 연결이 끊어지지 않도록 대기
+        # Keep the script running to stream video
         await asyncio.Event().wait()
     except KeyboardInterrupt:
         pass
