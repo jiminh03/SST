@@ -12,14 +12,7 @@ from common.modules.db_manager import PostgressqlSessionManager
 # --- Fixture 설정 ---
 
 @pytest.fixture(scope="function")
-def db_manager():
-    """
-    [세션 스코프] 전체 테스트 세션 동안 단 한 번만 실행됩니다.
-    1. 테스트용 데이터베이스 설정을 .env 파일에서 로드합니다.
-    2. PostgressqlSessionManager 인스턴스를 생성합니다.
-    3. 모든 SQLModel 테이블을 테스트 데이터베이스에 생성합니다.
-    4. 생성된 매니저 객체를 다른 fixture에 제공합니다.
-    """
+async def db_manager():
     print("\n--- 🛠️  Setting up test database session ---")
     
     # .env 파일에서 테스트용 DB 접속 정보 로드
@@ -35,13 +28,15 @@ def db_manager():
     )
 
     # 테스트 세션 시작 시 한 번만 모든 테이블을 생성합니다.
-    manager.create_db_and_tables()
+    await manager.clear_all_tables(force=True)
     
-    manager.convert_to_hypertable("sensor_logs", "timestamp")
+    await manager.create_db_and_tables()
+    
+    await manager.convert_to_hypertable("sensor_logs", "timestamp")
 
     yield manager # 테스트 세션 동안 manager 객체를 유지합니다.
 
-    manager.clear_all_tables(force=True)
+    await manager.clear_all_tables(force=True)
 
 
 @pytest_asyncio.fixture(scope="function")  # 2. 데코레이터를 변경합니다.

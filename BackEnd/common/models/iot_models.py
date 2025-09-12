@@ -11,7 +11,7 @@ class IoTHub(SQLModel, table=True):
 
     hub_id: Optional[int] = Field(default=None, primary_key=True)
     unique_id: str = Field(unique=True, index=True, description="기기 고유 번호 (e.g., MAC 주소)")
-    api_key_hash: str = Field(description="발급된 API 키의 해시값")
+    api_key_hash: Optional[str] = Field(default=None, description="발급된 API 키의 해시값")
     status: str = Field(default="offline", description="상태 (e.g., online, offline)")
     last_seen_at: Optional[datetime.datetime] = Field(default=None)
     registered_at: datetime.datetime = Field(
@@ -19,7 +19,7 @@ class IoTHub(SQLModel, table=True):
     )
 
     # 어느 어르신에게 할당된 허브인지 명시 (일대일 관계)
-    senior_id: int = Field(foreign_key="seniors.senior_id", unique=True)
+    senior_id: Optional[int] = Field(default=None, foreign_key="seniors.senior_id", unique=True)
     senior: "Senior" = Relationship(back_populates="iot_hub")
 
 class SensorLog(SQLModel, table=True):

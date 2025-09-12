@@ -31,5 +31,5 @@ class VisitSchedule(SQLModel, table=True):
         default_factory=datetime.datetime.utcnow, nullable=False
     )
 
-    # 어느 직원-어르신 관계에 대한 방문 일정인지 명시
-    staff_senior_map: "StaffSeniorMap" = Relationship(back_populates="visit_schedules")
+    # # 어느 직원-어르신 관계에 대한 방문 일정인지 명시
+    # staff_senior_map: "StaffSeniorMap" = Relationship(back_populates="visit_schedules")

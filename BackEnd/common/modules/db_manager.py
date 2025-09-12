@@ -76,46 +76,38 @@ class PostgressqlSessionManager:
 
     async def clear_all_tables(self, force: bool = False):
         """
-        데이터베이스의 모든 테이블 내용을 삭제(TRUNCATE)합니다.
-        매우 위험한 작업이므로 `force=True` 플래그가 있어야만 실행됩니다.
+        데이터베이스의 모든 테이블을 삭제(DROP)합니다.
+        데이터뿐만 아니라 테이블 구조 자체가 사라지는 매우 위험한 작업입니다.
+        `force=True` 플래그가 있어야만 실행됩니다.
 
         Args:
             force (bool): True로 설정해야만 실제 삭제 작업을 수행합니다.
         """
         if not force:
-            print("\n 경고: 모든 테이블의 데이터를 삭제하는 위험한 작업입니다.")
-            print("실행을 원하시면 메서드 호출 시 `force=True` 인자를 전달해주세요.")
-            print("예: db_session.clear_all_tables(force=True)")
             return
 
-        print("\n🔥 데이터베이스의 모든 테이블 내용 삭제를 시작합니다...")
+        print("\n🔥 데이터베이스의 모든 테이블 삭제를 시작합니다...")
         try:
             async with self.engine.connect() as connection:
-                # run_sync를 사용하여 동기 함수인 inspector 로직을 실행합니다.
-                def get_and_truncate_tables(sync_conn):
-                    inspector = inspect(sync_conn)
-                    table_names = inspector.get_table_names()
-
-                    if not table_names:
-                        print(
-                            "ℹ 데이터베이스에 테이블이 존재하지 않습니다. 작업을 중단합니다."
-                        )
-                        return
-
-                    print(f"다음 테이블들의 데이터를 삭제합니다: {table_names}")
-                    quoted_tables = ", ".join([f'"{name}"' for name in table_names])
-                    sql_command = text(
-                        f"TRUNCATE TABLE {quoted_tables} RESTART IDENTITY CASCADE;"
-                    )
-                    sync_conn.execute(sql_command)
-
-                # 동기 함수를 run_sync로 실행하고 트랜잭션을 관리합니다.
-                await connection.run_sync(get_and_truncate_tables)
-                await connection.commit()
-                print("✅ 모든 테이블의 데이터가 성공적으로 삭제되었습니다.")
+                # 'async with'를 사용하여 비동기 커넥션을 얻습니다.
+                async with self.engine.connect() as connection:
+                    drop_all_tables_query = """
+                    DO $$
+                    DECLARE
+                        r RECORD;
+                    BEGIN
+                        FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+                            EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+                        END LOOP;
+                    END $$;
+                    """
+                    command = text(drop_all_tables_query)
+                    # execute와 commit도 모두 await로 호출해야 합니다.
+                    await connection.execute(command)
+                    await connection.commit()
 
         except Exception as e:
-            print(f" 데이터베이스 작업 중 오류가 발생했습니다: {e}")
+            print(f"데이터베이스 작업 중 오류가 발생했습니다: {e}")
 
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
         """FastAPI 의존성 주입을 위한 비동기 데이터베이스 세션 생성기"""

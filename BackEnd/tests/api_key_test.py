@@ -1,8 +1,9 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
-# 실제 프로젝트 구조에 맞게 경로를 수정해주세요.
+
+from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate, _HubBasicInfo
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
-from fastapi import Depends
+
 
 # conftest.py의 db_session fixture가 자동으로 주입됩니다.
 
@@ -17,7 +18,11 @@ async def test_add_api_key_and_check_duplication(get_session: AsyncSession):
     db_session: AsyncSession = get_session
     key_manager = ApiKeyManager()
     key_repo = ApiKeyRepository(db_session)
-    hub_id = 13
+
+    hub_manager = IoTHubManager(db_session)
+
+    hub_id = (await hub_manager.add_hub(HubCreate(unique_id="device1"))).hub_id
+
     new_api_key, new_hashed_key = key_manager.generate_api_key()
 
     # Act & Assert (실행 및 검증) - 1: 추가 전에는 중복이 아니어야 함
@@ -25,7 +30,7 @@ async def test_add_api_key_and_check_duplication(get_session: AsyncSession):
     assert not is_duplicated_before
 
     # Act & Assert (실행 및 검증) - 2: 키를 추가하고, 추가 후에는 중복으로 확인되어야 함
-    await key_repo.save_hash_for_hub(new_hashed_key, hub_id)
+    await key_repo.update_hash_for_hub(hashed_key=new_hashed_key, hub_id=hub_id)
     is_duplicated_after = await key_repo.check_key_duplicated(new_hashed_key)
     assert is_duplicated_after
 
@@ -41,12 +46,15 @@ async def test_verify_succeeds_with_correct_key_and_hub_id(get_session: AsyncSes
     db_session: AsyncSession = get_session
     key_manager = ApiKeyManager()
     key_repo = ApiKeyRepository(db_session)
-    hub_id = 13
+    
+    hub_manager = IoTHubManager(db_session)
+    hub_id = (await hub_manager.add_hub(HubCreate(unique_id="device1"))).hub_id
+
     api_key, hashed_key = key_manager.generate_api_key()
-    await key_repo.save_hash_for_hub(hashed_key, hub_id)
+    await key_repo.update_hash_for_hub(hashed_key, hub_id)
 
     # Act (실행)
-    is_correct = await key_repo.is_correct_key(api_key, hub_id)
+    is_correct = await key_repo.is_correct_key(api_key=api_key, hub_id=hub_id)
 
     # Assert (검증)
     assert is_correct is True
@@ -61,16 +69,18 @@ async def test_verify_fails_with_wrong_hub_id(get_session: AsyncSession):
     db_session: AsyncSession = get_session
     key_manager = ApiKeyManager()
     key_repo = ApiKeyRepository(db_session)
-    correct_hub_id = 13
+
+    hub_manager = IoTHubManager(db_session)
+    correct_hub_id = (await hub_manager.add_hub(HubCreate(unique_id="device1"))).hub_id
+    
     wrong_hub_id = 14
     new_api_key, new_hashed_key = key_manager.generate_api_key()
-    await key_repo.save_hash_for_hub(new_hashed_key, correct_hub_id)
+    await key_repo.update_hash_for_hub(new_hashed_key, correct_hub_id)
 
-    # Act (실행)
-    is_correct = await key_repo.is_correct_key(new_api_key, wrong_hub_id)
+    with pytest.raises(ValueError):
+        # Act (실행) & Assert (검증)
+        await key_repo.is_correct_key(new_api_key, wrong_hub_id)
 
-    # Assert (검증)
-    assert is_correct is False
 
 
 @pytest.mark.asyncio
@@ -82,10 +92,13 @@ async def test_verify_fails_with_wrong_api_key(get_session: AsyncSession):
     db_session: AsyncSession = get_session
     key_manager = ApiKeyManager()
     key_repo = ApiKeyRepository(db_session)
-    hub_id = 13
-    correct_api_key = key_manager.generate_api_key()
+    
+    hub_manager = IoTHubManager(db_session)
+    hub_id = (await hub_manager.add_hub(HubCreate(unique_id="device1"))).hub_id
+
+    correct_api_key,correct_api_key_hash = key_manager.generate_api_key()
     wrong_api_key = "this-is-a-wrong-api-key"
-    await key_repo.save_hash_for_hub(correct_api_key, hub_id)
+    await key_repo.update_hash_for_hub(correct_api_key_hash, hub_id)
     # Act (실행)
     is_correct = await key_repo.is_correct_key(wrong_api_key, hub_id)
 

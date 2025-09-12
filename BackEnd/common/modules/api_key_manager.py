@@ -6,6 +6,8 @@ import secrets
 from sqlmodel import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .iot_hub_manager import HubUpdate, IoTHubManager, _HubBasicInfo
+
 load_dotenv(dotenv_path=".env")
 API_KEY_LENGTH = int(os.getenv("API_KEY_LEN"))
 
@@ -41,6 +43,8 @@ class ApiKeyManager:
 class ApiKeyRepository:
     def __init__(self, session: AsyncSession): # DB 세션을 주입받음
         self.session = session
+        # IoTHubManager 인스턴스를 생성하여 허브 관련 처리를 위임합니다.
+        self.iot_hub_manager = IoTHubManager(session)
 
     async def check_key_duplicated(self, hashed_key: str) -> bool:
         """key 중복을 확인하는 메서드"""
@@ -53,27 +57,19 @@ class ApiKeyRepository:
         return count > 0
 
     async def get_hash_for_hub(self, hub_id: int) -> str | None:
-        query = text("SELECT hub_id, api_key_hash FROM iot_hubs WHERE hub_id = :hub_id")
-        result = await self.session.execute(query, {"hub_id": hub_id})
-        row = result.fetchone()
-        if row:
-            return row.api_key_hash
-        else:
-            return None
+        """IoTHubManager를 통해 허브 정보를 가져와 해시를 반환합니다."""
+        hub_info = await self.iot_hub_manager.get_hub_info(hub_id)
+        if not hub_info:
+            raise ValueError(f"get_hash_for_hub - invalid hub_id:{hub_id}")
+        return hub_info.api_key_hash
 
-    async def save_hash_for_hub(self, hashed_key: str, hub_id: int) -> None:
-        """hub_id에 해당하는 허브의 api_key_hash를 업데이트합니다."""
-        query = text(
-            "UPDATE iot_hubs SET api_key_hash = :api_key_hash WHERE hub_id = :hub_id"
-        )
-        await self.session.execute(
-            query, {"api_key_hash": hashed_key, "hub_id": hub_id}
-        )
-        # self.session.commit()은 테스트 환경의 fixture에서 관리하므로 여기서는 호출하지 않습니다.
+    async def update_hash_for_hub(self, hashed_key: str, hub_id: int) -> None:
+        """IoTHubManager를 통해 허브의 api_key_hash를 업데이트합니다."""
+        await self.iot_hub_manager.edit_hub_info(hub_id=hub_id, update_data=HubUpdate(api_key_hash=hashed_key))
 
     async def is_correct_key(self, api_key: str, hub_id: int) -> bool:
         """제공된 API 키가 저장된 해시와 일치하는지 확인합니다."""
         stored_hash = await self.get_hash_for_hub(hub_id)
         if not stored_hash:
-            return False
+            raise ValueError(f"is_correct_key - invalid hub_id:{hub_id}")
         return ApiKeyManager.verify_api_key(api_key, stored_hash)
