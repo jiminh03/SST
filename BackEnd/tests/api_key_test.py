@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate, _HubBasicInfo
+from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate, HubBasicInfo
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
 
 

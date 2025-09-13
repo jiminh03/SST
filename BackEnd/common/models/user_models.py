@@ -1,5 +1,5 @@
 # common/models/user_models.py
-import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy import Column
@@ -28,8 +28,8 @@ class Staff(SQLModel, table=True):
     password_hash: str = Field(description="해시된 비밀번호")
     full_name: str = Field(description="직원 이름")
     role: str = Field(default="caregiver", description="역할 (e.g., admin, caregiver)")
-    created_at: datetime.datetime = Field(
-        default_factory=datetime.datetime.utcnow, nullable=False
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, nullable=False
     )
 
     # StaffSeniorMap을 통해 연결된 어르신 목록
@@ -46,8 +46,8 @@ class Senior(SQLModel, table=True):
     health_info: Optional[dict] = Field(
         default=None, sa_column=Column(JSON), description="건강 정보 (지병, 복용약 등)"
     )
-    created_at: datetime.datetime = Field(
-        default_factory=datetime.datetime.utcnow, nullable=False
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, nullable=False
     )
 
     # StaffSeniorMap을 통해 연결된 담당 직원 목록

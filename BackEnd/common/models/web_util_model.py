@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from deprecated import deprecated
 
@@ -11,8 +11,8 @@ class EmergencyLog(SQLModel, table=True):
     log_id: Optional[int] = Field(default=None, primary_key=True)
     event_type: str = Field(description="이벤트 종류 (e.g., fall_detection, no_response)")
     description: Optional[str] = Field(default=None, description="상세 내용")
-    occurred_at: datetime.datetime = Field(description="발생 시각")
-    resolved_at: Optional[datetime.datetime] = Field(default=None, description="조치 완료 시각")
+    occurred_at: datetime = Field(description="발생 시각")
+    resolved_at: Optional[datetime] = Field(default=None, description="조치 완료 시각")
 
     # 어느 어르신의 로그인지 명시 (일대다 관계)
     senior_id: int = Field(foreign_key="seniors.senior_id")
@@ -24,11 +24,11 @@ class VisitSchedule(SQLModel, table=True):
     __tablename__ = "visit_schedules"
 
     visit_id: Optional[int] = Field(default=None, primary_key=True)
-    visit_datetime: datetime.datetime = Field(description="방문 예정 일시")
+    visit_datetime: datetime = Field(description="방문 예정 일시")
     status: str = Field(default="scheduled", description="상태 (e.g., scheduled, completed, cancelled)")
     report: Optional[str] = Field(default=None, description="방문 결과 보고 내용")
-    created_at: datetime.datetime = Field(
-        default_factory=datetime.datetime.utcnow, nullable=False
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, nullable=False
     )
 
     # # 어느 직원-어르신 관계에 대한 방문 일정인지 명시

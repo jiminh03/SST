@@ -1,5 +1,5 @@
 # common/models/extra_models.py
-import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -13,8 +13,8 @@ class AIWeight(SQLModel, table=True):
     version: int = Field(description="가중치 버전")
     storage_path: str = Field(description="가중치 파일 경로 (Object Storage)")
     is_active: bool = Field(default=False, description="현재 서비스에 사용 중인 버전인지 여부")
-    created_at: datetime.datetime = Field(
-        default_factory=datetime.datetime.utcnow, nullable=False
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, nullable=False
     )
 
     # 어느 어르신의 가중치인지 명시 (일대다 관계)

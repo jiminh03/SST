@@ -6,7 +6,7 @@ import secrets
 from sqlmodel import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .iot_hub_manager import HubUpdate, IoTHubManager, _HubBasicInfo
+from .iot_hub_manager import HubUpdate, IoTHubManager, HubBasicInfo
 
 load_dotenv(dotenv_path=".env")
 API_KEY_LENGTH = int(os.getenv("API_KEY_LEN"))

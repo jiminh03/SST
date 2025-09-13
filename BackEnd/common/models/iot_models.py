@@ -1,5 +1,5 @@
 # common/models/iot_models.py
-import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -13,9 +13,9 @@ class IoTHub(SQLModel, table=True):
     unique_id: str = Field(unique=True, index=True, description="기기 고유 번호 (e.g., MAC 주소)")
     api_key_hash: Optional[str] = Field(default=None, description="발급된 API 키의 해시값")
     status: str = Field(default="offline", description="상태 (e.g., online, offline)")
-    last_seen_at: Optional[datetime.datetime] = Field(default=None)
-    registered_at: datetime.datetime = Field(
-        default_factory=datetime.datetime.utcnow, nullable=False
+    last_seen_at: Optional[datetime] = Field(default=None)
+    registered_at: datetime = Field(
+        default_factory=datetime.utcnow, nullable=False
     )
 
     # 어느 어르신에게 할당된 허브인지 명시 (일대일 관계)
@@ -32,7 +32,7 @@ class SensorLog(SQLModel, table=True):
     """
     __tablename__ = "sensor_logs"
 
-    timestamp: datetime.datetime = Field(
+    timestamp: datetime = Field(
         primary_key=True, 
         description="이벤트 발생 타임스탬프 (Primary Key)"
     )
