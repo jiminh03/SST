@@ -2,7 +2,8 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import TIMESTAMP
+from sqlmodel import Field, Relationship, SQLModel, Column
 from .enums import SensorTypeEnum
 
 class IoTHub(SQLModel, table=True):
@@ -33,8 +34,7 @@ class SensorLog(SQLModel, table=True):
     __tablename__ = "sensor_logs"
 
     timestamp: datetime = Field(
-        primary_key=True, 
-        description="이벤트 발생 타임스탬프 (Primary Key)"
+        sa_column=Column(TIMESTAMP(timezone=True), primary_key=True)
     )
     
     sensor_type: SensorTypeEnum = Field(

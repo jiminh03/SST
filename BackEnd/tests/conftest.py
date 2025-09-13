@@ -27,7 +27,6 @@ async def db_manager():
         db_name=os.getenv("TEST_DB_NAME"),
     )
 
-    # 테스트 세션 시작 시 한 번만 모든 테이블을 생성합니다.
     await manager.clear_all_tables(force=True)
     
     await manager.create_db_and_tables()

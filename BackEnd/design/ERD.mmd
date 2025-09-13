@@ -58,17 +58,14 @@ erDiagram
     string status "상태 (e.g., scheduled, completed, cancelled)"
     text report "방문 결과 보고"
     datetime created_at "생성일"
-}
+    }
 
-    %% --- Time-Series Data (Logical Representation) ---
-    %% 시계열 데이터(센서 로그)는 별도의 Time-Series DB(e.g., TimescaleDB)에 저장됩니다.
-    %% 아래는 개념적 표현이며, 실제 테이블은 관계형 DB에 존재하지 않습니다.
     SENSOR_LOGS {
         datetime timestamp "타임스탬프"
         enum sensor_type "센서 종류 및 위치"
         string event_description "이벤트 내용"
         boolean sensor_value "센서 값 (True/False)"
-        int senior_id "로그를 남긴 어르신 ID"
+        int senior_id FK "로그를 남긴 어르신 ID"
     }
 
 
@@ -80,5 +77,6 @@ erDiagram
     SENIORS ||--|| IOT_HUBS : "has one"
     SENIORS ||--|{ AI_WEIGHTS : "has personal"
     SENIORS ||--|{ EMERGENCY_LOGS : "has"
+    SENSOR_LOGS }o--|| SENIORS : "logs for"
     
     STAFF_SENIOR_MAP ||--|{ VISIT_SCHEDULES_DEPRECATED : "schedules"
