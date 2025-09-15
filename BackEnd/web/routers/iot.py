@@ -1,12 +1,15 @@
 # app/routers/iot.py
 """IoT 기기 연동 관련 라우터"""
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_session
-# from app.services import iot_service
-# from app.schemas import senior_care as schemas
+# 프로젝트 구조에 맞게 경로를 수정해주세요.
+from web.services.auth_service import get_hub_from_api_key
+from web.schemas.iot_schema import SensorLogPayload
+from common.modules.sensor_log_manager import SensorLogManager
+from common.models.iot_models import IoTHub
+from web.main import db
 
 router = APIRouter(prefix="/iot", tags=["IoT"])
 
@@ -14,33 +17,32 @@ router = APIRouter(prefix="/iot", tags=["IoT"])
 @router.post(
     "/logs",
     status_code=status.HTTP_201_CREATED,
-    summary="센서 이벤트 로그 전송"
+    summary="센서 이벤트 로그 전송",
+    responses={
+        401: {"description": "인증 실패 (유효하지 않은 API 키)"},
+        403: {"description": "권한 없음 (API 키와 senior_id 불일치)"}
+    }
 )
-async def receive_sensor_event_log(payload: schemas.SensorEventLog, db: AsyncSession = Depends(get_session)):
-    """홈 허브가 수집한 센서 데이터들을 묶어 서버로 전송하고 데이터베이스에 저장합니다."""
-    # TODO: iot_service.save_sensor_logs(db, payload) 호출
-    return {"message": "로그 전송 성공"}
+async def receive_sensor_logs(
+    payload: SensorLogPayload,
+    # API 키를 통해 인증된 허브 정보를 가져옵니다.
+    hub: IoTHub = Depends(get_hub_from_api_key),
+    db_session: AsyncSession = Depends(db.get_session)
+):
+    """
+    홈 허브가 수집한 센서 데이터들을 묶어 서버로 전송하고 데이터베이스에 저장합니다.
+    - **인증**: `X-API-Key` 헤더에 발급받은 API 키를 포함해야 합니다.
+    """
+    # [권한 검증] API 키에 연결된 어르신 ID와 페이로드의 어르신 ID가 일치하는지 확인합니다.
+    # 이를 통해 허브가 다른 어르신의 로그를 잘못 전송하는 것을 방지합니다.
+    if hub.senior_id != payload.senior_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="API Key is valid, but it is not authorized to send logs for this senior_id."
+        )
 
-
-@router.post(
-    "/seniors/{senior_id}/safety-check",
-    status_code=status.HTTP_202_ACCEPTED,
-    summary="어르신 안전 확인 요청",
-    tags=["IoT"] # prefix가 iot이므로 태그만 추가
-)
-async def request_safety_check(senior_id: int, db: AsyncSession = Depends(get_session)):
-    """AI나 관리자의 판단에 따라, 특정 어르신의 안전 확인을 로봇에게 명령합니다."""
-    # TODO: iot_service.command_safety_check(db, senior_id) 호출 (예: WebSocket으로 허브에 명령)
-    return {"message": "확인 요청 성공"}
-
-
-@router.post(
-    "/safety-checks/{check_id}/result",
-    status_code=status.HTTP_200_OK,
-    summary="안전 확인 결과 보고",
-    tags=["IoT"]
-)
-async def report_safety_check_result(check_id: int, payload: schemas.SafetyCheckResult, db: AsyncSession = Depends(get_session)):
-    """안전 확인을 수행한 로봇이 확인 결과를 서버로 보고합니다."""
-    # TODO: iot_service.process_safety_check_result(db, check_id, payload) 호출
-    return {"message": "결과 보고 성공"}
+    # SensorLogManager를 사용하여 로그를 데이터베이스에 추가합니다.
+    log_manager = SensorLogManager(db_session)
+    await log_manager.add_logs(payload.senior_id, payload.log_list)
+    
+    return {"message": "Logs have been successfully saved."}

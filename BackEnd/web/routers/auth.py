@@ -2,8 +2,6 @@ import os
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from web.schemas.auth_schema import (
@@ -16,17 +14,12 @@ from web.services.auth_service import WebAuthModule
 from common.modules.user_manager import UserManager, StaffCreate, SeniorCreate, StaffInfo, StaffUpdate, SeniorUpdate
 from common.modules.iot_hub_manager import IoTHubManager, HubCreate
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
-from common.modules.db_manager import PostgressqlSessionManager # Assuming this is how to get the session manager
 
 auth_module = WebAuthModule(
     secret_key=os.getenv("SECRET_KEY"),
     access_token_expire_minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
     algorithm=os.getenv("ALGORITHM"),
 )
-
-
-
-
 
 # --- FastAPI Router ---
 router = APIRouter(tags=["인증"])
@@ -98,7 +91,7 @@ async def register_staff(
 async def edit_staff(
     staff_data: StaffEdit,
     db: AsyncSession = Depends(db.get_session),
-    current_user: StaffInfo = Depends(get_current_user)
+    current_user: StaffInfo = Depends(auth_module.get_current_user)
 ):
     """
     특정 직원의 계정 정보(이름, 역할 등)를 수정합니다.
@@ -127,7 +120,7 @@ async def edit_staff(
 async def register_senior(
     senior_data: SeniorRegister,
     db: AsyncSession = Depends(db.get_session),
-    current_user: StaffInfo = Depends(get_current_user)
+    current_user: StaffInfo = Depends(auth_module.get_current_user)
 ):
     """
     새로운 어르신의 기본 정보와 디바이스를 시스템에 등록합니다.
@@ -167,7 +160,7 @@ async def edit_senior(
     senior_id: int,
     senior_data: SeniorEdit,
     db: AsyncSession = Depends(db.get_session),
-    current_user: StaffInfo = Depends(get_current_user)
+    current_user: StaffInfo = Depends(auth_module.get_current_user)
 ):
     """
     기존에 등록된 어르신의 상세 정보를 수정합니다.
