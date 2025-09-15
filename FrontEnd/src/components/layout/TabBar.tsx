@@ -4,7 +4,7 @@ import RegisterIcon from '../../assets/icons/RegisterIcon'
 
 export default function TabBar() {
   const location = useLocation()
-  const isHomeActive = location.pathname === '/' || location.pathname.startsWith('/elders')
+  const isHomeActive = location.pathname === '/home' || location.pathname.startsWith('/elders')
 
   return (
     <nav className="sticky bottom-0 z-10 bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.1)]">
@@ -36,7 +36,7 @@ export default function TabBar() {
         {/* 홈 버튼 */}
         <div className="flex justify-center relative">
           <NavLink
-            to="/"
+            to="/home"
             className="-translate-y-8 sm:-translate-y-10 no-underline relative"
             style={{ textDecoration: 'none' }}
           >

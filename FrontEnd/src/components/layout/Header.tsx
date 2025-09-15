@@ -8,7 +8,7 @@ export default function Header() {
 
   // 경로에 따라 타이틀 바꾸기
   const getTitle = () => {
-    if (location.pathname === '/') return '담당 어르신 목록'
+    if (location.pathname === '/home') return '담당 어르신 목록'
     if (location.pathname.startsWith('/register')) return '담당 어르신 등록'
     if (location.pathname.startsWith('/settings')) return '설정'
     return ''

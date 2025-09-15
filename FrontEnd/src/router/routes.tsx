@@ -5,12 +5,25 @@ import EldersPage from '../pages/elders/EldersPage'
 import SettingsPage from '../pages/settings/SettingsPage'
 import RegisterPage from '../pages/register/RegisterPage'
 import ElderDetailPage from '../pages/elders/ElderDetailPage'
+import SplashPage from '../pages/splash/SplashPage'
+import LoginPage from '../pages/auth/LoginPage'
+import AuthRegisterPage from '../pages/auth/RegisterPage'
 
 const router = createBrowserRouter([
+  // 스플래시 화면 (레이아웃 없음)
+  { path: '/', element: <SplashPage /> },
+  
+  // 로그인 페이지 (레이아웃 없음)
+  { path: '/login', element: <LoginPage /> },
+  
+  // 회원가입 페이지 (레이아웃 없음)
+  { path: '/auth/register', element: <AuthRegisterPage /> },
+  
+  // 메인 앱 페이지들 (MobileLayout 사용)
   {
     element: <MobileLayout />,
     children: [
-      { path: '/', element: <HomePage /> },
+      { path: '/home', element: <HomePage /> },
       { path: '/elders', element: <EldersPage /> },
       { path: '/elders/:id', element: <ElderDetailPage /> },
       { path: '/settings', element: <SettingsPage /> },
