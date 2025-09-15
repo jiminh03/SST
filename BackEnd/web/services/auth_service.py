@@ -1,310 +1,117 @@
-# app/services/auth_service.py
-"""인증 및 인가 서비스 계층입니다."""
-
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Union
+from typing import Annotated, Optional
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-from sqlalchemy.orm import selectinload
 
-# --- 상수 및 설정 ---
+from common.modules.user_manager import UserManager
+from web.main import db
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/sessions", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+class WebAuthModule:
+    def __init__(
+        self,
+        secret_key: str,
+        access_token_expire_minutes: int,
+        algorithm: str = "HS256",
+    ):
+        self._secret_key = secret_key
+        self._access_token_expire_minutes = access_token_expire_minutes
+        self._algorithm = algorithm
 
-# --- 비밀번호 및 토큰 유틸리티 ---
+        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+    def get_password_hash(self, password: str) -> str:
+        """
+        평문 비밀번호를 bcrypt 해시로 변환합니다.
 
-def get_password_hash(password: str) -> str:
-    """
-    평문 비밀번호를 해시 처리합니다.
+        Args:
+            password (str): 해시할 평문 비밀번호입니다.
 
-    Args:
-        password: 해시할 평문 비밀번호입니다.
+        Returns:
+            str: 해시 처리된 비밀번호 문자열입니다.
+        """
+        return self.pwd_context.hash(password)
 
-    Returns:
-        해시된 비밀번호 문자열입니다.
-    """
-    return pwd_context.hash(password)
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+        """
+        평문 비밀번호가 해시된 비밀번호와 일치하는지 확인합니다.
 
+        Args:
+            plain_password (str): 확인할 평문 비밀번호입니다.
+            hashed_password (str): 비교할 해시된 비밀번호입니다.
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    평문 비밀번호와 해시된 비밀번호를 비교합니다.
+        Returns:
+            bool: 비밀번호가 일치하면 True, 그렇지 않으면 False를 반환합니다.
+        """
+        return self.pwd_context.verify(plain_password, hashed_password)
 
-    Args:
-        plain_password: 확인할 평문 비밀번호입니다.
-        hashed_password: 비교할 해시된 비밀번호입니다.
+    def create_access_token(
+        self, data: dict, expires_delta: Optional[timedelta] = None
+    ) -> str:
+        """
+        주어진 데이터를 기반으로 JWT 액세스 토큰을 생성합니다.
 
-    Returns:
-        비밀번호가 일치하면 True, 그렇지 않으면 False를 반환합니다.
-    """
-    return pwd_context.verify(plain_password, hashed_password)
+        Args:
+            data (dict): 토큰의 페이로드(payload)에 포함될 데이터입니다.
+            expires_delta (Optional[timedelta]): 토큰의 만료 시간을 지정합니다.
+                설정하지 않으면 인스턴스 생성 시 지정된 기본 만료 시간이 적용됩니다.
 
+        Returns:
+            str: 생성된 JWT 액세스 토큰 문자열입니다.
+        """
+        to_encode = data.copy()
+        now = datetime.now(timezone.utc)
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """
-    새로운 JWT 액세스 토큰을 생성합니다.
+        if expires_delta:
+            expire = now + expires_delta
+        else:
+            expire = now + timedelta(minutes=self._access_token_expire_minutes)
 
-    Args:
-        data: 토큰 페이로드에 인코딩할 데이터입니다.
-        expires_delta: 토큰 만료 시간을 설정하는 timedelta 객체 (선택 사항).
-                       기본값은 ACCESS_TOKEN_EXPIRE_MINUTES 입니다.
+        to_encode.update({"exp": expire, "iat": now})
+        return jwt.encode(to_encode, self._secret_key, algorithm=self._algorithm)
 
-    Returns:
-        인코딩된 JWT 액세스 토큰 문자열입니다.
-    """
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    def decode_jwt_payload(self, token: str) -> dict:
+        """
+        JWT 토큰을 검증하고 디코딩하여 페이로드(payload)를 반환합니다.
 
+        Args:
+            token (str): 디코딩할 JWT 토큰 문자열입니다.
 
-def _decode_jwt_payload(token: str) -> TokenPayload:
-    """
-    JWT 토큰을 디코딩하여 페이로드를 반환합니다.
+        Raises:
+            ValueError: 토큰의 서명이 유효하지 않거나, 형식이 잘못되었거나,
+                        만료되는 등 디코딩에 실패할 경우 발생합니다.
 
-    Args:
-        token: 디코딩할 JWT 토큰 문자열입니다.
-
-    Raises:
-        InvalidCredentialsError: 토큰이 유효하지 않거나, 만료되었거나,
-                                 페이로드가 잘못된 형식일 경우 발생합니다.
-
-    Returns:
-        디코딩된 토큰 페이로드를 담은 TokenPayload 객체입니다.
-    """
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        account_id = int(payload.get("account_id"))
-        role = payload.get("role")
-        if account_id is None or role is None:
-            raise InvalidCredentialsError(
-                "토큰 페이로드에 'account_id' 또는 'role'이 없습니다."
+        Returns:
+            dict: 디코딩된 토큰의 페이로드(payload)입니다.
+        """
+        try:
+            payload = jwt.decode(
+                token, self._secret_key, algorithms=[self._algorithm]
             )
-        return TokenPayload(account_id=str(account_id), role=role)
-    except (JWTError, ValueError, TypeError, KeyError) as e:
-        raise InvalidCredentialsError(f"토큰 디코딩 실패: {e}") from e
-
-
-# --- 사용자 및 의사 등록 ---
-
-
-async def is_id_duplicate(db: AsyncSession, login_id: str) -> bool:
-    """
-    로그인 ID가 Account 테이블에 이미 존재하는지 확인합니다.
-
-    Args:
-        db: 데이터베이스 세션입니다.
-        login_id: 중복 확인할 로그인 ID입니다.
-
-    Returns:
-        로그인 ID가 존재하면 True, 그렇지 않으면 False를 반환합니다.
-    """
-    statement = select(Account).where(Account.login_id == login_id)
-    existing_account = (await db.execute(statement)).scalars().first()
-    return existing_account is not None
-
-
-async def get_account_info(signup_data: Union[PatientSignup, DoctorSignup]) -> Account:
-    """
-    회원가입 데이터로부터 Account 모델 인스턴스를 생성합니다.
-
-    Args:
-        signup_data: 환자 또는 의사의 회원가입 데이터입니다.
-
-    Returns:
-        데이터베이스에 아직 저장되지 않은 새로운 Account 객체입니다.
-    """
-    account_data = signup_data.model_dump(
-        include={"login_id", "full_name", "email", "phone_number", "role"}
-    )
-    account_data["password"] = get_password_hash(signup_data.password)
-    return Account(**account_data)
-
-
-async def request_license_verification(db: AsyncSession, valid_license_id: str) -> bool:
-    """
-    의사 면허 ID로 의사를 찾아 인증 상태를 True로 변경합니다.
-    참고: 실제 환경에서는 의료 면허 기관에 대한 외부 API 호출이 포함될 수 있습니다.
-
-    Args:
-        db: 데이터베이스 세션입니다.
-        valid_license_id: 확인할 의사의 면허 ID입니다.
-
-    Returns:
-        의사를 찾아 업데이트했으면 True, 그렇지 않으면 False를 반환합니다.
-    """
-    # statement = select(Doctor).where(Doctor.valid_license_id == valid_license_id)
-    # doctor = (await db.execute(statement)).scalars().first()
-    # if not doctor:
-    #     return False
-    # doctor.is_verified = True
-    # db.add(doctor)
-    # await db.commit()
-    return True
-
-async def check_license_duplicate(db: AsyncSession, valid_license_id: str) -> bool:
-    """주어진 의사 면허 ID가 이미 데이터베이스에 존재하는지 확인합니다.
-
-    Args:
-        db: 데이터베이스 세션입니다.
-        valid_license_id: 중복 확인할 의사 면허 ID입니다.
-
-    Returns:
-        면허 ID가 이미 존재하면 True, 그렇지 않으면 False를 반환합니다.
-    """
-    # 1. 면허 ID로 의사 정보를 조회하는 쿼리 생성
-    statement = select(Doctor).where(Doctor.valid_license_id == valid_license_id)
+            return payload
+        except JWTError as e:
+            raise ValueError(f"토큰 디코딩에 실패했습니다: {e}") from e
     
-    # 2. 쿼리를 실행하여 첫 번째 결과를 가져옴
-    doctor = (await db.execute(statement)).scalars().first()
-
-    # 3. 결과(doctor)가 존재하면 True(중복), 존재하지 않으면 False(중복 아님) 반환
-    return doctor is not None
-
-
-
-async def register_patient(db: AsyncSession, signup_data: PatientCreate):
-    """
-    새로운 환자와 관련 계정을 등록합니다.
-
-    Args:
-        db: 데이터베이스 세션입니다.
-        signup_data: 환자의 등록 데이터입니다.
-
-    Raises:
-        IntegrityError: 로그인 ID 또는 다른 고유 제약 조건이 위반될 경우 발생합니다.
-    """
-    new_account = await get_account_info(signup_data)
-    patient_data = signup_data.model_dump(include={"address", "gender", "age"})
-    new_patient = Patient(**patient_data, account=new_account)
-    db.add(new_patient)
-    try:
-        await db.commit()
-        await db.refresh(new_patient)
-        await db.refresh(new_account)
-    except IntegrityError:
-        await db.rollback()
-        raise
-
-
-async def register_doctor(db: AsyncSession, signup_data: DoctorCreate):
-    """
-    새로운 의사와 관련 계정을 등록합니다.
-
-    Args:
-        db: 데이터베이스 세션입니다.
-        signup_data: 의사의 등록 데이터입니다.
-
-    Raises:
-        LicenseVerificationError: 제공된 면허 ID를 확인할 수 없는 경우 발생합니다.
-        IntegrityError: 로그인 ID 또는 다른 고유 제약 조건이 위반될 경우 발생합니다.
-    """
-    new_account = await get_account_info(signup_data)
-    doctor_data = signup_data.model_dump(
-        include={"address", "gender", "age", "valid_license_id"}
-    )
-    if not await request_license_verification(db, doctor_data["valid_license_id"]):
-        raise LicenseVerificationError(
-            "유효하지 않은 면허 ID이거나 확인에 실패했습니다."
+    async def get_current_user(self, token: Annotated[str, Depends(oauth2_scheme)], db: AsyncSession = Depends(db.get_session)):
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    if await check_license_duplicate(db, doctor_data["valid_license_id"]):
-        raise LicenseVerificationError(
-            "이미 사용중인 면허입니다."
-        )
-
-    doctor_data["is_verified"] = True
-    new_doctor = Doctor(**doctor_data, account=new_account)
-    db.add(new_doctor)
-    try:
-        await db.commit()
-        await db.refresh(new_doctor)
-        await db.refresh(new_account)
-    except IntegrityError:
-        await db.rollback()
-        raise
-
-
-# --- 인증 및 인가 의존성 ---
-
-
-async def authenticate_user(
-    db: AsyncSession, login_id: str, password: str
-) -> Optional[Account]:
-    """
-    로그인 ID와 비밀번호로 사용자를 인증합니다.
-
-    Args:
-        db: 데이터베이스 세션입니다.
-        login_id: 사용자의 로그인 ID입니다.
-        password: 사용자의 평문 비밀번호입니다.
-
-    Returns:
-        인증에 성공하면 인증된 Account 객체를, 그렇지 않으면 None을 반환합니다.
-    """
-    statement = select(Account).where(Account.login_id == login_id)
-    account = (await db.execute(statement)).scalars().first()
-    if not account or not verify_password(password, account.password):
-        return None
-    return account
-
-
-async def get_current_active_session_info(
-    db: AsyncSession = Depends(get_session), token: str = Depends(oauth2_scheme)
-) -> dict:
-    """
-    JWT 토큰으로부터 현재 활성화된 사용자(환자 또는 의사)를 가져오는 FastAPI 의존성입니다.
-
-    이 함수는 관련된 Account 객체를 포함하여 전체 엔티티를 로드하므로,
-    현재 사용자의 전체 프로필을 가져오는 데 적합합니다.
-
-    Args:
-        db: FastAPI에 의해 주입되는 데이터베이스 세션입니다.
-        token: FastAPI에 의해 주입되는 OAuth2 베어러 토큰입니다.
-
-    Raises:
-        InvalidCredentialsError: 토큰이 없거나, 유효하지 않거나,
-                                 토큰에 명시된 사용자가 존재하지 않을 경우 발생합니다.
-
-    Returns:
-        토큰에 담긴 정보 딕셔너리.
-    """
-    if token is None:
-        raise InvalidCredentialsError("인증 토큰이 없습니다.")
-    payload = _decode_jwt_payload(token)
-    return payload.model_dump()
-
-
-
-
-async def verify_password_for_account(
-    db: AsyncSession, account_id: int, password: str
-) -> bool:
-    """주어진 계정 ID에 대한 비밀번호를 확인합니다.
-
-    Args:
-        db: 데이터베이스 세션입니다.
-        account_id: 확인할 계정의 ID입니다.
-        password: 확인할 평문 비밀번호입니다.
-
-    Returns:
-        비밀번호가 맞으면 True, 그렇지 않으면 False를 반환합니다.
-    """
-    account = await db.get(Account, account_id)
-    if not account or not verify_password(password, account.password):
-        return False
-    return True
+        try:
+            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+            login_id: str = payload.get("sub")
+            if login_id is None:
+                raise credentials_exception
+        except JWTError:
+            raise credentials_exception
+        user_manager = UserManager(db)
+        user = await user_manager.get_staff_by_login_id(login_id=login_id)
+        if user is None:
+            raise credentials_exception
+        return user

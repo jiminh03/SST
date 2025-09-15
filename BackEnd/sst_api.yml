@@ -34,6 +34,16 @@ components:
 
   schemas:
     # 1. Request/Response Models
+    ErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          description: "에러를 식별하는 고유 코드"
+        message:
+          type: string
+          description: "에러에 대한 상세 설명"
+          
     LoginRequest:
       type: object
       properties:
@@ -52,20 +62,56 @@ components:
         access_token:
           type: string
           
-    Staff:
+    StaffRegister:
       type: object
       properties:
-        staff_id:
-          type: integer
-        name:
+        full_name:
           type: string
         role:
           type: string
+        login_id:
+          type: string
+        password:
+          type: string
+      required:
+        - full_name
+        - role
+        - login_id
+        - password
+    
+    StaffEdit:
+      type: object
+      properties:
+        full_name:
+          type: string
+        role:
+          type: string
+        password:
+          type: string
+
+    SeniorRegister:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        device_id:
+          type: string
       required:
         - name
-        - role
+        - address
+        - device_id
+    
+    SeniorEdit:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
 
-    Senior:
+    SeniorInfo:
       type: object
       properties:
         senior_id:
@@ -74,23 +120,18 @@ components:
           type: string
         address:
           type: string
-        health_info:
-          type: string
       required:
+        - senior_id
         - name
+        - address
 
     Hub:
       type: object
       properties:
-        hub_id:
-          type: integer
-        mac_address:
+        device_id:
           type: string
-        senior_id:
-          type: integer
       required:
-        - mac_address
-        - senior_id
+        - device_id
 
     ApiKey:
       type: object
@@ -247,6 +288,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: "로그인 실패 (ID 또는 비밀번호 불일치)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /staffs:
     post:
@@ -258,50 +305,85 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Staff"
+              $ref: "#/components/schemas/StaffRegister"
       responses:
         "201":
           description: "계정 생성 성공"
-
-  /staffs/{staff_id}:
+        "400":
+          description: "잘못된 요청 형식 (필수 필드 누락 등)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: "ID 중복 (이미 존재하는 ID)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        
     put:
       tags: ["인증"]
       summary: "직원 계정 정보 수정"
       description: "특정 직원의 계정 정보(이름, 역할 등)를 수정합니다."
-      parameters:
-        - name: staff_id
-          in: path
-          required: true
-          schema:
-            type: integer
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Staff"
+              $ref: "#/components/schemas/StaffEdit"
       responses:
         "200":
           description: "정보 수정 성공"
+        "400":
+          description: "잘못된 요청 형식 (필수 필드 누락 등)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: "인증 실패 (토큰 없음 또는 유효하지 않은 토큰)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /seniors:
     post:
       tags: ["인증"]
       summary: "어르신 등록"
       description: "새로운 어르신의 기본 정보(성함, 주소, 건강 정보 등)를 시스템에 등록합니다."
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Senior"
+              $ref: "#/components/schemas/SeniorRegister"
       responses:
         "201":
           description: "등록 성공"
+        "400":
+          description: "잘못된 요청 형식 (필수 필드 누락 등)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: "디바이스 ID 중복 (이미 등록된 디바이스)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       tags: ["사용자 관리 및 모니터링"]
       summary: "사용자 리스트 조회"
       description: "관리자가 담당하는 모든 어르신의 목록과 현재 위험도 상태를 조회합니다."
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: "조회 성공"
@@ -310,13 +392,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Senior"
+                  $ref: "#/components/schemas/SeniorInfo"
 
   /hubs:
     post:
       tags: ["인증"]
       summary: "기기 등록"
-      description: "IoT 홈 허브의 고유 식별 번호(MAC 주소 등)를 시스템에 등록하고, 특정 어르신과 연결합니다."
+      description: "IoT 홈 허브의 고유 식별 번호(MAC 주소 등)를 시스템에 등록합니다."
       requestBody:
         required: true
         content:
@@ -326,12 +408,31 @@ paths:
       responses:
         "201":
           description: "등록 성공"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+    delete:
+      tags: ["인증"]
+      summary: "기기 등록 해지"
+      description: "더 이상 사용하지 않는 홈 허브를 시스템에서 등록 해지합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Hub"
+      responses:
+        "204":
+          description: "해지 성공"
 
   /seniors/{senior_id}:
     put:
       tags: ["인증"]
       summary: "어르신 정보 수정"
       description: "기존에 등록된 어르신의 상세 정보를 수정합니다."
+      security:
+        - bearerAuth: []      
       parameters:
         - name: senior_id
           in: path
@@ -343,10 +444,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Senior"
+              $ref: "#/components/schemas/SeniorEdit"
       responses:
         "200":
           description: "수정 성공"
+        "400":
+          description: "잘못된 요청 형식 (필수 필드 누락 등)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: "권한 없음"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       tags: ["사용자 관리 및 모니터링"]
       summary: "사용자 세부 정보 조회"
@@ -363,41 +476,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Senior"
-
-  /hubs/{hub_id}/api-key:
-    post:
-      tags: ["인증"]
-      summary: "API 키 발급"
-      description: "등록된 홈 허브가 서버와 안전하게 통신할 수 있도록 고유 API 키를 생성하고 발급합니다."
-      parameters:
-        - name: hub_id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: "발급 성공"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiKey"
-
-  /hubs/{hub_id}:
-    delete:
-      tags: ["인증"]
-      summary: "기기 등록 해지"
-      description: "더 이상 사용하지 않는 홈 허브를 시스템에서 등록 해지합니다."
-      parameters:
-        - name: hub_id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: "해지 성공"
+                $ref: "#/components/schemas/SeniorInfo"
 
   # 사용자 관리 및 모니터링
   /seniors/{senior_id}/emergency-logs:
@@ -441,36 +520,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SensorLog"
-
-  /schedules/visits:
-    post:
-      tags: ["사용자 관리 및 모니터링"]
-      summary: "직원 방문 스케줄 등록"
-      description: "특정 어르신에 대한 직원의 방문 일정을 등록합니다."
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/VisitSchedule"
-      responses:
-        "201":
-          description: "등록 성공"
-
-  /schedules/visits/{visit_id}:
-    delete:
-      tags: ["사용자 관리 및 모니터링"]
-      summary: "직원 방문 스케줄 삭제"
-      description: "등록되어 있던 방문 일정을 삭제합니다."
-      parameters:
-        - name: visit_id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: "삭제 성공"
 
   # 실시간 통신
   /webrtc/sessions:

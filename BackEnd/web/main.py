@@ -19,137 +19,30 @@ load_dotenv()
 import common.modules.db_manager as db_manager
 from common.modules.db_manager import create_db_and_tables
 
-from app.routers import auth, dashboard, users, training, screening
-from padoc_common.exceptions import (
-    InvalidCredentialsError, 
-    LicenseVerificationError, 
-    DuplicateIdError,
-    PermissionDeniedError,
-    BadRequestError,
-    InsufficientPermissionsError,
-    AlreadyConnectedError,
-    ConnectionCreationError,
-    NotFoundError  # 새로 추가
+from web.routers import auth, ai, iot, monitoring, realtime
+
+db = db_manager.PostgressqlSessionManager(
+    db_user=os.getenv("DB_ROOT_USER"),
+    db_password=os.getenv("DB_ROOT_PW"),
+    db_host=os.getenv("DB_HOST"),
+    db_port=os.getenv("POSTGRES_PORT"),
+    db_name=os.getenv("TEST_DB_NAME"),
 )
-from padoc_common.schemas.base import ErrorResponse
 
 # Lifespan 컨텍스트 매니저 정의
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """애플리케이션 시작과 종료 시 처리할 로직"""
     print("--- FastAPI app startup: creating DB tables... ---")
-    await create_db_and_tables()
+    await db.create_db_and_tables()
+    await db.convert_to_hypertable("sensor_logs", "timestamp")
+    print("--- DB tables created successfully. ---")
     yield
     print("--- FastAPI app shutdown. ---")
 
 # FastAPI 앱 인스턴스 생성
 app = FastAPI(lifespan=lifespan)
 
-# --- 전역 예외 핸들러 --- 
-
-@app.exception_handler(NotFoundError)  # 새로 추가된 핸들러
-async def not_found_exception_handler(request: Request, exc: NotFoundError):
-    return JSONResponse(
-        status_code=status.HTTP_404_NOT_FOUND,
-        content=ErrorResponse(
-            timestamp=datetime.now().isoformat(),
-            status=status.HTTP_404_NOT_FOUND,
-            error="Not Found",
-            message=exc.message
-        ).model_dump(mode='json')
-    )
-
-@app.exception_handler(InvalidCredentialsError)
-async def invalid_credentials_exception_handler(request: Request, exc: InvalidCredentialsError):
-    return JSONResponse(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        content={"detail": exc.message},
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-@app.exception_handler(LicenseVerificationError)
-async def license_verification_exception_handler(request: Request, exc: LicenseVerificationError):
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content=ErrorResponse(
-            timestamp=datetime.now().isoformat(),
-            status=status.HTTP_400_BAD_REQUEST,
-            error="Bad Request",
-            message=exc.message
-        ).model_dump(mode='json')
-    )
-
-@app.exception_handler(DuplicateIdError)
-async def duplicate_id_exception_handler(request: Request, exc: DuplicateIdError):
-    return JSONResponse(
-        status_code=status.HTTP_409_CONFLICT,
-        content=ErrorResponse(
-            timestamp=datetime.now().isoformat(),
-            status=status.HTTP_409_CONFLICT,
-            error="Conflict",
-            message=exc.message
-        ).model_dump(mode='json')
-    )
-
-@app.exception_handler(PermissionDeniedError)
-async def permission_denied_exception_handler(request: Request, exc: PermissionDeniedError):
-    return JSONResponse(
-        status_code=status.HTTP_403_FORBIDDEN,
-        content=ErrorResponse(
-            timestamp=datetime.now().isoformat(),
-            status=status.HTTP_403_FORBIDDEN,
-            error="Forbidden",
-            message=exc.message
-        ).model_dump(mode='json')
-    )
-
-@app.exception_handler(BadRequestError)
-async def bad_request_exception_handler(request: Request, exc: BadRequestError):
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content=ErrorResponse(
-            timestamp=datetime.now().isoformat(),
-            status=status.HTTP_400_BAD_REQUEST,
-            error="Bad Request",
-            message=exc.message
-        ).model_dump(mode='json')
-    )
-
-@app.exception_handler(InsufficientPermissionsError)
-async def insufficient_permissions_exception_handler(request: Request, exc: InsufficientPermissionsError):
-    return JSONResponse(
-        status_code=status.HTTP_403_FORBIDDEN,
-        content=ErrorResponse(
-            timestamp=datetime.now().isoformat(),
-            status=status.HTTP_403_FORBIDDEN,
-            error="Forbidden",
-            message=exc.message
-        ).model_dump(mode='json')
-    )
-
-@app.exception_handler(AlreadyConnectedError)
-async def already_connected_exception_handler(request: Request, exc: AlreadyConnectedError):
-    return JSONResponse(
-        status_code=status.HTTP_409_CONFLICT,
-        content=ErrorResponse(
-            timestamp=datetime.now().isoformat(),
-            status=status.HTTP_409_CONFLICT,
-            error="Conflict",
-            message=exc.message
-        ).model_dump(mode='json')
-    )
-
-@app.exception_handler(ConnectionCreationError)
-async def connection_creation_exception_handler(request: Request, exc: ConnectionCreationError):
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=ErrorResponse(
-            timestamp=datetime.now().isoformat(),
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=exc.message
-        ).model_dump(mode='json')
-    )
 
 
 # --- 미들웨어 설정 --- 
@@ -172,10 +65,10 @@ app.add_middleware(
 # --- 라우터 등록 --- 
 
 app.include_router(auth.router)
-app.include_router(dashboard.router)
-app.include_router(users.router)
-app.include_router(training.router)
-app.include_router(screening.router)
+app.include_router(ai.router)
+app.include_router(iot.router)
+app.include_router(monitoring.router)
+app.include_router(realtime.router)
 
 
 # 기본 루트 엔드포인트

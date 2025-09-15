@@ -56,6 +56,15 @@ class IoTHubManager:
         if row:
             return HubBasicInfo.model_validate(row._mapping)
         return None
+    
+    async def get_hub_by_unique_id(self, unique_id: str) -> Optional[HubBasicInfo]:
+        """기기 고유 ID로 허브의 기본 정보를 조회하여 HubBasicInfo 객체로 반환합니다."""
+        query = text("SELECT hub_id, unique_id, status, api_key_hash FROM iot_hubs WHERE unique_id = :unique_id")
+        result = await self.session.execute(query, {"unique_id": unique_id}) 
+        row = result.first()
+        if row:
+            return HubBasicInfo.model_validate(row._mapping)
+        return None
 
     async def edit_hub_info(self, hub_id: int, update_data: HubUpdate) -> None:
         """허브 ID에 해당하는 허브의 정보를 선택적으로 수정합니다."""

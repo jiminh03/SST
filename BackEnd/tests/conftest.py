@@ -28,9 +28,7 @@ async def db_manager():
     )
 
     await manager.clear_all_tables(force=True)
-    
     await manager.create_db_and_tables()
-    
     await manager.convert_to_hypertable("sensor_logs", "timestamp")
 
     yield manager # 테스트 세션 동안 manager 객체를 유지합니다.
