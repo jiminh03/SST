@@ -223,7 +223,7 @@ components:
                 type: string
                 format: date-time
       required:
-        - hub_id
+        - api_key
         - sensor_data
 
     SafetyCheckResult:
@@ -478,49 +478,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/SeniorInfo"
 
-  # 사용자 관리 및 모니터링
-  /seniors/{senior_id}/emergency-logs:
-    get:
-      tags: ["사용자 관리 및 모니터링"]
-      summary: "사용자 응급 상황 로그 조회"
-      description: "특정 어르신에게 과거에 발생했던 응급 상황들의 이력을 조회합니다."
-      parameters:
-        - name: senior_id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: "조회 성공"
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/EmergencyLog"
-
-  /seniors/{senior_id}/sensor-logs:
-    get:
-      tags: ["사용자 관리 및 모니터링"]
-      summary: "센서 로그 타임라인 조회"
-      description: "특정 어르신의 집에서 발생한 센서 이벤트들을 기간별로 조회하여 생활 패턴을 파악합니다."
-      parameters:
-        - name: senior_id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: "조회 성공"
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SensorLog"
-
   # 실시간 통신
   /webrtc/sessions:
     post:
@@ -560,13 +517,7 @@ paths:
       summary: "실시간 알림 수신을 위한 WS 연결"
       description: "관리자(웹/앱)가 서버와 WebSocket 연결을 맺습니다. 이 채널을 통해 이상치 감지, 기기 연결 해제 등 모든 실시간 알림을 수신합니다. (This endpoint uses the WebSocket protocol)"
 
-  /ws/hub:
-    get:
-      tags: ["실시간 통신 (WebSocket / WebRTC)"]
-      summary: "홈허브 상태 발신 및 이상치 감지 알림을 수신하기 위한 WS 연결 요청"
-      description: "홈허브가 서버와 WebSocket 연결을 맺습니다. 이 채널을 통해 서버는 주기적으로 허브의 상태를 확인하고 이상치 발생시 허브에 이를 알립니다. (This endpoint uses the WebSocket protocol)"
-
-  # IoT
+  # IoT 
   /iot/logs:
     post:
       tags: ["IoT"]
@@ -581,42 +532,13 @@ paths:
       responses:
         "201":
           description: "로그 전송 성공"
-
-  /seniors/{senior_id}/safety-check:
-    post:
+  
+  /ws/hub:
+    get:
       tags: ["IoT"]
-      summary: "어르신 안전 확인 요청"
-      description: "AI나 관리자의 판단에 따라, 특정 어르신의 안전 확인이 필요할 때 홈 허브의 로봇에게 확인을 명령합니다."
-      parameters:
-        - name: senior_id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "202":
-          description: "확인 요청 성공"
+      summary: "홈허브 상태 발신 및 이상치 감지 알림을 수신하기 위한 WS 연결 요청"
+      description: "홈허브가 서버와 WebSocket 연결을 맺습니다. 이 채널을 통해 서버는 주기적으로 허브의 상태를 확인하고 이상치 발생시 허브에 이를 알립니다. (This endpoint uses the WebSocket protocol)"
 
-  /safety-checks/{check_id}/result:
-    post:
-      tags: ["IoT"]
-      summary: "안전 확인 결과 보고"
-      description: "안전 확인 명령을 수행한 로봇이 확인 결과를(예: '어르신 응답 확인', '응답 없음') 서버로 보고합니다."
-      parameters:
-        - name: check_id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SafetyCheckResult"
-      responses:
-        "200":
-          description: "결과 보고 성공"
 
   # AI
   /ai/weights/active:
