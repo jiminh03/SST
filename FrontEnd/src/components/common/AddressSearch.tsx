@@ -102,29 +102,16 @@ export default function AddressSearch({ value, onChange, placeholder = "주소�
       </label>
       
       <div className="relative">
-        <div className="flex gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={placeholder}
-            className="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 transition-all shadow-sm cursor-pointer"
-            onClick={handleSearch}
-            readOnly
-          />
-          <button
-            onClick={handleSearch}
-            disabled={isLoading}
-            className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-lg transition-colors"
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Search className="w-5 h-5" />
-            )}
-          </button>
-        </div>
+        <input
+          ref={inputRef}
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 transition-all shadow-sm cursor-pointer"
+          onClick={handleSearch}
+          readOnly
+        />
 
         {/* 선택된 주소 표시 및 상세주소 입력 */}
         {selectedAddress && (

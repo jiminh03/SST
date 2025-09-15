@@ -50,12 +50,12 @@ export default function RegisterPage() {
       {/* 헤더 */}
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <button
+          <span
             onClick={handleBackToLogin}
-            className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
+            className="w-6 h-6 flex items-center justify-center cursor-pointer transition-colors"
           >
-            <span className="w-3 h-3 -rotate-45 border-l-2 border-b-2 border-gray-600"></span>
-          </button>
+            <span className="w-4 h-4 rotate-45 border-l-2 border-b-2 border-gray-600"></span>
+          </span>
           <h1 className="text-xl font-semibold text-gray-800">회원가입</h1>
         </div>
       </div>
@@ -208,12 +208,12 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
               이미 계정이 있으신가요?{' '}
-              <button 
+              <span 
                 onClick={handleBackToLogin}
-                className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                className="text-blue-600 hover:text-blue-800 font-medium underline cursor-pointer transition-colors"
               >
                 로그인하기
-              </button>
+              </span>
             </p>
           </div>
         </div>

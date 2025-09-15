@@ -22,13 +22,12 @@ export default function Header() {
     <header className="relative flex h-20 flex-shrink-0 items-center justify-between px-4 bg-white shadow">
       <div className="flex items-center gap-2">
         {showBack && (
-          <button
-            aria-label="뒤로가기"
+          <span
             onClick={() => navigate(-1)}
-            className="w-10 h-10 flex items-center justify-center"
+            className="w-6 h-6 flex items-center justify-center cursor-pointer transition-colors"
           >
-            <span className="w-3 h-3 -rotate-45 border-l-2 border-b-2 border-zinc-700 inline-block" />
-          </button>
+            <span className="w-4 h-4 rotate-45 border-l-2 border-b-2 border-zinc-700 inline-block" />
+          </span>
         )}
         <h1 className="text-2xl font-semibold leading-none">{getTitle()}</h1>
       </div>
