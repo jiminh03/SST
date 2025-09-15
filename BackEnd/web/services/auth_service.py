@@ -14,29 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from sqlalchemy.orm import selectinload
 
-# app/services/auth_service.py
-"""인증 및 인가 서비스 계층입니다."""
-
-import os
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Union
-
-from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-from sqlalchemy.orm import selectinload
-
 # --- 상수 및 설정 ---
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
-ALGORITHM = "HS256"
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/sessions", auto_error=False)
 
 
