@@ -25,6 +25,24 @@ export default function Header({ onDeleteClick }: HeaderProps) {
   const showBack = location.pathname.startsWith('/elders/') || location.pathname === '/camera' || location.pathname === '/notifications'
   const isDetail = showBack && !location.pathname.includes('/edit') && location.pathname !== '/camera' && location.pathname !== '/notifications'
   const showAlarm = location.pathname === '/home'
+
+  // 뒤로가기 처리 함수
+  const handleBack = () => {
+    if (location.pathname.includes('/edit')) {
+      // 수정 페이지에서는 상세보기로
+      const detailPath = location.pathname.replace('/edit', '')
+      navigate(detailPath)
+    } else if (location.pathname.startsWith('/elders/')) {
+      // 상세보기에서는 목록으로
+      navigate('/home')
+    } else if (location.pathname === '/camera' || location.pathname === '/notifications') {
+      // 카메라나 알림에서는 홈으로
+      navigate('/home')
+    } else {
+      // 기본적으로는 이전 페이지로
+      navigate(-1)
+    }
+  }
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -55,7 +73,7 @@ export default function Header({ onDeleteClick }: HeaderProps) {
       <div className="flex items-center gap-2">
         {showBack && (
           <span
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="w-6 h-6 flex items-center justify-center cursor-pointer transition-colors"
           >
             <span className="w-4 h-4 rotate-45 border-l-3 border-b-3 border-zinc-700 inline-block" />

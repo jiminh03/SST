@@ -82,7 +82,7 @@ export default function RegisterPage() {
               <div className="w-32 h-32 rounded-full bg-white shadow-lg flex items-center justify-center border-4 border-blue-100">
                 <User className="w-16 h-16 text-blue-400" />
               </div>
-              <button className="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors">
+              <button className="absolute -bottom-2 -right-2 bg-black hover:bg-gray-800 text-white p-3 rounded-full shadow-lg transition-colors">
                 <Camera className="w-5 h-5" />
               </button>
             </div>

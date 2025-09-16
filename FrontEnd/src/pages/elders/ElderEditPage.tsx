@@ -61,8 +61,7 @@ export default function ElderEditPage() {
         device_number: formData.device_number
       })
       
-      alert('어르신 정보가 수정되었습니다.')
-      navigate(`/elders/${senior.senior_id}`)
+      window.location.href = `/elders/${senior.senior_id}?updated=true`
     } catch (err) {
       setError('어르신 정보 수정에 실패했습니다. 다시 시도해주세요.')
       console.error('Update error:', err)
