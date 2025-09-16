@@ -12,7 +12,7 @@ export default function TabBar() {
         {/* 어르신 등록 */}
         <NavLink
           to="/register"
-          className="flex flex-col items-center no-underline"
+          className="flex flex-col items-center no-underline ml-8"
           style={{
             textDecoration: 'none',
             fontWeight: 700,
@@ -64,7 +64,7 @@ export default function TabBar() {
         {/* 설정 */}
         <NavLink
           to="/settings"
-          className="flex flex-col items-center no-underline"
+          className="flex flex-col items-center no-underline mr-8"
           style={{
             textDecoration: 'none',
             fontWeight: 700,
