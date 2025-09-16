@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Camera, User, Phone, Smartphone } from 'lucide-react'
+import { Camera, User, Phone, Smartphone, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import AddressSearch from '../../components/common/AddressSearch'
-import DatePicker from '../../components/common/DatePicker'
 import { createSenior } from '../../api/eldersApi'
 
 export default function RegisterPage() {
@@ -96,11 +95,21 @@ export default function RegisterPage() {
               value={formData.name}
               onChange={(value) => handleInputChange('name', value)}
             />
-            <DatePicker 
-              value={formData.birthDate}
-              onChange={handleBirthDateChange}
-              placeholder="YYYY-MM-DD"
-            />
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <span className="text-blue-500"><Calendar className="w-5 h-5" /></span>
+                생년월일
+                <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={formData.birthDate}
+                  onChange={(e) => handleBirthDateChange(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                />
+              </div>
+            </div>
             <AddressSearch 
               value={formData.address}
               onChange={handleAddressChange}

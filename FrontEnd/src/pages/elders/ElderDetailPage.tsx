@@ -87,8 +87,8 @@ export default function ElderDetailPage() {
         <div className="bg-white rounded-3xl shadow-xl p-6">
           <div className="flex items-start gap-6">
             <div className="relative">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 shadow-lg flex items-center justify-center">
-                <img src="https://placehold.co/112x112" alt="어르신" className="rounded-full w-24 h-24 object-cover" />
+              <div className="w-28 h-28 rounded-full flex items-center justify-center">
+                <img src="https://placehold.co/112x112" alt="어르신" className="rounded-full w-28 h-28 object-cover" />
               </div>
             </div>
             <div className="flex-1 pt-2">

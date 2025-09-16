@@ -2,7 +2,11 @@ import { Bell, MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-export default function Header() {
+interface HeaderProps {
+  onDeleteClick?: () => void
+}
+
+export default function Header({ onDeleteClick }: HeaderProps) {
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -42,8 +46,25 @@ export default function Header() {
           </div>
           {menuOpen && (
             <div className="absolute right-0 mt-1 w-28 rounded-lg border border-zinc-200 bg-white shadow-lg z-10">
-              <button className="w-full text-left px-3 py-2 hover:bg-zinc-50">수정</button>
-              <button className="w-full text-left px-3 py-2 text-red-600 hover:bg-zinc-50">삭제</button>
+              <button 
+                onClick={() => {
+                  const id = location.pathname.split('/')[2]
+                  navigate(`/elders/${id}/edit`)
+                  setMenuOpen(false)
+                }}
+                className="w-full text-left px-3 py-2 hover:bg-zinc-50"
+              >
+                수정
+              </button>
+              <button 
+                onClick={() => {
+                  onDeleteClick?.()
+                  setMenuOpen(false)
+                }}
+                className="w-full text-left px-3 py-2 text-red-600 hover:bg-zinc-50"
+              >
+                삭제
+              </button>
             </div>
           )}
         </div>
@@ -56,6 +77,7 @@ export default function Header() {
           <Bell className="w-6 h-6 text-gray-600" />
         </div>
       )}
+
     </header>
   )
 }

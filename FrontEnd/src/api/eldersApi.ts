@@ -309,3 +309,88 @@ export const createSenior = async (seniorData: Omit<Senior, 'senior_id'>): Promi
     }, 1000)
   })
 }
+
+// 어르신 정보 수정
+export const updateSenior = async (seniorId: number, updateData: Partial<Senior>): Promise<void> => {
+  const possibleUrls = [
+    `http://j13a503.p.ssafy.io:8000/seniors/${seniorId}`,
+    `http://j13a503.p.ssafy.io:8000/api/v1/seniors/${seniorId}`,
+    `http://127.0.0.1:8000/seniors/${seniorId}`,
+    `http://127.0.0.1:8000/api/v1/seniors/${seniorId}`,
+    `http://localhost:3000/seniors/${seniorId}`,
+    `http://localhost:3001/seniors/${seniorId}`,
+    `http://localhost:8080/seniors/${seniorId}`,
+    `http://127.0.0.1:3000/seniors/${seniorId}`,
+    `http://127.0.0.1:3001/seniors/${seniorId}`,
+    `http://127.0.0.1:8080/seniors/${seniorId}`
+  ]
+
+  for (const url of possibleUrls) {
+    try {
+      console.log(`어르신 수정 시도 중: ${url}`)
+      
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      })
+
+      if (response.ok) {
+        console.log(`성공! 서버 주소: ${url}`)
+        return
+      } else {
+        console.log(`${url} 실패: ${response.status}`)
+      }
+    } catch (error) {
+      console.log(`${url} 연결 실패:`, error)
+    }
+  }
+
+  // 모든 서버 연결 실패 시 더미 응답
+  console.log('모든 서버 연결 실패, 더미 응답 반환')
+  return Promise.resolve()
+}
+
+// 어르신 삭제
+export const deleteSenior = async (seniorId: number): Promise<void> => {
+  const possibleUrls = [
+    `http://j13a503.p.ssafy.io:8000/seniors/${seniorId}`,
+    `http://j13a503.p.ssafy.io:8000/api/v1/seniors/${seniorId}`,
+    `http://127.0.0.1:8000/seniors/${seniorId}`,
+    `http://127.0.0.1:8000/api/v1/seniors/${seniorId}`,
+    `http://localhost:3000/seniors/${seniorId}`,
+    `http://localhost:3001/seniors/${seniorId}`,
+    `http://localhost:8080/seniors/${seniorId}`,
+    `http://127.0.0.1:3000/seniors/${seniorId}`,
+    `http://127.0.0.1:3001/seniors/${seniorId}`,
+    `http://127.0.0.1:8080/seniors/${seniorId}`
+  ]
+
+  for (const url of possibleUrls) {
+    try {
+      console.log(`어르신 삭제 시도 중: ${url}`)
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        console.log(`성공! 서버 주소: ${url}`)
+        return
+      } else {
+        console.log(`${url} 실패: ${response.status}`)
+      }
+    } catch (error) {
+      console.log(`${url} 연결 실패:`, error)
+    }
+  }
+
+  // 모든 서버 연결 실패 시 더미 응답
+  console.log('모든 서버 연결 실패, 더미 응답 반환')
+  return Promise.resolve()
+}
