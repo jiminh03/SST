@@ -75,7 +75,7 @@ export default function HomePage() {
   return (
     <div className="space-y-2">
       <FilterBar selected={filter} onSelect={setFilter} />
-      <div className="pt-0 px-4 pb-4 space-y-4">
+      <div className="pt-0 px-4 pb-4 space-y-3">
         {filtered.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500">등록된 어르신이 없습니다.</p>

@@ -82,9 +82,9 @@ export default function ElderDetailPage() {
   }
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto bg-gray-50">
+    <div ref={scrollRef} className="h-full overflow-y-auto bg-gray-200">
       {/* 히어로 영역 */}
-      <section className="relative px-6 pt-10 pb-6">
+      <section className="relative px-6 pt-6 pb-4">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
           <div className="flex items-start gap-6">
             <div className="relative">
@@ -125,9 +125,9 @@ export default function ElderDetailPage() {
           
           {/* 특이사항 표시 */}
           {showDetails && (
-            <div className="mt-3 px-4 py-2 bg-gray-200 rounded-xl">
-              <h3 className="text-xs font-semibold text-gray-800 mb-1">특이사항</h3>
-              <p className="text-xs text-gray-700">
+            <div className="mt-3 px-4 py-3 bg-gray-200 rounded-xl">
+              <h3 className="text-sm font-semibold text-gray-800 mb-2">특이사항</h3>
+              <p className="text-sm text-gray-700">
                 {senior.health_info || '등록된 특이사항이 없습니다.'}
               </p>
             </div>
@@ -136,7 +136,7 @@ export default function ElderDetailPage() {
       </section>
 
       {/* 콘텐츠 카드 컨테이너 - 스크롤 시 확장 연출 */}
-      <div className={`relative transition-all duration-300 ease-out ${scrolled ? 'mt-0 rounded-[40px]' : 'mt-4'} `}>
+      <div className={`relative transition-all duration-300 ease-out ${scrolled ? 'mt-0 rounded-[40px]' : 'mt-2'} `}>
         <div className={`bg-white shadow-lg border border-gray-100 ${scrolled ? 'rounded-2xl pt-4' : 'rounded-2xl pt-4'} `}>
           {/* 상단 액션/배너 영역 */}
           <div className="px-6 pb-6 space-y-4">

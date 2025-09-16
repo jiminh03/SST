@@ -12,6 +12,7 @@ export default function ElderEditPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [profileImage, setProfileImage] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -50,6 +51,29 @@ export default function ElderEditPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // 파일 크기 체크 (5MB 제한)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('파일 크기는 5MB 이하여야 합니다.')
+        return
+      }
+      
+      // 이미지 파일 타입 체크
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드 가능합니다.')
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setProfileImage(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const handleUpdate = async () => {
@@ -110,11 +134,18 @@ export default function ElderEditPage() {
           {/* 프로필 사진 */}
           <div className="flex justify-center mb-6">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 shadow-xl flex items-center justify-center border-4 border-white ring-4 ring-gray-100">
-                <User className="w-12 h-12 text-white" />
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 shadow-xl flex items-center justify-center border-4 border-white ring-4 ring-gray-100 overflow-hidden">
+                {profileImage ? (
+                  <img 
+                    src={profileImage} 
+                    alt="프로필" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-12 h-12 text-white" />
+                )}
               </div>
-              <button 
-                className="absolute -bottom-1 -right-2 text-white p-1 rounded-full shadow-xl transition-all duration-200 hover:scale-110"
+              <label className="absolute -bottom-1 -right-2 text-white p-1 rounded-full shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer"
                 style={{ backgroundColor: '#0088FF' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0066CC'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0088FF'}
@@ -123,7 +154,13 @@ export default function ElderEditPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-              </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
             </div>
           </div>
 
@@ -163,7 +200,6 @@ export default function ElderEditPage() {
             <FormField 
               icon={<Phone className="w-5 h-5" />}
               label="보호자 연락처" 
-              required
               placeholder="예) 010-1234-5678"
               value={formData.guardian_contact}
               onChange={(value) => handleInputChange('guardian_contact', value)}

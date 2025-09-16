@@ -26,7 +26,7 @@ export default function ElderCard({ elder }: { elder: Elder }) {
   const glowClass = ''
 
   return (
-    <Link to={`/elders/${elder.id}`} className="relative flex items-center gap-4 p-5 bg-white rounded-[20px] shadow-[0px_4px_20px_rgba(0,0,0,0.25)] no-underline text-inherit">
+    <Link to={`/elders/${elder.id}`} className="relative flex items-center gap-3 p-4 bg-white rounded-[20px] shadow-[0px_4px_20px_rgba(0,0,0,0.25)] no-underline text-inherit">
       {/* 상태 배지 (우상단 고정) */}
       <div className={`absolute top-4 right-4 flex items-center gap-1 text-base font-semibold ${statusClass}`}>
         <span className={`w-3 h-3 shrink-0 aspect-square rounded-full ${dotClass} ${glowClass}`} />
@@ -43,7 +43,7 @@ export default function ElderCard({ elder }: { elder: Elder }) {
       </div>
 
       {/* 정보 */}
-      <div className="flex-1 ml-2 text-left">
+      <div className="flex-1 ml-2 text-left space-y-1">
         <p className="text-lg font-bold tracking-widest text-black">{elder.name}</p>
         <p className="text-sm text-zinc-400 font-semibold">{elder.birthDate}</p>
         <p className="text-sm text-zinc-400 font-semibold">{elder.address}</p>
