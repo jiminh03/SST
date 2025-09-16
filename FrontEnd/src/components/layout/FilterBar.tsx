@@ -14,7 +14,7 @@ export default function FilterBar({ selected, onSelect }: FilterBarProps) {
       <button
         onClick={() => onSelect('전체')}
         className={
-          `inline-flex items-center justify-center gap-1 h-10 px-2 text-xs whitespace-nowrap rounded-full ` +
+          `inline-flex items-center justify-center gap-1 h-10 px-2 text-xs whitespace-nowrap rounded-full transition-all duration-150 ` +
           (isSelected('전체')
             ? 'font-bold text-sky-500 bg-blue-100 border-2 border-sky-500'
             : 'font-semibold text-zinc-500 bg-white border-2 border-stone-300')
@@ -26,7 +26,7 @@ export default function FilterBar({ selected, onSelect }: FilterBarProps) {
       <button
         onClick={() => onSelect('위험')}
         className={
-          `inline-flex items-center justify-center gap-1 h-10 px-2 text-xs whitespace-nowrap rounded-full ` +
+          `inline-flex items-center justify-center gap-1 h-10 px-2 text-xs whitespace-nowrap rounded-full transition-all duration-150 ` +
           (isSelected('위험')
             ? 'font-bold text-red-500 bg-red-50 border-2 border-red-400'
             : 'font-semibold text-red-500 bg-white border-2 border-stone-300')
@@ -39,7 +39,7 @@ export default function FilterBar({ selected, onSelect }: FilterBarProps) {
       <button
         onClick={() => onSelect('주의')}
         className={
-          `inline-flex items-center justify-center gap-1 h-10 px-2 text-xs whitespace-nowrap rounded-full ` +
+          `inline-flex items-center justify-center gap-1 h-10 px-2 text-xs whitespace-nowrap rounded-full transition-all duration-150 ` +
           (isSelected('주의')
             ? 'font-bold text-yellow-600 bg-yellow-50 border-2 border-yellow-400'
             : 'font-semibold text-yellow-500 bg-white border-2 border-stone-300')
@@ -52,7 +52,7 @@ export default function FilterBar({ selected, onSelect }: FilterBarProps) {
       <button
         onClick={() => onSelect('안전')}
         className={
-          `inline-flex items-center justify-center gap-1 h-10 px-2 text-xs whitespace-nowrap rounded-full ` +
+          `inline-flex items-center justify-center gap-1 h-10 px-2 text-xs whitespace-nowrap rounded-full transition-all duration-150 ` +
           (isSelected('안전')
             ? 'font-bold text-green-600 bg-green-50 border-2 border-green-400'
             : 'font-semibold text-green-500 bg-white border-2 border-stone-300')

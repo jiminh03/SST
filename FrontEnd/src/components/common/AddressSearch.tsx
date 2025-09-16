@@ -22,6 +22,14 @@ export default function AddressSearch({ value, onChange, placeholder = "주소�
   const [detailAddress, setDetailAddress] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // value prop이 변경될 때 기존 주소를 파싱하여 표시
+  useEffect(() => {
+    if (value && !selectedAddress) {
+      // 기존 주소가 있으면 selectedAddress로 설정
+      setSelectedAddress(value)
+    }
+  }, [value, selectedAddress])
+
   // 다음 우편번호 서비스 스크립트 로드
   useEffect(() => {
     const script = document.createElement('script')
@@ -105,9 +113,9 @@ export default function AddressSearch({ value, onChange, placeholder = "주소�
         <input
           ref={inputRef}
           type="text"
-          value={searchQuery}
+          value={selectedAddress || searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={placeholder}
+          placeholder={selectedAddress ? selectedAddress : placeholder}
           className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 transition-all shadow-sm cursor-pointer"
           onClick={handleSearch}
           readOnly

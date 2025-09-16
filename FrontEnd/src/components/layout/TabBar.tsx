@@ -4,7 +4,7 @@ import RegisterIcon from '../../assets/icons/RegisterIcon'
 
 export default function TabBar() {
   const location = useLocation()
-  const isHomeActive = location.pathname === '/home' || location.pathname.startsWith('/elders') || location.pathname === '/notifications'
+  const isHomeActive = location.pathname === '/home' || location.pathname.startsWith('/elders') || location.pathname === '/notifications' || location.pathname === '/camera'
 
   return (
     <nav className="sticky bottom-0 z-10 bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.1)]">
@@ -37,11 +37,11 @@ export default function TabBar() {
         <div className="flex justify-center relative">
           <NavLink
             to="/home"
-            className="-translate-y-8 sm:-translate-y-10 no-underline relative"
+            className="-translate-y-4 sm:-translate-y-6 no-underline relative"
             style={{ textDecoration: 'none' }}
           >
-            {/* 흰색 반원 배경 + 그림자 */}
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-[100px] h-[50px] rounded-t-full bg-white shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-0" />
+            {/* 흰색 반원 배경 */}
+            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-[90px] h-[45px] rounded-t-full bg-white shadow-[0_-2px_6px_rgba(0,0,0,0.12)] z-0" />
 
             {/* 실제 원 */}
             <div

@@ -13,6 +13,7 @@ export default function ElderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showDetails, setShowDetails] = useState(false)
+  const [showGuardianContact, setShowGuardianContact] = useState(false)
 
   useEffect(() => {
     const el = scrollRef.current
@@ -153,7 +154,7 @@ export default function ElderDetailPage() {
             {/* 액션 카드 2열 */}
             <div className="grid grid-cols-2 gap-3">
               <button 
-                onClick={() => navigate('/camera')}
+                onClick={() => navigate(`/camera?from=${id}`)}
                 className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors shadow-sm hover:shadow-md"
                 style={{ backgroundColor: '#ffffff' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
@@ -162,7 +163,8 @@ export default function ElderDetailPage() {
                 <Camera className="w-4 h-4" />
                 <span className="text-sm font-medium">카메라 확인</span>
               </button>
-              <button 
+              <button
+                onClick={() => setShowGuardianContact(true)}
                 className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors shadow-sm hover:shadow-md"
                 style={{ backgroundColor: '#ffffff' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
@@ -224,6 +226,69 @@ export default function ElderDetailPage() {
         </div>
         <div className="h-6" />
       </div>
+
+      {/* 보호자 연락처 팝업 */}
+      {showGuardianContact && senior && (
+        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 mx-4 max-w-sm w-full shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Phone className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">보호자 연락처</h2>
+              <p className="text-gray-600 mb-6">{senior.name}님의 보호자</p>
+              
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-center gap-2">
+                  <Phone className="w-5 h-5 text-gray-600" />
+                  <span className="text-lg font-semibold text-gray-800">
+                    {senior.guardian_contact || '연락처 없음'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowGuardianContact(false)}
+                  className="flex-1 py-3 px-4 rounded-lg border border-gray-300 text-gray-700 font-semibold transition-colors hover:bg-gray-50"
+                >
+                  닫기
+                </button>
+                {senior.guardian_contact ? (
+                  <button
+                    onClick={async () => {
+                      const phoneNumber = senior.guardian_contact
+                      try {
+                        await navigator.clipboard.writeText(phoneNumber)
+                      } catch (err) {
+                        // 클립보드 API가 지원되지 않는 경우 대체 방법
+                        const textArea = document.createElement('textarea')
+                        textArea.value = phoneNumber
+                        document.body.appendChild(textArea)
+                        textArea.select()
+                        document.execCommand('copy')
+                        document.body.removeChild(textArea)
+                      }
+                      setShowGuardianContact(false)
+                    }}
+                    className="flex-1 py-3 px-4 rounded-lg text-white font-semibold transition-colors"
+                    style={{ backgroundColor: '#0088FF' }}
+                  >
+                    복사하기
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="flex-1 py-3 px-4 rounded-lg text-gray-400 font-semibold bg-gray-200 cursor-not-allowed"
+                  >
+                    복사하기
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -241,25 +306,25 @@ function RoomCard({ name, time, status, icon }: { name: string; time: string; st
     <div className="relative rounded-lg bg-white shadow-sm border border-gray-200 px-3 py-3 hover:shadow-md transition-all duration-200">
       <div className="flex items-center justify-center mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-800 whitespace-nowrap">{name}</span>
+          <span className="text-base font-medium text-gray-800 whitespace-nowrap">{name}</span>
           <StatusDot color={status} />
         </div>
       </div>
-      <div className="text-xs text-gray-500">{time}</div>
+      <div className="text-xs text-gray-500 text-center">{time}</div>
     </div>
   )
 }
 
 function SmallRoomCard({ name, time, status, icon }: { name: string; time: string; status: 'red' | 'yellow' | 'green'; icon: React.ReactNode }) {
   return (
-    <div className="relative rounded-lg bg-white shadow-sm border border-gray-200 px-2 py-2 hover:shadow-md transition-all duration-200">
-      <div className="flex items-center justify-center mb-1">
+    <div className="relative rounded-lg bg-white shadow-sm border border-gray-200 px-3 py-3 hover:shadow-md transition-all duration-200">
+      <div className="flex items-center justify-center mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-800 whitespace-nowrap">{name}</span>
+          <span className="text-base font-medium text-gray-800 whitespace-nowrap">{name}</span>
           <StatusDot color={status} />
         </div>
       </div>
-      <div className="text-xs text-gray-500">{time}</div>
+      <div className="text-xs text-gray-500 text-center">{time}</div>
     </div>
   )
 }

@@ -79,11 +79,19 @@ export default function RegisterPage() {
           {/* 프로필 이미지 섹션 */}
           <div className="text-center mb-8">
             <div className="relative inline-block">
-              <div className="w-32 h-32 rounded-full bg-white shadow-lg flex items-center justify-center border-4 border-blue-100">
-                <User className="w-16 h-16 text-blue-400" />
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 shadow-xl flex items-center justify-center border-4 border-white ring-4 ring-gray-100">
+                <User className="w-20 h-20 text-white" />
               </div>
-              <button className="absolute -bottom-2 -right-2 bg-black hover:bg-gray-800 text-white p-3 rounded-full shadow-lg transition-colors">
-                <Camera className="w-5 h-5" />
+              <button 
+                className="absolute -bottom-2 -right-5 text-white p-2 rounded-full shadow-xl transition-all duration-200 hover:scale-110"
+                style={{ backgroundColor: '#0088FF' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0066CC'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0088FF'}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               </button>
             </div>
             <p className="text-sm text-gray-600 mt-4">프로필 사진을 추가해주세요</p>
@@ -164,7 +172,7 @@ export default function RegisterPage() {
           </div>
         )}
         
-        <button 
+        <button
           onClick={handleSubmit}
           disabled={isSubmitting}
           className="w-full text-white font-semibold py-4 px-6 rounded-xl shadow-lg transition-colors transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" 

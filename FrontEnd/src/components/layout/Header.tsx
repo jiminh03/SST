@@ -35,8 +35,17 @@ export default function Header({ onDeleteClick }: HeaderProps) {
     } else if (location.pathname.startsWith('/elders/')) {
       // 상세보기에서는 목록으로
       navigate('/home')
-    } else if (location.pathname === '/camera' || location.pathname === '/notifications') {
-      // 카메라나 알림에서는 홈으로
+    } else if (location.pathname === '/camera') {
+      // 카메라에서는 이전 페이지로 (어르신 상세보기에서 왔다면 상세보기로)
+      const urlParams = new URLSearchParams(location.search)
+      const fromId = urlParams.get('from')
+      if (fromId) {
+        navigate(`/elders/${fromId}`)
+      } else {
+        navigate('/home')
+      }
+    } else if (location.pathname === '/notifications') {
+      // 알림에서는 홈으로
       navigate('/home')
     } else {
       // 기본적으로는 이전 페이지로

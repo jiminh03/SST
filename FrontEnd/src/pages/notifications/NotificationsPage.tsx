@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react'
 
 interface Notification {
@@ -8,9 +9,12 @@ interface Notification {
   message: string
   time: string
   isRead: boolean
+  seniorId: number
+  seniorName: string
 }
 
 export default function NotificationsPage() {
+  const navigate = useNavigate()
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: 1,
@@ -18,7 +22,9 @@ export default function NotificationsPage() {
       title: '위험 상황 감지',
       message: '김할머니님의 안방에서 낙상 위험이 감지되었습니다.',
       time: '5분 전',
-      isRead: false
+      isRead: false,
+      seniorId: 1,
+      seniorName: '김할머니'
     },
     {
       id: 2,
@@ -26,7 +32,9 @@ export default function NotificationsPage() {
       title: '위험 상황 감지',
       message: '김할머니님의 화장실에서 응급상황이 감지되었습니다.',
       time: '1시간 전',
-      isRead: true
+      isRead: true,
+      seniorId: 1,
+      seniorName: '김할머니'
     },
     {
       id: 3,
@@ -34,7 +42,9 @@ export default function NotificationsPage() {
       title: '위험 상황 감지',
       message: '김할머니님의 거실에서 낙상 위험이 감지되었습니다.',
       time: '3시간 전',
-      isRead: true
+      isRead: true,
+      seniorId: 1,
+      seniorName: '김할머니'
     }
   ])
 
@@ -60,6 +70,13 @@ export default function NotificationsPage() {
     setNotifications(prev => prev.filter(notification => notification.id !== id))
   }
 
+  const handleNotificationClick = (notification: Notification) => {
+    // 알림을 읽음 처리
+    markAsRead(notification.id)
+    // 카메라 스트리밍 페이지로 이동 (스트리밍 모드)
+    navigate(`/camera?streaming=true&seniorId=${notification.seniorId}&seniorName=${notification.seniorName}`)
+  }
+
   const unreadCount = notifications.filter(n => !n.isRead).length
 
   return (
@@ -77,9 +94,10 @@ export default function NotificationsPage() {
             {notifications.map((notification) => (
               <div
                 key={notification.id}
+                onClick={() => handleNotificationClick(notification)}
                 className={`p-4 rounded-lg border ${getNotificationBg()} ${
                   !notification.isRead ? 'shadow-sm' : ''
-                }`}
+                } cursor-pointer hover:shadow-md transition-all duration-200`}
               >
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 mt-0.5">
