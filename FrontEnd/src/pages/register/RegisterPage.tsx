@@ -57,8 +57,8 @@ export default function RegisterPage() {
         health_info: formData.healthInfo
       })
 
-      // 성공 시 홈 페이지로 이동
-      navigate('/home')
+      // 성공 시 홈 페이지로 이동 (강제 새로고침)
+      window.location.href = '/home'
     } catch (err) {
       setError('어르신 등록에 실패했습니다. 다시 시도해주세요.')
       console.error('Registration error:', err)

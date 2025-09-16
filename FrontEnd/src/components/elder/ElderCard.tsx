@@ -23,12 +23,7 @@ export default function ElderCard({ elder }: { elder: Elder }) {
       ? 'bg-yellow-500'
       : 'bg-green-500'
 
-  const glowClass =
-    elder.status === '위험'
-      ? 'shadow-[0_0_5px_0_rgba(239,68,68,0.5)]'
-      : elder.status === '주의'
-      ? 'shadow-[0_0_5px_0_rgba(234,179,8,0.5)]'
-      : 'shadow-[0_0_5px_0_rgba(34,197,94,0.5)]'
+  const glowClass = ''
 
   return (
     <Link to={`/elders/${elder.id}`} className="relative flex items-center gap-4 p-5 bg-white rounded-[20px] shadow-[0px_0px_30px_-2px_rgba(0,0,0,0.15)] no-underline text-inherit">
@@ -48,8 +43,8 @@ export default function ElderCard({ elder }: { elder: Elder }) {
       </div>
 
       {/* 정보 */}
-      <div className="flex-1">
-        <p className="text-xl font-bold tracking-widest">{elder.name}</p>
+      <div className="flex-1 ml-2 text-left">
+        <p className="text-xl font-bold tracking-widest text-black">{elder.name}</p>
         <p className="text-base text-zinc-400 font-semibold">{elder.birthDate}</p>
         <p className="text-base text-zinc-400 font-semibold">{elder.address}</p>
       </div>

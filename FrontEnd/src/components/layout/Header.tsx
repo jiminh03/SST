@@ -33,9 +33,13 @@ export default function Header() {
       </div>
       {isDetail ? (
         <div className="relative">
-          <button aria-label="메뉴" onClick={() => setMenuOpen((v) => !v)} className="w-10 h-10 flex items-center justify-center">
-            <MoreVertical className="w-6 h-6 text-gray-600" />
-          </button>
+          <div 
+            aria-label="메뉴" 
+            onClick={() => setMenuOpen((v) => !v)} 
+            className="w-10 h-10 flex items-center justify-center cursor-pointer"
+          >
+            <MoreVertical className="w-6 h-6 text-black" />
+          </div>
           {menuOpen && (
             <div className="absolute right-0 mt-1 w-28 rounded-lg border border-zinc-200 bg-white shadow-lg z-10">
               <button className="w-full text-left px-3 py-2 hover:bg-zinc-50">수정</button>
@@ -44,9 +48,13 @@ export default function Header() {
           )}
         </div>
       ) : (
-        <button aria-label="알림">
+        <div 
+          aria-label="알림" 
+          className="cursor-pointer"
+          onClick={() => {}}
+        >
           <Bell className="w-6 h-6 text-gray-600" />
-        </button>
+        </div>
       )}
     </header>
   )

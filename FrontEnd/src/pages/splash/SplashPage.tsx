@@ -5,11 +5,11 @@ export default function SplashPage() {
   const navigate = useNavigate()
 
   const handleLogin = () => {
-    navigate('/login')
+    navigate('/auth/login')
   }
 
   const handleRegister = () => {
-    navigate('/auth/register')
+    navigate('/staffs')
   }
 
   return (

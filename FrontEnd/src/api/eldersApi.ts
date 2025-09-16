@@ -6,72 +6,306 @@ export interface Senior {
   health_info: string
 }
 
+// 로그인 관련 API 타입 정의
+export interface LoginRequest {
+  login_id: string
+  password: string
+}
+
+export interface LoginResponse {
+  access_token: string
+}
+
+export interface LoginError {
+  errorCode: string
+  message: string
+}
+
+// 회원가입 관련 API 타입 정의
+export interface RegisterRequest {
+  full_name: string
+  role: string
+  login_id: string
+  password: string
+}
+
+export interface RegisterError {
+  errorCode: string
+  message: string
+}
+
+// 로그인 API
+export const login = async (loginData: LoginRequest): Promise<LoginResponse> => {
+  // 가능한 서버 주소들
+  const possibleUrls = [
+    'http://j13a503.p.ssafy.io:8000/auth/login',
+    'http://j13a503.p.ssafy.io:8000/api/v1/auth/login',
+    'http://localhost:3000/auth/login',
+    'http://localhost:3001/auth/login', 
+    'http://localhost:8080/auth/login',
+    'http://127.0.0.1:3000/auth/login',
+    'http://127.0.0.1:3001/auth/login',
+    'http://127.0.0.1:8080/auth/login',
+    'http://127.0.0.1:8000/auth/login',
+    'http://127.0.0.1:8000/api/v1/auth/login'
+  ]
+
+  for (const url of possibleUrls) {
+    try {
+      console.log(`로그인 시도 중: ${url}`)
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData),
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          const errorData: LoginError = await response.json()
+          throw new Error(errorData.message || '로그인 실패')
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data: LoginResponse = await response.json()
+      console.log(`로그인 성공! 서버 주소: ${url}`)
+      return data
+    } catch (error) {
+      console.log(`${url} 로그인 실패:`, error.message)
+      if (error.message.includes('로그인 실패') || error.message.includes('ID 또는 비밀번호')) {
+        throw error // 로그인 실패는 즉시 에러로 처리
+      }
+      continue
+    }
+  }
+
+  throw new Error('모든 서버 연결 실패')
+}
+
+// 회원가입 API
+export const register = async (registerData: RegisterRequest): Promise<void> => {
+  // 가능한 서버 주소들
+  const possibleUrls = [
+    'http://j13a503.p.ssafy.io:8000/staffs',
+    'http://j13a503.p.ssafy.io:8000/api/v1/staffs',
+    'http://127.0.0.1:8000/staffs',
+    'http://127.0.0.1:8000/api/v1/staffs',
+    'http://localhost:3000/staffs',
+    'http://localhost:3001/staffs', 
+    'http://localhost:8080/staffs',
+    'http://127.0.0.1:3000/staffs',
+    'http://127.0.0.1:3001/staffs',
+    'http://127.0.0.1:8080/staffs'
+  ]
+
+  for (const url of possibleUrls) {
+    try {
+      console.log(`회원가입 시도 중: ${url}`)
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registerData),
+      })
+
+      if (!response.ok) {
+        if (response.status === 400 || response.status === 409) {
+          const errorData: RegisterError = await response.json()
+          throw new Error(errorData.message || '회원가입 실패')
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      console.log(`회원가입 성공! 서버 주소: ${url}`)
+      return
+    } catch (error) {
+      console.log(`${url} 회원가입 실패:`, error.message)
+      if (error.message.includes('회원가입 실패') || error.message.includes('ID 중복') || error.message.includes('필수 필드')) {
+        throw error // 회원가입 실패는 즉시 에러로 처리
+      }
+      continue
+    }
+  }
+
+  console.log('모든 서버 연결 실패, 목업 응답 사용')
+  
+  // 모든 서버 연결 실패 시 목업 응답 사용
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log('목업 회원가입 성공:', registerData)
+      resolve()
+    }, 1000)
+  })
+}
+
 // 어르신 목록 조회 API
 export const getSeniors = async (): Promise<Senior[]> => {
-  try {
-    // 실제 API 호출 시도
-    const response = await fetch('http://127.0.0.1:8000/api/v1/seniors', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+  // 가능한 서버 주소들
+  const possibleUrls = [
+    'http://j13a503.p.ssafy.io:8000/seniors',
+    'http://j13a503.p.ssafy.io:8000/api/v1/seniors',
+    'http://localhost:3000/seniors',
+    'http://localhost:3001/seniors', 
+    'http://localhost:8080/seniors',
+    'http://127.0.0.1:3000/seniors',
+    'http://127.0.0.1:3001/seniors',
+    'http://127.0.0.1:8080/seniors',
+    'http://127.0.0.1:8000/seniors',
+    'http://127.0.0.1:8000/api/v1/seniors'
+  ]
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+  for (const url of possibleUrls) {
+    try {
+      console.log(`시도 중: ${url}`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log(`성공! 서버 주소: ${url}`, data)
+      return data
+    } catch (error) {
+      console.log(`${url} 연결 실패:`, error.message)
+      continue
     }
-
-    const data = await response.json()
-    console.log('실제 API 데이터:', data)
-    return data
-  } catch (error) {
-    console.log('백엔드 서버 연결 실패, 목업 데이터 사용:', error.message)
-    
-    // 에러 발생 시 목업 데이터 사용
-    const mockData: Senior[] = [
-      { senior_id: 1, name: '김OO', address: '싸파트 503호', health_info: '위험' },
-      { senior_id: 2, name: '이OO', address: '싸파트 504호', health_info: '안전' },
-      { senior_id: 3, name: '신OO', address: '싸파트 505호', health_info: '주의' },
-    ]
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log('목업 데이터 반환:', mockData)
-        resolve(mockData)
-      }, 500)
-    })
   }
+
+  console.log('모든 서버 연결 실패, 목업 데이터 사용')
+  
+  // 모든 서버 연결 실패 시 목업 데이터 사용
+  const mockData: Senior[] = [
+    { senior_id: 1, name: '김OO', address: '싸파트 503호', health_info: '위험' },
+    { senior_id: 2, name: '이OO', address: '싸파트 504호', health_info: '안전' },
+    { senior_id: 3, name: '신OO', address: '싸파트 505호', health_info: '주의' },
+  ]
+  
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log('목업 데이터 반환:', mockData)
+      resolve(mockData)
+    }, 500)
+  })
+}
+
+// 어르신 상세 조회 API
+export const getSeniorById = async (seniorId: number): Promise<Senior> => {
+  // 가능한 서버 주소들
+  const possibleUrls = [
+    `http://j13a503.p.ssafy.io:8000/seniors/${seniorId}`,
+    `http://j13a503.p.ssafy.io:8000/api/v1/seniors/${seniorId}`,
+    `http://localhost:3000/seniors/${seniorId}`,
+    `http://localhost:3001/seniors/${seniorId}`, 
+    `http://localhost:8080/seniors/${seniorId}`,
+    `http://127.0.0.1:3000/seniors/${seniorId}`,
+    `http://127.0.0.1:3001/seniors/${seniorId}`,
+    `http://127.0.0.1:8080/seniors/${seniorId}`,
+    `http://127.0.0.1:8000/seniors/${seniorId}`,
+    `http://127.0.0.1:8000/api/v1/seniors/${seniorId}`
+  ]
+
+  for (const url of possibleUrls) {
+    try {
+      console.log(`상세 조회 시도 중: ${url}`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log(`상세 조회 성공! 서버 주소: ${url}`, data)
+      return data
+    } catch (error) {
+      console.log(`${url} 상세 조회 실패:`, error.message)
+      continue
+    }
+  }
+
+  console.log('모든 서버 상세 조회 실패, 목업 데이터 사용')
+  
+  // 모든 서버 연결 실패 시 목업 데이터 사용
+  const mockData: Senior = {
+    senior_id: seniorId,
+    name: '김OO',
+    address: '싸파트 503호',
+    health_info: '위험'
+  }
+  
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log('목업 상세 데이터 반환:', mockData)
+      resolve(mockData)
+    }, 500)
+  })
 }
 
 // 어르신 등록 API
 export const createSenior = async (seniorData: Omit<Senior, 'senior_id'>): Promise<Senior> => {
-  try {
-    // 실제 API 호출 시도
-    const response = await fetch('http://127.0.0.1:8000/api/v1/seniors', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(seniorData),
-    })
+  // 가능한 서버 주소들
+  const possibleUrls = [
+    'http://j13a503.p.ssafy.io:8000/seniors',
+    'http://j13a503.p.ssafy.io:8000/api/v1/seniors',
+    'http://127.0.0.1:8000/seniors',
+    'http://127.0.0.1:8000/api/v1/seniors',
+    'http://localhost:3000/seniors',
+    'http://localhost:3001/seniors', 
+    'http://localhost:8080/seniors',
+    'http://127.0.0.1:3000/seniors',
+    'http://127.0.0.1:3001/seniors',
+    'http://127.0.0.1:8080/seniors'
+  ]
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
+  for (const url of possibleUrls) {
+    try {
+      console.log(`등록 시도 중: ${url}`)
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(seniorData),
+      })
 
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('어르신 등록 실패:', error)
-    
-    // 에러 발생 시 목업 응답 사용
-    const mockResponse: Senior = {
-      senior_id: Date.now(), // 임시 ID 생성
-      ...seniorData
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log(`등록 성공! 서버 주소: ${url}`, data)
+      return data
+    } catch (error) {
+      console.log(`${url} 등록 실패:`, error.message)
+      continue
     }
-    
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(mockResponse), 1000)
-    })
   }
+
+  console.log('모든 서버 등록 실패, 목업 응답 사용')
+  
+  // 모든 서버 연결 실패 시 목업 응답 사용
+  const mockResponse: Senior = {
+    senior_id: Date.now(), // 임시 ID 생성
+    ...seniorData
+  }
+  
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log('목업 등록 응답:', mockResponse)
+      resolve(mockResponse)
+    }, 1000)
+  })
 }

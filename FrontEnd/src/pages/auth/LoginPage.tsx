@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, User, Lock } from 'lucide-react'
+import { login } from '../../api/eldersApi'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    username: '',
+    login_id: '',
     password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -22,12 +24,26 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
     
-    // 로그인 로직 (임시로 1초 후 홈으로 이동)
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      const response = await login({
+        login_id: formData.login_id,
+        password: formData.password
+      })
+      
+      // 로그인 성공 시 토큰 저장 (localStorage 또는 다른 저장소)
+      localStorage.setItem('access_token', response.access_token)
+      console.log('로그인 성공, 토큰 저장됨:', response.access_token)
+      
+      // 홈페이지로 이동
       navigate('/home')
-    }, 1000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.')
+      console.error('로그인 에러:', err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleBackToSplash = () => {
@@ -65,18 +81,25 @@ export default function LoginPage() {
 
           {/* 로그인 폼 */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 에러 메시지 */}
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm text-center">{error}</p>
+              </div>
+            )}
+
             {/* 아이디 입력 */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <User className="w-4 h-4 text-blue-500" />
-                아이디
+                로그인 ID
               </label>
               <input
                 type="text"
-                name="username"
-                value={formData.username}
+                name="login_id"
+                value={formData.login_id}
                 onChange={handleInputChange}
-                placeholder="아이디를 입력해주세요"
+                placeholder="로그인 ID를 입력해주세요"
                 className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 transition-all shadow-sm"
                 required
               />
@@ -111,7 +134,7 @@ export default function LoginPage() {
             {/* 로그인 버튼 */}
             <button
               type="submit"
-              disabled={isLoading || !formData.username || !formData.password}
+              disabled={isLoading || !formData.login_id || !formData.password}
               className="w-full font-semibold py-4 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: '#000000', color: '#ffffff' }}
             >
@@ -142,7 +165,7 @@ export default function LoginPage() {
                 아직 계정이 없으신가요?
               </p>
               <button
-                onClick={() => navigate('/auth/register')}
+                onClick={() => navigate('/staffs')}
                 className="w-full font-semibold py-4 px-6 rounded-lg border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 transition-colors"
               >
                 회원가입

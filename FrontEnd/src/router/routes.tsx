@@ -15,9 +15,11 @@ const router = createBrowserRouter([
   
   // 로그인 페이지 (레이아웃 없음)
   { path: '/login', element: <LoginPage /> },
+  { path: '/auth/login', element: <LoginPage /> },
   
   // 회원가입 페이지 (레이아웃 없음)
   { path: '/auth/register', element: <AuthRegisterPage /> },
+  { path: '/staffs', element: <AuthRegisterPage /> },
   
   // 메인 앱 페이지들 (MobileLayout 사용)
   {
