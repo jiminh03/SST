@@ -27,7 +27,7 @@ class Staff(SQLModel, table=True):
     login_id: str = Field(unique=True, index=True, description="로그인 ID")
     password_hash: str = Field(description="해시된 비밀번호")
     full_name: str = Field(description="직원 이름")
-    role: str = Field(default="caregiver", description="역할 (e.g., admin, caregiver)")
+    email: str = Field(description="이메일")
     created_at: datetime = Field(
         default_factory=datetime.utcnow, nullable=False
     )

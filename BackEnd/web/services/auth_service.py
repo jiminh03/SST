@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common.modules.user_manager import UserManager
-from web.main import db
+from web.database import db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -18,7 +18,7 @@ class WebAuthModule:
         self,
         secret_key: str,
         access_token_expire_minutes: int,
-        algorithm: str = "HS256",
+        algorithm: str,
     ):
         self._secret_key = secret_key
         self._access_token_expire_minutes = access_token_expire_minutes
@@ -105,7 +105,7 @@ class WebAuthModule:
             headers={"WWW-Authenticate": "Bearer"},
         )
         try:
-            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+            payload = jwt.decode(token, self._secret_key, algorithms=[self._algorithm])
             login_id: str = payload.get("sub")
             if login_id is None:
                 raise credentials_exception

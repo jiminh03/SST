@@ -14,15 +14,15 @@ async def test_add_hub(get_session: AsyncSession):
     """HubCreate 모델을 사용하여 허브를 추가하는 기능 테스트"""
     iot_hub_manager = IoTHubManager(get_session)
 
-    # 1. unique_id만으로 추가
-    hub1_info = await iot_hub_manager.add_hub(HubCreate(unique_id="device1"))
-    assert hub1_info.unique_id == "device1"
+    # 1. device_id만으로 추가
+    hub1_info = await iot_hub_manager.add_hub(HubCreate(device_id="device1"))
+    assert hub1_info.device_id == "device1"
     assert hub1_info.status == "offline"
 
     
     # 2. api 키 포함하여 추가
-    hub3_info = await iot_hub_manager.add_hub(HubCreate(unique_id="device3", api_key_hash="123123"))
-    assert hub3_info.unique_id == "device3"
+    hub3_info = await iot_hub_manager.add_hub(HubCreate(device_id="device3", api_key_hash="123123"))
+    assert hub3_info.device_id == "device3"
 
     # get_hub_status가 _HubStatus 객체를 반환하는지 확인
     hub1_status = await iot_hub_manager.get_hub_status(hub_id=hub1_info.hub_id)
@@ -35,16 +35,16 @@ async def test_edit_hub_info(get_session: AsyncSession):
     
     # 테스트를 위한 초기 허브 추가
     hub_info = await iot_hub_manager.add_hub(
-        HubCreate(unique_id="device_to_edit", api_key_hash="initial_key")
+        HubCreate(device_id="device_to_edit", api_key_hash="initial_key")
     )
     hub_id = hub_info.hub_id
 
-    # 1. unique_id와 api_key_hash를 동시에 수정
-    await iot_hub_manager.edit_hub_info(hub_id=hub_id, update_data=HubUpdate(unique_id="edited_device", api_key_hash="edited_key"))
+    # 1. device_id와 api_key_hash를 동시에 수정
+    await iot_hub_manager.edit_hub_info(hub_id=hub_id, update_data=HubUpdate(device_id="edited_device", api_key_hash="edited_key"))
     
     # 수정된 정보 확인
     edited_hub_info = await iot_hub_manager.get_hub_info(hub_id)
-    assert edited_hub_info.unique_id == "edited_device"
+    assert edited_hub_info.device_id == "edited_device"
 
     db_row_after_second_edit = (await get_session.execute(text("SELECT senior_id, api_key_hash FROM iot_hubs WHERE hub_id=:hub_id"), {"hub_id": hub_id})).first()
     assert db_row_after_second_edit.api_key_hash == "edited_key"
@@ -55,7 +55,7 @@ async def test_hub_status_change(get_session: AsyncSession):
     iot_hub_manager = IoTHubManager(get_session)
 
     # 테스트를 위한 허브 추가
-    hub_info = await iot_hub_manager.add_hub(HubCreate(unique_id="status_test_device"))
+    hub_info = await iot_hub_manager.add_hub(HubCreate(device_id="status_test_device"))
     hub_id = hub_info.hub_id
 
     # 초기 상태 확인

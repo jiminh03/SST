@@ -43,7 +43,6 @@ class ApiKeyManager:
 class ApiKeyRepository:
     def __init__(self, session: AsyncSession): # DB 세션을 주입받음
         self.session = session
-        # IoTHubManager 인스턴스를 생성하여 허브 관련 처리를 위임합니다.
         self.iot_hub_manager = IoTHubManager(session)
 
     async def check_key_duplicated(self, hashed_key: str) -> bool:
@@ -66,6 +65,11 @@ class ApiKeyRepository:
     async def update_hash_for_hub(self, hashed_key: str, hub_id: int) -> None:
         """IoTHubManager를 통해 허브의 api_key_hash를 업데이트합니다."""
         await self.iot_hub_manager.edit_hub_info(hub_id=hub_id, update_data=HubUpdate(api_key_hash=hashed_key))
+
+    async def get_hub_by_api_key(self, api_key: str) -> HubBasicInfo | None:
+        """api 키를 통해 hub정보를 가져옵니다."""
+        hashed_key = ApiKeyManager.hash_api_key(api_key)
+        return await self.iot_hub_manager.get_hub_by_api_key_hash(hashed_key)
 
     async def is_correct_key(self, api_key: str, hub_id: int) -> bool:
         """제공된 API 키가 저장된 해시와 일치하는지 확인합니다."""

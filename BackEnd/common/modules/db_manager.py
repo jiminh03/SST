@@ -16,11 +16,6 @@ from sqlalchemy.exc import OperationalError
 from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
-# 이 코드는 SQLModel과 SQLAlchemy가 설치되어 있어야 합니다.
-# 예시를 위해 SQLModel, SensorLog 클래스가 있다고 가정합니다.
-# from models import SensorLog
-
-
 class PostgressqlSessionManager:
     """데이터베이스 세션 생성 및 제공 클래스"""
 
@@ -47,6 +42,7 @@ class PostgressqlSessionManager:
             """SQLModel 메타데이터를 기반으로 모든 테이블을 비동기적으로 생성합니다."""
             async with self.engine.begin() as conn:
                 await conn.run_sync(SQLModel.metadata.create_all)
+                await conn.commit()
                 print("--- Database tables created successfully. ---")
 
         except OperationalError as e:

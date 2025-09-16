@@ -4,9 +4,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_session
-# from app.services import ai_service
-# from app.schemas import senior_care as schemas
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 

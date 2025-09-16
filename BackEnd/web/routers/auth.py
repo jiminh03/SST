@@ -8,17 +8,17 @@ from web.schemas.auth_schema import (
     LoginRequest, LoginResponse, StaffRegister, StaffEdit,
     SeniorRegister, SeniorEdit, Hub, ApiKey
 )
-from web.main import db
+from web.database import db
 
 from web.services.auth_service import WebAuthModule
 from common.modules.user_manager import UserManager, StaffCreate, SeniorCreate, StaffInfo, StaffUpdate, SeniorUpdate
-from common.modules.iot_hub_manager import IoTHubManager, HubCreate
+from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
 
 auth_module = WebAuthModule(
     secret_key=os.getenv("SECRET_KEY"),
     access_token_expire_minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
-    algorithm=os.getenv("ALGORITHM"),
+    algorithm=os.getenv("ENC_ALGORITHM"),
 )
 
 # --- FastAPI Router ---
@@ -47,7 +47,7 @@ async def login_for_access_token(
         )
     
     access_token = auth_module.create_access_token(
-        data={"sub": user.login_id, "role": user.role}
+        data={"sub": user.login_id, "email": user.email}
     )
     return {"access_token": access_token}
 
@@ -76,10 +76,11 @@ async def register_staff(
         login_id=staff_data.login_id,
         password_hash=hashed_password,
         full_name=staff_data.full_name,
-        role=staff_data.role
+        email=staff_data.email
     )
     
     await user_manager.create_staff(new_staff_data)
+    await db.commit()
     return {"message": "Staff account created successfully."}
 
 
@@ -107,6 +108,7 @@ async def edit_staff(
 
     try:
         await user_manager.edit_staff(current_user.staff_id, staff_update)
+        await db.commit()
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -114,8 +116,7 @@ async def edit_staff(
 
 
 @router.post("/seniors", status_code=status.HTTP_201_CREATED, summary="어르신 등록", responses={
-    400: {"description": "잘못된 요청 형식 (필수 필드 누락 등)"},
-    409: {"description": "디바이스 ID 중복 (이미 등록된 디바이스)"}
+    400: {"description": "잘못된 요청 형식 (필수 필드 누락 등)"}
 })
 async def register_senior(
     senior_data: SeniorRegister,
@@ -128,13 +129,6 @@ async def register_senior(
     user_manager = UserManager(db)
     iot_manager = IoTHubManager(db)
 
-    existing_hub = await iot_manager.get_hub_by_unique_id(senior_data.device_id)
-    if existing_hub:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Device ID already registered."
-        )
-
     # 1. Create the senior user
     new_senior_info = SeniorCreate(
         full_name=senior_data.name,
@@ -143,11 +137,20 @@ async def register_senior(
     created_senior = await user_manager.create_senior(new_senior_info)
 
     # 2. Create and link the IoT Hub
-    new_hub_data = HubCreate(
-        unique_id=senior_data.device_id,
-        senior_id=created_senior.senior_id
-    )
-    await iot_manager.add_hub(new_hub_data)
+    existing_hub = await iot_manager.get_hub_by_device_id(senior_data.device_id)
+    if existing_hub is None:
+        new_hub_data = HubCreate(
+            device_id=senior_data.device_id,
+            senior_id=created_senior.senior_id
+        )
+        await iot_manager.add_hub(new_hub_data)
+    else:
+        update_hub_data=HubUpdate(
+            senior_id=created_senior.senior_id
+        )
+        await iot_manager.edit_hub_info(existing_hub.hub_id, update_hub_data)
+
+    await db.commit()
     
     return {"message": "Senior and device registered successfully.", "senior_id": created_senior.senior_id}
 
@@ -183,6 +186,7 @@ async def edit_senior(
 
     try:
         await user_manager.edit_senior(senior_id, senior_update)
+        await db.commit()
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -201,8 +205,10 @@ async def register_hub(
     api_key_repo = ApiKeyRepository(db)
 
     # 1. Create the hub entry
-    new_hub_data = HubCreate(unique_id=hub_data.device_id)
-    created_hub = await iot_manager.add_hub(new_hub_data)
+    new_hub_data = HubCreate(device_id=hub_data.device_id)
+    created_hub = await iot_manager.get_hub_by_device_id(new_hub_data.device_id)
+    if created_hub is None:
+        created_hub = await iot_manager.add_hub(new_hub_data)
 
     # 2. Generate and store API key
     api_key, hashed_key = ApiKeyManager.generate_api_key()
@@ -212,6 +218,7 @@ async def register_hub(
         api_key, hashed_key = ApiKeyManager.generate_api_key()
 
     await api_key_repo.update_hash_for_hub(hashed_key, created_hub.hub_id)
+    await db.commit()
 
     return {"api_key": api_key}
 
@@ -225,6 +232,6 @@ async def unregister_hub(
     더 이상 사용하지 않는 홈 허브를 시스템에서 등록 해지합니다.
     NOTE: IoTHubManager does not currently have a 'delete_hub' method.
     """
-    # Implementation would require a 'delete_hub_by_unique_id' method in IoTHubManager.
+    # Implementation would require a 'delete_hub_by_device_id' method in IoTHubManager.
     raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Functionality not yet implemented.")
 

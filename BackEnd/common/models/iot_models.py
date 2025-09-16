@@ -11,7 +11,7 @@ class IoTHub(SQLModel, table=True):
     __tablename__ = "iot_hubs"
 
     hub_id: Optional[int] = Field(default=None, primary_key=True)
-    unique_id: str = Field(unique=True, index=True, description="기기 고유 번호 (e.g., MAC 주소)")
+    device_id: str = Field(unique=True, index=True, description="기기 고유 번호 (e.g., MAC 주소)")
     api_key_hash: Optional[str] = Field(default=None, description="발급된 API 키의 해시값")
     status: str = Field(default="offline", description="상태 (e.g., online, offline)")
     last_seen_at: Optional[datetime] = Field(default=None)

@@ -33,8 +33,6 @@ async def db_manager():
 
     yield manager # 테스트 세션 동안 manager 객체를 유지합니다.
 
-    await manager.clear_all_tables(force=True)
-
 
 @pytest_asyncio.fixture(scope="function")  # 2. 데코레이터를 변경합니다.
 async def get_session(db_manager: PostgressqlSessionManager) -> AsyncGenerator[AsyncSession, None]:

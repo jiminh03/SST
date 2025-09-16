@@ -15,7 +15,7 @@ class LoginResponse(BaseModel):
 class Staff(BaseModel):
     staff_id: Optional[int] = None
     name: str
-    role: str
+    email: str
 
 class Senior(BaseModel):
     senior_id: Optional[int] = None

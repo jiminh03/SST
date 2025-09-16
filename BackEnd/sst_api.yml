@@ -5,7 +5,7 @@ info:
   description: "독거노인 스마트 홈케어 시스템 API 명세서. IoT 센서 데이터와 AI를 활용하여 위급 상황을 감지하고 대응합니다."
 
 servers:
-  - url: "http://127.0.0.1:8000/api/v1"
+  - url: "http://127.0.0.1:7000"
     description: "로컬 개발 서버"
   - url: "https://your-domain.com/api/v1"
     description: "프로덕션 서버"
@@ -67,7 +67,7 @@ components:
       properties:
         full_name:
           type: string
-        role:
+        email:
           type: string
         login_id:
           type: string
@@ -75,7 +75,7 @@ components:
           type: string
       required:
         - full_name
-        - role
+        - email
         - login_id
         - password
     
@@ -84,7 +84,7 @@ components:
       properties:
         full_name:
           type: string
-        role:
+        email:
           type: string
         password:
           type: string
@@ -337,12 +337,6 @@ paths:
       responses:
         "200":
           description: "정보 수정 성공"
-        "400":
-          description: "잘못된 요청 형식 (필수 필드 누락 등)"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: "인증 실패 (토큰 없음 또는 유효하지 않은 토큰)"
           content:
@@ -366,6 +360,15 @@ paths:
       responses:
         "201":
           description: "등록 성공"
+          content:
+            application/json:
+              schema:
+                properties:
+                  senior_id:
+                    type: integer
+                    description: "등록된 어르신의 고유 ID"
+                required:
+                  - senior_id
         "400":
           description: "잘못된 요청 형식 (필수 필드 누락 등)"
           content:

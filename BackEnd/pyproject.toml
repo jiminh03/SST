@@ -6,7 +6,6 @@ version = "0.1.0"
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-# ▼▼▼ 이 부분을 추가하세요 ▼▼▼
 [tool.setuptools]
 # 본인의 프로젝트에 맞는 실제 패키지 폴더 이름을 배열 안에 적어주세요.
 packages = ["common"]

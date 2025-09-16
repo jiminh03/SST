@@ -14,23 +14,23 @@ async def test_create_and_edit_staff(get_session: AsyncSession):
         login_id="test_staff_for_edit",
         password_hash="hashed_password",
         full_name="Test Staff Edit",
-        role="original_role"
+        email="original_email"
     )
     created_staff = await user_manager.create_staff(staff_to_create)
     
     assert created_staff is not None
-    assert created_staff.role == "original_role"
+    assert created_staff.email == "original_email"
     assert created_staff.full_name == "Test Staff Edit" 
 
-    # 2. Edit the staff member's role
-    staff_update_data = StaffUpdate(role="updated_role")
+    # 2. Edit the staff member's email
+    staff_update_data = StaffUpdate(email="updated_email")
     await user_manager.edit_staff(staff_id=created_staff.staff_id, staff_info=staff_update_data)
 
     # 3. Retrieve the staff member and verify the change
     updated_staff = await user_manager.get_staff_by_id(created_staff.staff_id)
 
     assert updated_staff is not None
-    assert updated_staff.role == "updated_role"
+    assert updated_staff.email == "updated_email"
     assert updated_staff.full_name == "Test Staff Edit"
 
 @pytest.mark.asyncio

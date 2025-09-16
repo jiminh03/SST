@@ -14,13 +14,13 @@ load_dotenv(dotenv_path=".env")
 
 class HubCreate(BaseModel):
     """'add_hub'에 사용할 입력 모델"""
-    unique_id: str
+    device_id: str
     senior_id: Optional[int] = None
     api_key_hash: Optional[str] = None
 
 class HubUpdate(BaseModel):
     """'edit_hub_info'에 사용할 입력 모델"""
-    unique_id: Optional[str] = None
+    device_id: Optional[str] = None
     senior_id: Optional[int] = None
     api_key_hash: Optional[str] = None
     status: Optional[str] = None
@@ -33,7 +33,7 @@ class HubBasicInfo(BaseModel):
     """get_hub_info 메서드의 반환 타입을 명시하기 위한 내부 모델"""
     hub_id: int
     senior_id: Optional[int]
-    unique_id: Optional[str] = None
+    device_id: Optional[str] = None
     status: Optional[str] = None
     api_key_hash: Optional[str] = None
 
@@ -62,11 +62,11 @@ class IoTHubManager:
             return HubBasicInfo.model_validate(row._mapping)
         return None
     
-    async def get_hub_by_unique_id(self, unique_id: str) -> Optional[HubBasicInfo]:
+    async def get_hub_by_device_id(self, device_id: str) -> Optional[HubBasicInfo]:
         """기기 고유 ID로 허브의 기본 정보를 조회하여 HubBasicInfo 객체로 반환합니다."""
-        query_str = f"SELECT {self._HUB_BASIC_INFO_COLUMNS} FROM iot_hubs WHERE unique_id = :unique_id"
+        query_str = f"SELECT {self._HUB_BASIC_INFO_COLUMNS} FROM iot_hubs WHERE device_id = :device_id"
         query = text(query_str)
-        result = await self.session.execute(query, {"unique_id": unique_id}) 
+        result = await self.session.execute(query, {"device_id": device_id}) 
         row = result.first()
         if row:
             return HubBasicInfo.model_validate(row._mapping)

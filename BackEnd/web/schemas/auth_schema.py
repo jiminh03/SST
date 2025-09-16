@@ -10,13 +10,13 @@ class LoginResponse(BaseModel):
 
 class StaffRegister(BaseModel):
     full_name: str
-    role: str
+    email: str
     login_id: str
     password: str
 
 class StaffEdit(BaseModel):
     full_name: Optional[str] = None
-    role: Optional[str] = None
+    email: Optional[str] = None
     password: Optional[str] = None
 
 class SeniorRegister(BaseModel):

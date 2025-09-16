@@ -1,13 +1,10 @@
 # app/main.py
 # app 폴더의 메인 실행 파일
 
-import sys
 import os
 
 import uvicorn
-from datetime import datetime
-from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,19 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # .env 파일 로드
 load_dotenv()
 
-# 이제 다른 모듈들을 상대 경로로 안전하게 임포트합니다.
-import common.modules.db_manager as db_manager
-from common.modules.db_manager import create_db_and_tables
-
-from web.routers import auth, ai, iot, monitoring, realtime
-
-db = db_manager.PostgressqlSessionManager(
-    db_user=os.getenv("DB_ROOT_USER"),
-    db_password=os.getenv("DB_ROOT_PW"),
-    db_host=os.getenv("DB_HOST"),
-    db_port=os.getenv("POSTGRES_PORT"),
-    db_name=os.getenv("TEST_DB_NAME"),
-)
+from web.routers import auth, iot
+from web.database import db
 
 # Lifespan 컨텍스트 매니저 정의
 @asynccontextmanager
@@ -43,9 +29,6 @@ async def lifespan(app: FastAPI):
 # FastAPI 앱 인스턴스 생성
 app = FastAPI(lifespan=lifespan)
 
-
-
-# --- 미들웨어 설정 --- 
 
 # CORS 미들웨어 설정
 origins = [
@@ -65,10 +48,10 @@ app.add_middleware(
 # --- 라우터 등록 --- 
 
 app.include_router(auth.router)
-app.include_router(ai.router)
+#app.include_router(ai.router)
 app.include_router(iot.router)
-app.include_router(monitoring.router)
-app.include_router(realtime.router)
+#app.include_router(monitoring.router)
+#app.include_router(realtime.router)
 
 
 # 기본 루트 엔드포인트
@@ -78,4 +61,4 @@ def read_root():
 
 # 이 파일을 직접 실행할 때를 위한 코드
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=int(os.getenv("MAIN_SERV_PORT")), reload=True)
+    uvicorn.run("web.main:app", host="0.0.0.0", port=int(os.getenv("MAIN_SERV_PORT")), reload=True)

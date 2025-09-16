@@ -16,6 +16,6 @@ class LoginResponse(BaseModel):
 class Staff(BaseModel):
     staff_id: Optional[int] = None
     name: str
-    role: str
+    email: str
 
 # ... 명세서의 모든 스키마를 Pydantic 모델로 변환합니다 ...
