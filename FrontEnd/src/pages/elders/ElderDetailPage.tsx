@@ -81,10 +81,10 @@ export default function ElderDetailPage() {
   }
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div ref={scrollRef} className="h-full overflow-y-auto bg-gray-50">
       {/* 히어로 영역 */}
-      <section className="relative px-6 pt-6 pb-6">
-        <div className="bg-white rounded-3xl shadow-xl p-6">
+      <section className="relative px-6 pt-10 pb-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
           <div className="flex items-start gap-6">
             <div className="relative">
               <div className="w-28 h-28 rounded-full flex items-center justify-center">
@@ -136,29 +136,39 @@ export default function ElderDetailPage() {
 
       {/* 콘텐츠 카드 컨테이너 - 스크롤 시 확장 연출 */}
       <div className={`relative transition-all duration-300 ease-out ${scrolled ? 'mt-0 rounded-[40px]' : 'mt-4'} `}>
-        <div className={`bg-white shadow-[0_0_30px_-2px_rgba(0,0,0,0.15)] ${scrolled ? 'rounded-[40px] pt-4' : 'rounded-[40px] pt-4'} `}>
+        <div className={`bg-white shadow-lg border border-gray-100 ${scrolled ? 'rounded-2xl pt-4' : 'rounded-2xl pt-4'} `}>
           {/* 상단 액션/배너 영역 */}
           <div className="px-6 pb-6 space-y-4">
             {/* 상태 알림 배너 */}
-            <div className="rounded-2xl bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-4 shadow-lg flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <Activity className="w-6 h-6" />
+            <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                <Activity className="w-4 h-4 text-red-600" />
               </div>
               <div>
-                <div className="text-lg font-bold">활동 감지 없음</div>
-                <div className="text-red-100 text-sm">마지막 활동: 1시간 전</div>
+                <div className="text-sm font-semibold text-red-800">활동 감지 없음</div>
+                <div className="text-red-600 text-xs">마지막 활동: 1시간 전</div>
               </div>
             </div>
 
             {/* 액션 카드 2열 */}
-            <div className="grid grid-cols-2 gap-4">
-              <button className="rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white px-4 py-3 shadow-lg flex items-center gap-2 hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105">
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors shadow-sm hover:shadow-md"
+                style={{ backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+              >
                 <Camera className="w-4 h-4" />
-                <span className="text-sm font-semibold">카메라 확인</span>
+                <span className="text-sm font-medium">카메라 확인</span>
               </button>
-              <button className="rounded-2xl bg-gradient-to-br from-green-500 to-green-600 text-white px-4 py-3 shadow-lg flex items-center gap-2 hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105">
+              <button 
+                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors shadow-sm hover:shadow-md"
+                style={{ backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+              >
                 <Phone className="w-4 h-4" />
-                <span className="text-sm font-semibold">보호자 연락</span>
+                <span className="text-sm font-medium">보호자 연락</span>
               </button>
             </div>
           </div>
@@ -166,10 +176,10 @@ export default function ElderDetailPage() {
           <div className="mx-6 border-t border-gray-200" />
 
           {/* 섹션 타이틀 */}
-          <div className="px-6 pt-6 pb-4">
-            <div className="flex items-center gap-3">
-              <Home className="w-5 h-5 text-blue-600" />
-              <h2 className="text-lg font-bold text-gray-800">문 상태</h2>
+          <div className="px-6 pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <Home className="w-4 h-4 text-gray-600" />
+              <h2 className="text-base font-semibold text-gray-800">문 상태</h2>
             </div>
           </div>
 
@@ -184,10 +194,10 @@ export default function ElderDetailPage() {
           {/* 구분선 */}
           <div className="mx-6 border-t border-gray-200" />
 
-          <div className="px-6 pt-6 pb-4">
-            <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-green-600" />
-              <h2 className="text-lg font-bold text-gray-800">현재 위치</h2>
+          <div className="px-6 pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-gray-600" />
+              <h2 className="text-base font-semibold text-gray-800">현재 위치</h2>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-6">
@@ -199,10 +209,10 @@ export default function ElderDetailPage() {
           {/* 구분선 */}
           <div className="mx-6 border-t border-gray-200" />
 
-          <div className="px-6 pt-6 pb-4">
-            <div className="flex items-center gap-3">
-              <Lightbulb className="w-5 h-5 text-yellow-600" />
-              <h2 className="text-lg font-bold text-gray-800">조명 상태</h2>
+          <div className="px-6 pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-4 h-4 text-gray-600" />
+              <h2 className="text-base font-semibold text-gray-800">조명 상태</h2>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-8">
@@ -227,28 +237,28 @@ function StatusDot({ color }: { color: 'red' | 'yellow' | 'green' }) {
 
 function RoomCard({ name, time, status, icon }: { name: string; time: string; status: 'red' | 'yellow' | 'green'; icon: React.ReactNode }) {
   return (
-    <div className="relative rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-lg border border-gray-100 pl-2 pr-4 py-3 hover:shadow-xl transition-all duration-200">
+    <div className="relative rounded-lg bg-white shadow-sm border border-gray-200 px-3 py-3 hover:shadow-md transition-all duration-200">
       <div className="flex items-center justify-center mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-800 whitespace-nowrap">{name}</span>
+          <span className="text-sm font-medium text-gray-800 whitespace-nowrap">{name}</span>
           <StatusDot color={status} />
         </div>
       </div>
-      <div className="text-sm text-gray-500 font-medium">{time}</div>
+      <div className="text-xs text-gray-500">{time}</div>
     </div>
   )
 }
 
 function SmallRoomCard({ name, time, status, icon }: { name: string; time: string; status: 'red' | 'yellow' | 'green'; icon: React.ReactNode }) {
   return (
-    <div className="relative rounded-xl bg-gradient-to-br from-white to-gray-50 shadow-md border border-gray-100 pl-1 pr-3 py-2 hover:shadow-lg transition-all duration-200">
+    <div className="relative rounded-lg bg-white shadow-sm border border-gray-200 px-2 py-2 hover:shadow-md transition-all duration-200">
       <div className="flex items-center justify-center mb-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-800 whitespace-nowrap">{name}</span>
+          <span className="text-sm font-medium text-gray-800 whitespace-nowrap">{name}</span>
           <StatusDot color={status} />
         </div>
       </div>
-      <div className="text-xs text-gray-500 font-medium">{time}</div>
+      <div className="text-xs text-gray-500">{time}</div>
     </div>
   )
 }
