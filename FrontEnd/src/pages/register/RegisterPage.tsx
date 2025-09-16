@@ -30,6 +30,7 @@ export default function RegisterPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+
   const handleSubmit = async () => {
     // 필수 필드 검증
     if (!formData.name.trim()) {
@@ -38,6 +39,10 @@ export default function RegisterPage() {
     }
     if (!formData.address.trim()) {
       setError('주소를 입력해주세요.')
+      return
+    }
+    if (!formData.guardianContact.trim()) {
+      setError('보호자 연락처를 입력해주세요.')
       return
     }
     if (!formData.deviceNumber.trim()) {
@@ -56,8 +61,8 @@ export default function RegisterPage() {
         health_info: formData.healthInfo
       })
 
-      // 성공 시 홈 페이지로 이동 (강제 새로고침)
-      window.location.href = '/home'
+      // 성공 시 홈 페이지로 이동 (강제 새로고침) - 등록 성공 파라미터 추가
+      window.location.href = '/home?registered=true'
     } catch (err) {
       setError('어르신 등록에 실패했습니다. 다시 시도해주세요.')
       console.error('Registration error:', err)
@@ -118,6 +123,7 @@ export default function RegisterPage() {
             <FormField 
               icon={<Phone className="w-5 h-5" />}
               label="보호자 연락처" 
+              required
               placeholder="예) 010-1234-5678"
               value={formData.guardianContact}
               onChange={(value) => handleInputChange('guardianContact', value)}

@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { getSeniorById } from '../../api/eldersApi'
 import type { Senior } from '../../api/eldersApi'
 import { Heart, MapPin, Clock, Camera, Phone, Activity, Home, Lightbulb, Thermometer, User, Smartphone } from 'lucide-react'
 
 export default function ElderDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const [scrolled, setScrolled] = useState(false)
   const [senior, setSenior] = useState<Senior | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showDetails, setShowDetails] = useState(false)
-  
-  const { id } = useParams<{ id: string }>()
 
   useEffect(() => {
     const el = scrollRef.current
@@ -153,6 +153,7 @@ export default function ElderDetailPage() {
             {/* 액션 카드 2열 */}
             <div className="grid grid-cols-2 gap-3">
               <button 
+                onClick={() => navigate('/camera')}
                 className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors shadow-sm hover:shadow-md"
                 style={{ backgroundColor: '#ffffff' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}

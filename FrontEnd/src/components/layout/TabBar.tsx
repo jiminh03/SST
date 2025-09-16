@@ -4,7 +4,7 @@ import RegisterIcon from '../../assets/icons/RegisterIcon'
 
 export default function TabBar() {
   const location = useLocation()
-  const isHomeActive = location.pathname === '/home' || location.pathname.startsWith('/elders')
+  const isHomeActive = location.pathname === '/home' || location.pathname.startsWith('/elders') || location.pathname === '/notifications'
 
   return (
     <nav className="sticky bottom-0 z-10 bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.1)]">
