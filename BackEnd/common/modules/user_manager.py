@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Any, List, Optional
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -37,25 +38,31 @@ class LoginInfo(BaseModel):
 
 class SeniorCreate(BaseModel):
     """어르신 생성을 위한 모델"""
-
+    profile_img: bytes
     full_name: str
     address: str
-
+    birth_date: date
+    guardian_contact: str
+    health_info: Optional[List[str]] = None
 
 class SeniorUpdate(BaseModel):
     """어르신 생성을 위한 모델"""
-
+    profile_img: Optional[bytes] = None
     full_name: Optional[str] = None
     address: Optional[str] = None
+    birth_date: Optional[date] = None
+    guardian_contact: Optional[str] = None
+    health_info: Optional[List[str]] = None
 
 
 class SeniorInfo(BaseModel):
     """어르신 정보 응답을 위한 모델"""
-
     senior_id: int
     full_name: str
     address: str
-    health_info: Optional[dict[str, Any]] = None
+    birth_date: Optional[date] = None
+    guardian_contact: Optional[str] = None
+    health_info: Optional[List[str]] = None
 
     class Config:
         from_attributes = True

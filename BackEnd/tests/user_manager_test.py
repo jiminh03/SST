@@ -1,6 +1,7 @@
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import date
 
 from common.modules.user_manager import UserManager, StaffCreate, StaffUpdate, SeniorCreate, SeniorUpdate
 
@@ -41,16 +42,23 @@ async def test_create_and_edit_senior(get_session: AsyncSession):
     # 1. Create a new senior
     senior_to_create = SeniorCreate(
         full_name="Test Senior Edit",
-        address="Original Address"
+        address="Original Address",
+        birth_date=date(1940, 1, 1),
+        guardian_contact="010-1234-5678",
+        profile_img=b"fake_image_bytes",
+        health_info=["aspirin"]
     )
     created_senior = await user_manager.create_senior(senior_to_create)
 
     assert created_senior is not None
     assert created_senior.address == "Original Address"
-    assert created_senior.full_name == "Test Senior Edit" 
+    assert created_senior.full_name == "Test Senior Edit"
+    assert created_senior.birth_date == date(1940, 1, 1)
+    assert created_senior.guardian_contact == "010-1234-5678"
+    assert created_senior.health_info == ["aspirin"]
 
-    # 2. Edit the senior's address
-    senior_update_data = SeniorUpdate(address="Updated Address")
+    # 2. Edit the senior's address and health_info
+    senior_update_data = SeniorUpdate(address="Updated Address", health_info=["aspirin", "plavix"])
     await user_manager.edit_senior(senior_id=created_senior.senior_id, senior_info=senior_update_data)
 
     # 3. Retrieve the senior and verify the change
@@ -58,4 +66,5 @@ async def test_create_and_edit_senior(get_session: AsyncSession):
 
     assert updated_senior is not None
     assert updated_senior.address == "Updated Address"
-    assert updated_senior.full_name == "Test Senior Edit" 
+    assert updated_senior.full_name == "Test Senior Edit" # Should not change
+    assert updated_senior.health_info == ["aspirin", "plavix"]

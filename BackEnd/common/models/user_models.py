@@ -3,7 +3,7 @@ from datetime import datetime, timezone, date
 from typing import List, Optional
 
 from sqlalchemy import Column, LargeBinary
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -40,19 +40,19 @@ class Senior(SQLModel, table=True):
     __tablename__ = "seniors"
 
     senior_id: Optional[int] = Field(default=None, primary_key=True)
-    
-    # ERD에 맞춰 추가된 필드들
+
     profile_img: Optional[bytes] = Field(
         default=None, sa_column=Column(LargeBinary), description="어르신 프로필 이미지"
     )
     full_name: str = Field(description="어르신 이름")
     address: str = Field(description="주소")
-    birth_date: Optional[date] = Field(default=None, description="생년월일")
-    guardian_contact: Optional[str] = Field(default=None, description="보호자 연락처")
-    
-    # 기존 필드
-    health_info: Optional[dict] = Field(
-        default=None, sa_column=Column(JSON), description="건강 정보 (지병, 복용약 등)"
+    birth_date: date = Field(description="생년월일")
+    guardian_contact: str = Field(description="보호자 연락처")
+
+    health_info: Optional[List[str]] = Field(
+        default=None,
+        sa_column=Column(JSONB),
+        description="건강 정보 (복용약 리스트 등)",
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow, nullable=False

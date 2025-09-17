@@ -9,8 +9,6 @@ servers:
     description: "로컬 개발 서버"
   - url: "https://j13a503.p.ssafy.io/api"
     description: "프로덕션 서버"
-  - url: "http://j13a503.p.ssafy.io:8000"
-    description: "테스트 서버"
 
 tags:
   - name: "인증"
@@ -92,38 +90,127 @@ components:
     SeniorRegister:
       type: object
       properties:
-        name:
+        full_name:
           type: string
+          description: "어르신 이름"
         address:
           type: string
+          description: "주소"
+        birth_date:
+          type: string
+          format: date
+          description: "생년월일"
+        guardian_contact:
+          type: string
+          description: "보호자 연락처"
+        profile_img:
+          type: string
+          format: binary
+          description: "어르신 프로필 이미지"
         device_id:
           type: string
+          description: "연결할 IoT Hub 기기 ID"
+        health_info:
+          type: array
+          items:
+            type: string
+          description: "건강 정보 (복용약 리스트 등)"
       required:
-        - name
+        - full_name
         - address
+        - birth_date
+        - guardian_contact
+        - profile_img
         - device_id
-    
+
     SeniorEdit:
       type: object
       properties:
-        name:
+        profile_img:
           type: string
+          format: binary
+          description: "어르신 프로필 이미지"
+        full_name:
+          type: string
+          description: "어르신 이름"
         address:
           type: string
+          description: "주소"
+        birth_date:
+          type: string
+          format: date
+          description: "생년월일"
+        guardian_contact:
+          type: string
+          description: "보호자 연락처"
+        health_info:
+          type: array
+          items:
+            type: string
+          description: "건강 정보 (복용약 리스트 등)"
 
+
+    SeniorSimpleInfo:
+      type: object
+      properties:
+        senior_id:
+          type: integer
+        profile_img:
+          type: string
+          format: binary
+          description: "어르신 프로필 이미지"
+        full_name:
+          type: string
+          description: "어르신 이름"
+        address:
+          type: string
+          description: "주소"
+        birth_date:
+          type: string
+          format: date
+          description: "생년월일"
+      required:
+        - senior_id
+        - full_name
+        - address
+        - birth_date
+        - profile_img
+
+    
     SeniorInfo:
       type: object
       properties:
         senior_id:
           type: integer
-        name:
+        profile_img:
           type: string
+          format: binary
+          description: "어르신 프로필 이미지"
+        full_name:
+          type: string
+          description: "어르신 이름"
         address:
           type: string
+          description: "주소"
+        birth_date:
+          type: string
+          format: date
+          description: "생년월일"
+        guardian_contact:
+          type: string
+          description: "보호자 연락처"
+        health_info:
+          type: array
+          items:
+            type: string
+          description: "건강 정보 (복용약 리스트 등)"
       required:
         - senior_id
-        - name
+        - full_name
         - address
+        - birth_date
+        - guardian_contact
+        - profile_img
 
     Hub:
       type: object
@@ -354,7 +441,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: "#/components/schemas/SeniorRegister"
       responses:
@@ -395,7 +482,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/SeniorInfo"
+                  $ref: "#/components/schemas/SeniorSimpleInfo"
 
   /hubs:
     post:
@@ -445,7 +532,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: "#/components/schemas/SeniorEdit"
       responses:
