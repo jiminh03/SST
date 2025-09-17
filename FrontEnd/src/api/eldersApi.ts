@@ -24,7 +24,7 @@ export interface LoginError {
 // 회원가입 관련 API 타입 정의
 export interface RegisterRequest {
   full_name: string
-  role: string
+  email: string
   login_id: string
   password: string
 }
@@ -34,31 +34,29 @@ export interface RegisterError {
   message: string
 }
 
+// 개발 모드 설정 (목업 사용 여부)
+const USE_MOCK_RESPONSES = false // true로 설정하면 서버 연결 실패 시 목업 응답 사용
+
 // 로그인 API
 export const login = async (loginData: LoginRequest): Promise<LoginResponse> => {
-  // 가능한 서버 주소들
+  // 프로덕션 서버 사용
   const possibleUrls = [
-    'http://j13a503.p.ssafy.io:8000/auth/login',
-    'http://j13a503.p.ssafy.io:8000/api/v1/auth/login',
-    'http://localhost:3000/auth/login',
-    'http://localhost:3001/auth/login', 
-    'http://localhost:8080/auth/login',
-    'http://127.0.0.1:3000/auth/login',
-    'http://127.0.0.1:3001/auth/login',
-    'http://127.0.0.1:8080/auth/login',
-    'http://127.0.0.1:8000/auth/login',
-    'http://127.0.0.1:8000/api/v1/auth/login'
+    'https://j13a503.p.ssafy.io/api/auth/login'  // 프로덕션 서버
   ]
 
   for (const url of possibleUrls) {
     try {
       console.log(`로그인 시도 중: ${url}`)
+      console.log('요청 데이터:', loginData)
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(loginData),
+        // 타임아웃 설정 (5초)
+        signal: AbortSignal.timeout(5000)
       })
 
       if (!response.ok) {
@@ -73,42 +71,51 @@ export const login = async (loginData: LoginRequest): Promise<LoginResponse> => 
       console.log(`로그인 성공! 서버 주소: ${url}`)
       return data
     } catch (error) {
-      console.log(`${url} 로그인 실패:`, error.message)
-      if (error.message.includes('로그인 실패') || error.message.includes('ID 또는 비밀번호')) {
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+      console.log(`${url} 로그인 실패:`, errorMessage)
+      if (errorMessage.includes('로그인 실패') || errorMessage.includes('ID 또는 비밀번호')) {
         throw error // 로그인 실패는 즉시 에러로 처리
       }
       continue
     }
   }
 
-  throw new Error('모든 서버 연결 실패')
+  // 실제 서버 연결 실패 시 처리
+  if (USE_MOCK_RESPONSES) {
+    console.log('모든 서버 연결 실패, 목업 응답 사용')
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('목업 로그인 성공:', loginData)
+        resolve({
+          access_token: 'mock_access_token_' + Date.now()
+        })
+      }, 1000)
+    })
+  } else {
+    throw new Error('서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.')
+  }
 }
 
 // 회원가입 API
 export const register = async (registerData: RegisterRequest): Promise<void> => {
-  // 가능한 서버 주소들
+  // 프로덕션 서버 사용
   const possibleUrls = [
-    'http://j13a503.p.ssafy.io:8000/staffs',
-    'http://j13a503.p.ssafy.io:8000/api/v1/staffs',
-    'http://127.0.0.1:8000/staffs',
-    'http://127.0.0.1:8000/api/v1/staffs',
-    'http://localhost:3000/staffs',
-    'http://localhost:3001/staffs', 
-    'http://localhost:8080/staffs',
-    'http://127.0.0.1:3000/staffs',
-    'http://127.0.0.1:3001/staffs',
-    'http://127.0.0.1:8080/staffs'
+    'https://j13a503.p.ssafy.io/api/staffs'  // 프로덕션 서버
   ]
 
   for (const url of possibleUrls) {
     try {
       console.log(`회원가입 시도 중: ${url}`)
+      console.log('요청 데이터:', registerData)
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(registerData),
+        // 타임아웃 설정 (5초)
+        signal: AbortSignal.timeout(5000)
       })
 
       if (!response.ok) {
@@ -122,23 +129,27 @@ export const register = async (registerData: RegisterRequest): Promise<void> => 
       console.log(`회원가입 성공! 서버 주소: ${url}`)
       return
     } catch (error) {
-      console.log(`${url} 회원가입 실패:`, error.message)
-      if (error.message.includes('회원가입 실패') || error.message.includes('ID 중복') || error.message.includes('필수 필드')) {
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+      console.log(`${url} 회원가입 실패:`, errorMessage)
+      if (errorMessage.includes('회원가입 실패') || errorMessage.includes('ID 중복') || errorMessage.includes('필수 필드')) {
         throw error // 회원가입 실패는 즉시 에러로 처리
       }
       continue
     }
   }
 
-  console.log('모든 서버 연결 실패, 목업 응답 사용')
-  
-  // 모든 서버 연결 실패 시 목업 응답 사용
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log('목업 회원가입 성공:', registerData)
-      resolve()
-    }, 1000)
-  })
+  // 실제 서버 연결 실패 시 처리
+  if (USE_MOCK_RESPONSES) {
+    console.log('모든 서버 연결 실패, 목업 응답 사용')
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('목업 회원가입 성공:', registerData)
+        resolve()
+      }, 1000)
+    })
+  } else {
+    throw new Error('서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.')
+  }
 }
 
 // 어르신 목록 조회 API
@@ -175,7 +186,8 @@ export const getSeniors = async (): Promise<Senior[]> => {
       console.log(`성공! 서버 주소: ${url}`, data)
       return data
     } catch (error) {
-      console.log(`${url} 연결 실패:`, error.message)
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+      console.log(`${url} 연결 실패:`, errorMessage)
       continue
     }
   }
@@ -231,7 +243,8 @@ export const getSeniorById = async (seniorId: number): Promise<Senior> => {
       console.log(`상세 조회 성공! 서버 주소: ${url}`, data)
       return data
     } catch (error) {
-      console.log(`${url} 상세 조회 실패:`, error.message)
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+      console.log(`${url} 상세 조회 실패:`, errorMessage)
       continue
     }
   }
@@ -289,7 +302,8 @@ export const createSenior = async (seniorData: Omit<Senior, 'senior_id'>): Promi
       console.log(`등록 성공! 서버 주소: ${url}`, data)
       return data
     } catch (error) {
-      console.log(`${url} 등록 실패:`, error.message)
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+      console.log(`${url} 등록 실패:`, errorMessage)
       continue
     }
   }

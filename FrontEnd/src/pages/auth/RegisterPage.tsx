@@ -8,6 +8,7 @@ export default function RegisterPage() {
   const location = useLocation()
   const [formData, setFormData] = useState({
     full_name: '',
+    email: '',
     login_id: '',
     password: '',
     confirmPassword: ''
@@ -40,7 +41,7 @@ export default function RegisterPage() {
     try {
       await register({
         full_name: formData.full_name,
-        role: '복지사', // 기본값으로 설정
+        email: formData.email,
         login_id: formData.login_id,
         password: formData.password
       })
@@ -246,7 +247,7 @@ export default function RegisterPage() {
                       />
                     </div>
 
-                    {/* 로그인 ID 입력 */}
+                    {/* 이메일 입력 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <label style={{
                         display: 'flex',
@@ -257,6 +258,48 @@ export default function RegisterPage() {
                         color: '#374151'
                       }}>
                         <Mail style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
+                        이메일
+                        <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder="이메일을 입력해주세요"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          outline: 'none',
+                          transition: 'all 0.2s'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6'
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db'
+                          e.target.style.boxShadow = 'none'
+                        }}
+                        required
+                      />
+                    </div>
+
+                    {/* 로그인 ID 입력 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151'
+                      }}>
+                        <Briefcase style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
                         로그인 ID
                         <span style={{ color: '#ef4444' }}>*</span>
                       </label>
