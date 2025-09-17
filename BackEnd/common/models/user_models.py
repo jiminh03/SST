@@ -1,8 +1,8 @@
 # common/models/user_models.py
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import List, Optional
 
-from sqlalchemy import Column
+from sqlalchemy import Column, LargeBinary
 from sqlalchemy.dialects.postgresql import JSON
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -35,14 +35,22 @@ class Staff(SQLModel, table=True):
     # StaffSeniorMap을 통해 연결된 어르신 목록
     seniors: List["Senior"] = Relationship(back_populates="staffs", link_model=StaffSeniorMap)
 
-
 class Senior(SQLModel, table=True):
     """어르신 정보를 저장하는 테이블"""
     __tablename__ = "seniors"
 
     senior_id: Optional[int] = Field(default=None, primary_key=True)
+    
+    # ERD에 맞춰 추가된 필드들
+    profile_img: Optional[bytes] = Field(
+        default=None, sa_column=Column(LargeBinary), description="어르신 프로필 이미지"
+    )
     full_name: str = Field(description="어르신 이름")
     address: str = Field(description="주소")
+    birth_date: Optional[date] = Field(default=None, description="생년월일")
+    guardian_contact: Optional[str] = Field(default=None, description="보호자 연락처")
+    
+    # 기존 필드
     health_info: Optional[dict] = Field(
         default=None, sa_column=Column(JSON), description="건강 정보 (지병, 복용약 등)"
     )
@@ -56,4 +64,4 @@ class Senior(SQLModel, table=True):
     # Senior와 일대일 또는 일대다 관계를 맺는 다른 테이블들
     iot_hub: Optional["IoTHub"] = Relationship(back_populates="senior")
     ai_weights: List["AIWeight"] = Relationship(back_populates="senior")
-    emergency_logs: List["EmergencyLog"] = Relationship(back_populates="senior")
+    emergency_logs: List["EmergencyLog"] = Relationship(back_populates="senior")    

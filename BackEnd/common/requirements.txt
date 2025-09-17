@@ -1,0 +1,6 @@
+sqlmodel
+sqlalchemy
+pydantic
+python-dotenv
+deprecated
+asyncpg
