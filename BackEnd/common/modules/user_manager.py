@@ -1,5 +1,6 @@
 from datetime import date
 from typing import Any, List, Optional
+import json
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,7 +39,7 @@ class LoginInfo(BaseModel):
 
 class SeniorCreate(BaseModel):
     """어르신 생성을 위한 모델"""
-    profile_img: bytes
+    profile_img: Optional[bytes] = None
     full_name: str
     address: str
     birth_date: date
@@ -46,7 +47,7 @@ class SeniorCreate(BaseModel):
     health_info: Optional[List[str]] = None
 
 class SeniorUpdate(BaseModel):
-    """어르신 생성을 위한 모델"""
+    """어르신 수정을 위한 모델"""
     profile_img: Optional[bytes] = None
     full_name: Optional[str] = None
     address: Optional[str] = None
@@ -58,6 +59,7 @@ class SeniorUpdate(BaseModel):
 class SeniorInfo(BaseModel):
     """어르신 정보 응답을 위한 모델"""
     senior_id: int
+    profile_img: Optional[bytes] = None
     full_name: str
     address: str
     birth_date: Optional[date] = None
@@ -138,13 +140,16 @@ class UserManager:
 
     async def edit_senior(self, senior_id: int, senior_info: SeniorUpdate) -> None:
         """어르신 정보를 수정합니다."""
-        if self.get_senior_info_by_id(senior_id) is None:
+        if await self.get_senior_info_by_id(senior_id) is None:
             raise ValueError(f"edit_senior - invalid senior_id:{senior_id}")
 
         update_dict = senior_info.model_dump(exclude_unset=True, exclude_none=True)
 
         if not update_dict:
             raise ValueError(f"edit_senior - invalid update_data:{senior_info}")
+
+        if 'health_info' in update_dict and isinstance(update_dict['health_info'], list):
+            update_dict['health_info'] = json.dumps(update_dict['health_info'])
 
         set_clause = ", ".join([f"{key} = :{key}" for key in update_dict.keys()])
         query_str = f"UPDATE seniors SET {set_clause} WHERE senior_id = :senior_id"

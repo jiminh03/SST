@@ -20,9 +20,17 @@ async def registered_senior(get_session: AsyncSession) -> SeniorInfo:
     연결이 완료된 hub_info와 senior_info 객체를 반환합니다.
     """
     user_manager = UserManager(get_session)
+    senior_to_create = SeniorCreate(
+        full_name="Test Senior Edit",
+        address="Original Address",
+        birth_date=datetime.date(1940, 1, 1),
+        guardian_contact="010-1234-5678",
+        profile_img=b"fake_image_bytes",
+        health_info=["aspirin"]
+    )
 
     senior_info = await user_manager.create_senior(
-        SeniorCreate(full_name="Log Test Senior", address="123 Log St")
+        senior_to_create
     )
 
     return senior_info
