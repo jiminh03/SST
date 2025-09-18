@@ -46,11 +46,10 @@ class Senior(SQLModel, table=True):
     full_name: str = Field(description="어르신 이름")
     address: str = Field(description="주소")
     birth_date: date = Field(description="생년월일")
-    guardian_contact: str = Field(description="보호자 연락처")
+    guardian_contact: Optional[str] = Field(default=None, description="보호자 연락처")
 
-    health_info: Optional[List[str]] = Field(
+    health_info: Optional[str] = Field(
         default=None,
-        sa_column=Column(JSONB),
         description="건강 정보 (복용약 리스트 등)",
     )
     created_at: datetime = Field(

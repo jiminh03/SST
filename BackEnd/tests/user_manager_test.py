@@ -45,7 +45,7 @@ async def test_create_and_edit_senior(get_session: AsyncSession):
         birth_date=date(1940, 1, 1),
         guardian_contact="010-1234-5678",
         profile_img=b"fake_image_bytes",
-        health_info=["aspirin"]
+        health_info="aspirin"
     )
     created_senior = await user_manager.create_senior(senior_to_create)
 
@@ -54,10 +54,10 @@ async def test_create_and_edit_senior(get_session: AsyncSession):
     assert created_senior.full_name == "Test Senior Edit"
     assert created_senior.birth_date == date(1940, 1, 1)
     assert created_senior.guardian_contact == "010-1234-5678"
-    assert created_senior.health_info == ["aspirin"]
+    assert created_senior.health_info == "aspirin"
 
     # 2. Edit the senior's address and health_info
-    senior_update_data = SeniorUpdate(address="Updated Address", health_info=["aspirin", "plavix"])
+    senior_update_data = SeniorUpdate(address="Updated Address", health_info="aspirin, plavix")
     await user_manager.edit_senior(senior_id=created_senior.senior_id, senior_info=senior_update_data)
 
     # 3. Retrieve the senior and verify the change
@@ -66,4 +66,35 @@ async def test_create_and_edit_senior(get_session: AsyncSession):
     assert updated_senior is not None
     assert updated_senior.address == "Updated Address"
     assert updated_senior.full_name == "Test Senior Edit" # Should not change
-    assert updated_senior.health_info == ["aspirin", "plavix"]
+    assert updated_senior.health_info == "aspirin, plavix"
+
+@pytest.mark.asyncio
+async def test_link_staff_to_senior(get_session: AsyncSession):
+    """Test linking a staff member to a senior."""
+    user_manager = UserManager(get_session)
+
+    # 1. Create a new staff member
+    staff_to_create = StaffCreate(
+        email="link_test@example.com",
+        password_hash="hashed_password",
+        full_name="Link Test Staff",
+    )
+    created_staff = await user_manager.create_staff(staff_to_create)
+
+    # 2. Create a new senior
+    senior_to_create = SeniorCreate(
+        full_name="Link Test Senior",
+        address="123 Link Test St",
+        birth_date=date(1950, 5, 5),
+        guardian_contact="010-5555-4444",
+    )
+    created_senior = await user_manager.create_senior(senior_to_create)
+
+    # 3. Link the staff to the senior
+    await user_manager.link_staff_to_senior(created_staff.staff_id, created_senior.senior_id)
+
+    # 4. Verify the link
+    cared_seniors = await user_manager.get_care_seniors(created_staff.staff_id)
+    assert cared_seniors is not None
+    assert len(cared_seniors) == 1
+    assert cared_seniors[0].senior_id == created_senior.senior_id

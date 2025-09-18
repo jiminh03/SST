@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from common.modules.api_key_manager import ApiKeyRepository
 from common.modules.user_manager import UserManager
-from web.database import db
+from web.services.database import db
 
 class HubService:
     def __init__(self, api_key_repo: ApiKeyRepository):

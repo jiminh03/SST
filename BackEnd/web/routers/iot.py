@@ -9,7 +9,7 @@ from web.schemas.iot_schema import SensorLogPayload
 from common.modules.sensor_log_manager import SensorLogManager
 from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate, HubBasicInfo
 from common.modules.api_key_manager import ApiKeyRepository, ApiKeyManager
-from web.database import db
+from web.services.database import db
 
 router = APIRouter(prefix="/iot", tags=["IoT"])
 

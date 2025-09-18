@@ -36,7 +36,7 @@ class SeniorCreate(BaseModel):
     address: str
     birth_date: date
     guardian_contact: Optional[str] = None
-    health_info: Optional[List[str]] = None
+    health_info: Optional[str] = None
 
 class SeniorUpdate(BaseModel):
     """어르신 수정을 위한 모델"""
@@ -45,7 +45,7 @@ class SeniorUpdate(BaseModel):
     address: Optional[str] = None
     birth_date: Optional[date] = None
     guardian_contact: Optional[str] = None
-    health_info: Optional[List[str]] = None
+    health_info: Optional[str] = None
 
 
 class SeniorInfo(BaseModel):
@@ -56,7 +56,7 @@ class SeniorInfo(BaseModel):
     address: str
     birth_date: date
     guardian_contact: Optional[str] = None
-    health_info: Optional[List[str]] = None
+    health_info: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -80,7 +80,7 @@ class UserManager:
 
     async def edit_staff(self, staff_id: int, staff_info: StaffUpdate) -> None:
         """어르신 정보를 수정합니다."""
-        if self.get_staff_by_id(staff_id) is None:
+        if await self.get_staff_by_id(staff_id) is None:
             raise ValueError(f"edit_staff - invalid staff_id:{staff_id}")
 
         update_dict = staff_info.model_dump(exclude_unset=True, exclude_none=True)
@@ -140,9 +140,6 @@ class UserManager:
         if not update_dict:
             raise ValueError(f"edit_senior - invalid update_data:{senior_info}")
 
-        if 'health_info' in update_dict and isinstance(update_dict['health_info'], list):
-            update_dict['health_info'] = json.dumps(update_dict['health_info'])
-
         set_clause = ", ".join([f"{key} = :{key}" for key in update_dict.keys()])
         query_str = f"UPDATE seniors SET {set_clause} WHERE senior_id = :senior_id"
         query = text(query_str)
@@ -184,4 +181,12 @@ class UserManager:
         return [SeniorInfo.model_validate(row) for row in senior_rows]
     
     async def link_staff_to_senior(self, staff_id: int, senior_id: int) -> None:
-        pass
+        """직원과 어르신을 연결합니다."""
+        if await self.get_staff_by_id(staff_id) is None:
+            raise ValueError(f"link_staff_to_senior - invalid staff_id:{staff_id}")
+        if await self.get_senior_info_by_id(senior_id) is None:
+            raise ValueError(f"link_staff_to_senior - invalid senior_id:{senior_id}")
+
+        new_link = StaffSeniorMap(staff_id=staff_id, senior_id=senior_id)
+        self.session.add(new_link)
+        await self.session.flush()

@@ -1,24 +1,22 @@
+from datetime import date
 import os
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from web.database import db
+from web.services.database import db
+from web.services.auth_service import auth_module
 from web.schemas.auth_schema import (
     LoginRequest, LoginResponse, StaffRegister, StaffEdit,
     SeniorRegister, SeniorEdit, Hub, ApiKey
 )
-from web.services.auth_service import WebAuthModule
 
 from common.modules.user_manager import UserManager, StaffCreate, SeniorCreate, StaffInfo, StaffUpdate, SeniorUpdate
 from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
 
-auth_module = WebAuthModule(
-    secret_key=os.getenv("SECRET_KEY"),
-    access_token_expire_minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
-    algorithm=os.getenv("ENC_ALGORITHM"),
-)
+
 
 # --- FastAPI Router ---
 router = APIRouter(tags=["인증"])
@@ -117,7 +115,13 @@ async def edit_staff(
     400: {"description": "잘못된 요청 형식 (필수 필드 누락 등)"}
 })
 async def register_senior(
-    senior_data: SeniorRegister,
+    full_name: str = Form(...),
+    address: str = Form(...),
+    birth_date: date = Form(...),
+    guardian_contact: Optional[str] = Form(None),
+    device_id: str = Form(...),
+    health_info: Optional[str] = Form(None),
+    profile_img: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(db.get_session),
     current_user: StaffInfo = Depends(auth_module.get_current_user)
 ):
@@ -127,18 +131,26 @@ async def register_senior(
     user_manager = UserManager(db)
     iot_manager = IoTHubManager(db)
 
-    # 1. Create the senior user
+    file_bytes = None
+    if profile_img:
+        file_bytes = await profile_img.read()
+
     new_senior_info = SeniorCreate(
-        full_name=senior_data.full_name,
-        address=senior_data.address
+        full_name=full_name,
+        address=address,
+        birth_date=birth_date,
+        guardian_contact=guardian_contact,
+        health_info=health_info, 
+        profile_img=file_bytes
     )
     created_senior = await user_manager.create_senior(new_senior_info)
+    
+    user_manager.link_staff_to_senior(current_user.staff_id, created_senior.senior_id)
 
-    # 2. Create and link the IoT Hub
-    existing_hub = await iot_manager.get_hub_by_device_id(senior_data.device_id)
+    existing_hub = await iot_manager.get_hub_by_device_id(device_id)
     if existing_hub is None:
         new_hub_data = HubCreate(
-            device_id=senior_data.device_id,
+            device_id=device_id,
             senior_id=created_senior.senior_id
         )
         await iot_manager.add_hub(new_hub_data)
@@ -159,7 +171,12 @@ async def register_senior(
 })
 async def edit_senior(
     senior_id: int,
-    senior_data: SeniorEdit,
+    full_name: str = Form(...),
+    address: str = Form(...),
+    birth_date: date = Form(...),
+    guardian_contact: Optional[str] = Form(None),
+    health_info: Optional[str] = Form(None),
+    profile_img: UploadFile = File(None),
     db: AsyncSession = Depends(db.get_session),
     current_user: StaffInfo = Depends(auth_module.get_current_user)
 ):
@@ -177,6 +194,19 @@ async def edit_senior(
             status_code=403,
             detail="해당 어르신 정보에 접근하거나 수정할 권한이 없습니다."
         )
+
+    file_bytes = None
+    if profile_img:
+        file_bytes = await profile_img.read()
+        
+    senior_data = SeniorEdit(
+        full_name=full_name,
+        address=address,
+        birth_date=birth_date,
+        guardian_contact=guardian_contact,
+        health_info=health_info, # 쉼표로 구분된 문자열을 리스트로 변환
+        profile_img=file_bytes
+    )
     
     update_data = senior_data.model_dump(exclude_unset=True)
 
@@ -232,4 +262,3 @@ async def unregister_hub(
     """
     # Implementation would require a 'delete_hub_by_device_id' method in IoTHubManager.
     raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Functionality not yet implemented.")
-

@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 
 from web.routers import auth, iot
-from web.database import db
+from web.services.database import db
 
 # Lifespan 컨텍스트 매니저 정의
 @asynccontextmanager

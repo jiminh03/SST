@@ -26,7 +26,7 @@ async def registered_senior(get_session: AsyncSession) -> SeniorInfo:
         birth_date=datetime.date(1940, 1, 1),
         guardian_contact="010-1234-5678",
         profile_img=b"fake_image_bytes",
-        health_info=["aspirin"]
+        health_info="aspirin"
     )
 
     senior_info = await user_manager.create_senior(

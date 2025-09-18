@@ -9,9 +9,10 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common.modules.user_manager import UserManager
-from web.database import db
+from web.services.database import db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
 
 class WebAuthModule:
     def __init__(
@@ -116,3 +117,9 @@ class WebAuthModule:
         if user is None:
             raise credentials_exception
         return user
+    
+auth_module = WebAuthModule(
+    secret_key=os.getenv("SECRET_KEY"),
+    access_token_expire_minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
+    algorithm=os.getenv("ENC_ALGORITHM"),
+)
