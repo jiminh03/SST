@@ -7,12 +7,12 @@ import { createSenior } from '../../api/eldersApi'
 export default function RegisterPage() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    name: '',
-    birthDate: '',
+    full_name: '',
+    birth_date: '',
     address: '',
-    guardianContact: '',
-    deviceNumber: '',
-    healthInfo: '안전', // 기본값
+    guardian_contact: '',
+    device_id: '',
+    health_info: '안전', // 기본값
     notes: '' // 특이사항
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -24,7 +24,7 @@ export default function RegisterPage() {
   }
 
   const handleBirthDateChange = (date: string) => {
-    setFormData(prev => ({ ...prev, birthDate: date }))
+    setFormData(prev => ({ ...prev, birth_date: date }))
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -57,22 +57,23 @@ export default function RegisterPage() {
 
   const handleSubmit = async () => {
     // 필수 필드 검증
-    if (!formData.name.trim()) {
+    if (!formData.full_name.trim()) {
       setError('이름을 입력해주세요.')
+      return
+    }
+    if (!formData.birth_date.trim()) {
+      setError('생년월일을 입력해주세요.')
       return
     }
     if (!formData.address.trim()) {
       setError('주소를 입력해주세요.')
       return
     }
-    if (!formData.guardianContact.trim()) {
-      setError('보호자 연락처를 입력해주세요.')
-      return
-    }
-    if (!formData.deviceNumber.trim()) {
+    if (!formData.device_id.trim()) {
       setError('연동 기기 번호를 입력해주세요.')
       return
     }
+    
 
     try {
       setIsSubmitting(true)
@@ -87,12 +88,12 @@ export default function RegisterPage() {
       
       // API 호출
       await createSenior({
-        full_name: formData.name,
+        full_name: formData.full_name,
         address: formData.address,
-        birth_date: formData.birthDate,
-        guardian_contact: formData.guardianContact,
-        device_id: formData.deviceNumber,
-        health_info: formData.healthInfo,
+        birth_date: formData.birth_date,
+        guardian_contact: formData.guardian_contact,
+        device_id: formData.device_id,
+        health_info: formData.health_info,
         profile_img: file || defaultImageFile
       })
 
@@ -155,8 +156,8 @@ export default function RegisterPage() {
               label="이름" 
               required 
               placeholder="이름을 입력해주세요"
-              value={formData.name}
-              onChange={(value) => handleInputChange('name', value)}
+              value={formData.full_name}
+              onChange={(value) => handleInputChange('full_name', value)}
             />
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
@@ -167,7 +168,7 @@ export default function RegisterPage() {
               <div className="relative">
                 <input
                   type="date"
-                  value={formData.birthDate}
+                  value={formData.birth_date}
                   onChange={(e) => handleBirthDateChange(e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
                 />
@@ -182,16 +183,16 @@ export default function RegisterPage() {
               icon={<Phone className="w-5 h-5" />}
               label="보호자 연락처" 
               placeholder="예) 010-1234-5678"
-              value={formData.guardianContact}
-              onChange={(value) => handleInputChange('guardianContact', value)}
+              value={formData.guardian_contact}
+              onChange={(value) => handleInputChange('guardian_contact', value)}
             />
             <FormField 
               icon={<Smartphone className="w-5 h-5" />}
               label="연동 기기 번호" 
               required 
               placeholder="연동된 기기의 번호를 입력해주세요"
-              value={formData.deviceNumber}
-              onChange={(value) => handleInputChange('deviceNumber', value)}
+              value={formData.device_id}
+              onChange={(value) => handleInputChange('device_id', value)}
             />
             
             {/* 특이사항 입력 */}

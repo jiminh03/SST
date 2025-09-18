@@ -6,7 +6,7 @@ import { login } from '../../api/eldersApi'
 export default function LoginPage() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    login_id: '',
+    email: '',
     password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
@@ -28,7 +28,7 @@ export default function LoginPage() {
     
     try {
       const response = await login({
-        login_id: formData.login_id,
+        email: formData.email,
         password: formData.password
       })
       
@@ -198,14 +198,14 @@ export default function LoginPage() {
                         color: '#374151'
                       }}>
                         <User style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
-                        로그인 ID
+                        이메일
                       </label>
                       <input
-                        type="text"
-                        name="login_id"
-                        value={formData.login_id}
+                        type="email"
+                        name="email"
+                        value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="로그인 ID를 입력해주세요"
+                        placeholder="이메일을 입력해주세요"
                         style={{
                           width: '100%',
                           padding: '12px 16px',
@@ -294,7 +294,7 @@ export default function LoginPage() {
                     {/* 로그인 버튼 */}
                     <button
                       type="submit"
-                      disabled={isLoading || !formData.login_id || !formData.password}
+                      disabled={isLoading || !formData.email || !formData.password}
                       style={{
                         width: '100%',
                         fontWeight: '600',
@@ -303,17 +303,17 @@ export default function LoginPage() {
                         backgroundColor: '#000000',
                         color: '#ffffff',
                         border: 'none',
-                        cursor: isLoading || !formData.login_id || !formData.password ? 'not-allowed' : 'pointer',
-                        opacity: isLoading || !formData.login_id || !formData.password ? 0.5 : 1,
+                        cursor: isLoading || !formData.email || !formData.password ? 'not-allowed' : 'pointer',
+                        opacity: isLoading || !formData.email || !formData.password ? 0.5 : 1,
                         transition: 'background-color 0.2s'
                       }}
                       onMouseEnter={(e) => {
-                        if (!isLoading && formData.login_id && formData.password) {
+                        if (!isLoading && formData.email && formData.password) {
                           e.target.style.backgroundColor = '#333333'
                         }
                       }}
                       onMouseLeave={(e) => {
-                        if (!isLoading && formData.login_id && formData.password) {
+                        if (!isLoading && formData.email && formData.password) {
                           e.target.style.backgroundColor = '#000000'
                         }
                       }}

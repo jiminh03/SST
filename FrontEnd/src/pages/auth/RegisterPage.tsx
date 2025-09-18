@@ -9,7 +9,6 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
-    login_id: '',
     password: '',
     confirmPassword: ''
   })
@@ -30,7 +29,35 @@ export default function RegisterPage() {
     e.preventDefault()
     setError(null)
     
-    // 비밀번호 확인
+    // 클라이언트 측 유효성 검사
+    if (!formData.full_name.trim()) {
+      setError('이름을 입력해주세요.')
+      return
+    }
+    
+    if (!formData.email.trim()) {
+      setError('이메일을 입력해주세요.')
+      return
+    }
+    
+    // 이메일 형식 검사
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setError('올바른 이메일 형식을 입력해주세요.')
+      return
+    }
+    
+    
+    if (!formData.password) {
+      setError('비밀번호를 입력해주세요.')
+      return
+    }
+    
+    if (formData.password.length < 6) {
+      setError('비밀번호는 최소 6자 이상이어야 합니다.')
+      return
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       setError('비밀번호가 일치하지 않습니다.')
       return
@@ -42,7 +69,6 @@ export default function RegisterPage() {
       await register({
         full_name: formData.full_name,
         email: formData.email,
-        login_id: formData.login_id,
         password: formData.password
       })
       
@@ -50,8 +76,18 @@ export default function RegisterPage() {
       alert('회원가입이 완료되었습니다. 로그인해주세요.')
       navigate('/auth/login')
     } catch (err) {
-      setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.')
-      console.error('회원가입 에러:', err)
+      const errorMessage = err instanceof Error ? err.message : '회원가입에 실패했습니다.'
+      setError(errorMessage)
+      console.error('회원가입 에러 상세:', {
+        error: err,
+        message: errorMessage,
+        formData: {
+          full_name: formData.full_name,
+          email: formData.email,
+          passwordLength: formData.password?.length || 0,
+          confirmPasswordLength: formData.confirmPassword?.length || 0
+        }
+      })
     } finally {
       setIsLoading(false)
     }
@@ -289,47 +325,6 @@ export default function RegisterPage() {
                       />
                     </div>
 
-                    {/* 로그인 ID 입력 */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <label style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#374151'
-                      }}>
-                        <Briefcase style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
-                        로그인 ID
-                        <span style={{ color: '#ef4444' }}>*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="login_id"
-                        value={formData.login_id}
-                        onChange={handleInputChange}
-                        placeholder="로그인 ID를 입력해주세요"
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '8px',
-                          fontSize: '16px',
-                          outline: 'none',
-                          transition: 'all 0.2s'
-                        }}
-                        onFocus={(e) => {
-                          e.target.style.borderColor = '#3b82f6'
-                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
-                        }}
-                        onBlur={(e) => {
-                          e.target.style.borderColor = '#d1d5db'
-                          e.target.style.boxShadow = 'none'
-                        }}
-                        required
-                      />
-                    </div>
 
                     {/* 비밀번호 입력 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -463,7 +458,7 @@ export default function RegisterPage() {
                     <div style={{ paddingTop: '16px' }}>
                       <button
                         type="submit"
-                        disabled={isLoading || !formData.full_name || !formData.login_id || !formData.password || !formData.confirmPassword}
+                        disabled={isLoading || !formData.full_name || !formData.email || !formData.password || !formData.confirmPassword}
                         style={{
                           width: '100%',
                           fontWeight: '600',
@@ -472,17 +467,17 @@ export default function RegisterPage() {
                           backgroundColor: '#000000',
                           color: '#ffffff',
                           border: 'none',
-                          cursor: isLoading || !formData.full_name || !formData.login_id || !formData.password || !formData.confirmPassword ? 'not-allowed' : 'pointer',
-                          opacity: isLoading || !formData.full_name || !formData.login_id || !formData.password || !formData.confirmPassword ? 0.5 : 1,
+                          cursor: isLoading || !formData.full_name || !formData.email || !formData.password || !formData.confirmPassword ? 'not-allowed' : 'pointer',
+                          opacity: isLoading || !formData.full_name || !formData.email || !formData.password || !formData.confirmPassword ? 0.5 : 1,
                           transition: 'background-color 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                          if (!isLoading && formData.full_name && formData.login_id && formData.password && formData.confirmPassword) {
+                          if (!isLoading && formData.full_name && formData.email && formData.password && formData.confirmPassword) {
                             e.target.style.backgroundColor = '#333333'
                           }
                         }}
                         onMouseLeave={(e) => {
-                          if (!isLoading && formData.full_name && formData.login_id && formData.password && formData.confirmPassword) {
+                          if (!isLoading && formData.full_name && formData.email && formData.password && formData.confirmPassword) {
                             e.target.style.backgroundColor = '#000000'
                           }
                         }}

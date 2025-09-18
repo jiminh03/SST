@@ -1,52 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react'
-
-interface Notification {
-  id: number
-  type: 'danger' | 'warning' | 'info'
-  title: string
-  message: string
-  time: string
-  isRead: boolean
-  seniorId: number
-  seniorName: string
-}
+import { getNotifications, markNotificationAsRead, deleteNotification as deleteNotificationApi, type Notification } from '../../api/eldersApi'
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 1,
-      type: 'danger',
-      title: '위험 상황 감지',
-      message: '김할머니님의 안방에서 낙상 위험이 감지되었습니다.',
-      time: '5분 전',
-      isRead: false,
-      seniorId: 1,
-      seniorName: '김할머니'
-    },
-    {
-      id: 2,
-      type: 'danger',
-      title: '위험 상황 감지',
-      message: '김할머니님의 화장실에서 응급상황이 감지되었습니다.',
-      time: '1시간 전',
-      isRead: true,
-      seniorId: 1,
-      seniorName: '김할머니'
-    },
-    {
-      id: 3,
-      type: 'danger',
-      title: '위험 상황 감지',
-      message: '김할머니님의 거실에서 낙상 위험이 감지되었습니다.',
-      time: '3시간 전',
-      isRead: true,
-      seniorId: 1,
-      seniorName: '김할머니'
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // 알림 목록 로드
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true)
+        const data = await getNotifications()
+        setNotifications(data)
+      } catch (err) {
+        setError('알림을 불러오는데 실패했습니다.')
+        console.error('Error fetching notifications:', err)
+      } finally {
+        setLoading(false)
+      }
     }
-  ])
+
+    fetchNotifications()
+  }, [])
 
   const getNotificationIcon = () => {
     return <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -56,18 +35,44 @@ export default function NotificationsPage() {
     return 'bg-red-50 border-red-200'
   }
 
-  const markAsRead = (id: number) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, isRead: true }
-          : notification
+  const markAsRead = async (id: number) => {
+    try {
+      // 백엔드에 읽음 처리 요청
+      await markNotificationAsRead(id)
+      
+      // 로컬 상태 업데이트
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === id 
+            ? { ...notification, isRead: true }
+            : notification
+        )
       )
-    )
+    } catch (err) {
+      console.error('읽음 처리 실패:', err)
+      // 에러가 발생해도 로컬 상태는 업데이트 (사용자 경험 개선)
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === id 
+            ? { ...notification, isRead: true }
+            : notification
+        )
+      )
+    }
   }
 
-  const deleteNotification = (id: number) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id))
+  const deleteNotification = async (id: number) => {
+    try {
+      // 백엔드에 삭제 요청
+      await deleteNotificationApi(id)
+      
+      // 로컬 상태에서 제거
+      setNotifications(prev => prev.filter(notification => notification.id !== id))
+    } catch (err) {
+      console.error('삭제 실패:', err)
+      // 에러가 발생해도 로컬 상태는 업데이트 (사용자 경험 개선)
+      setNotifications(prev => prev.filter(notification => notification.id !== id))
+    }
   }
 
   const handleNotificationClick = (notification: Notification) => {
@@ -78,6 +83,33 @@ export default function NotificationsPage() {
   }
 
   const unreadCount = notifications.filter(n => !n.isRead).length
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-600">알림을 불러오는 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="h-full overflow-y-auto bg-gray-50">
@@ -125,14 +157,20 @@ export default function NotificationsPage() {
                       <div className="flex gap-2">
                         {!notification.isRead && (
                           <button
-                            onClick={() => markAsRead(notification.id)}
+                            onClick={(e) => {
+                              e.stopPropagation() // 이벤트 전파 중단
+                              markAsRead(notification.id)
+                            }}
                             className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
                           >
                             읽음 처리
                           </button>
                         )}
                         <button
-                          onClick={() => deleteNotification(notification.id)}
+                          onClick={(e) => {
+                            e.stopPropagation() // 이벤트 전파 중단
+                            deleteNotification(notification.id)
+                          }}
                           className="text-xs text-gray-400 hover:text-red-600 transition-colors"
                         >
                           삭제

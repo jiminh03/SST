@@ -32,7 +32,7 @@ export default function FilterBar({ selected, onSelect }: FilterBarProps) {
             : 'font-semibold text-red-500 bg-white border-2 border-stone-300')
         }
       >
-        <span className="w-3 h-3 shrink-0 aspect-square rounded-full bg-red-500" />
+        <span className="w-3 h-3 shrink-0 aspect-square rounded-full bg-red-500 shadow-[0_0_5px_0_rgba(239,68,68,0.5)]" />
         위험
       </button>
       {/* 주의 */}
@@ -45,7 +45,7 @@ export default function FilterBar({ selected, onSelect }: FilterBarProps) {
             : 'font-semibold text-yellow-500 bg-white border-2 border-stone-300')
         }
       >
-        <span className="w-3 h-3 shrink-0 aspect-square rounded-full bg-yellow-500" />
+        <span className="w-3 h-3 shrink-0 aspect-square rounded-full bg-yellow-500 shadow-[0_0_5px_0_rgba(234,179,8,0.5)]" />
         주의
       </button>
       {/* 안전 */}
@@ -58,7 +58,7 @@ export default function FilterBar({ selected, onSelect }: FilterBarProps) {
             : 'font-semibold text-green-500 bg-white border-2 border-stone-300')
         }
       >
-        <span className="w-3 h-3 shrink-0 aspect-square rounded-full bg-green-500" />
+        <span className="w-3 h-3 shrink-0 aspect-square rounded-full bg-green-500 shadow-[0_0_5px_0_rgba(34,197,94,0.5)]" />
         안전
       </button>
     </div>

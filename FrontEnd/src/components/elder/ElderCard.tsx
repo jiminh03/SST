@@ -24,7 +24,11 @@ export default function ElderCard({ elder }: { elder: Elder }) {
       ? 'bg-yellow-500'
       : 'bg-green-500'
 
-  const glowClass = ''
+  const glowClass = elder.status === '위험' 
+    ? 'shadow-[0_0_5px_0_rgba(239,68,68,0.5)]' 
+    : elder.status === '주의' 
+    ? 'shadow-[0_0_5px_0_rgba(234,179,8,0.5)]'
+    : 'shadow-[0_0_5px_0_rgba(34,197,94,0.5)]'
 
   return (
     <Link to={`/elders/${elder.id}`} className="relative flex items-center gap-3 p-4 bg-white rounded-[20px] shadow-[0px_4px_20px_rgba(0,0,0,0.25)] no-underline text-inherit">
