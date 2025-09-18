@@ -1,9 +1,14 @@
 // 어르신 관련 API 타입 정의
 export interface Senior {
   senior_id: number
-  name: string
+  profile_img?: string  // 이미지 URL
+  full_name: string
   address: string
-  health_info: string
+  birth_date: string
+  health_info?: string
+  guardian_contact?: string
+  device_id?: string
+  created_at?: string
 }
 
 // 로그인 관련 API 타입 정의
@@ -74,8 +79,8 @@ const tryCreateSeniorWithDifferentDateFormats = async (seniorData: CreateSeniorR
 // 특정 형식으로 어르신 등록 시도
 const createSeniorWithFormat = async (seniorData: CreateSeniorRequest, token: string): Promise<CreateSeniorResponse> => {
   const possibleUrls = [
-    'http://127.0.0.1:7000/seniors',
-    'https://j13a503.p.ssafy.io/api/seniors'
+    'https://j13a503.p.ssafy.io/api/seniors',
+    'http://127.0.0.1:7000/seniors'
   ]
 
   for (const url of possibleUrls) {
@@ -374,20 +379,19 @@ export const getSeniors = async (): Promise<Senior[]> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         const mockData: Senior[] = [
-          { senior_id: 1, name: '김OO', address: '싸파트 503호', health_info: '위험' },
-          { senior_id: 2, name: '이OO', address: '싸파트 504호', health_info: '안전' },
-          { senior_id: 3, name: '신OO', address: '싸파트 505호', health_info: '주의' },
+          { senior_id: 1, full_name: '김OO', address: '싸파트 503호', birth_date: '1950-01-01', health_info: '위험' },
+          { senior_id: 2, full_name: '이OO', address: '싸파트 504호', birth_date: '1955-02-15', health_info: '안전' },
+          { senior_id: 3, full_name: '신OO', address: '싸파트 505호', birth_date: '1960-03-20', health_info: '주의' },
         ]
         resolve(mockData)
       }, 500)
     })
   }
 
-  // 가능한 서버 주소들
+  // 가능한 서버 주소들 (프로덕션 서버 우선)
   const possibleUrls = [
     'https://j13a503.p.ssafy.io/api/seniors',
     'https://j13a503.p.ssafy.io/seniors',
-    'https://j13a503.p.ssafy.io/api/v1/seniors',
     'http://127.0.0.1:7000/seniors',
     'http://127.0.0.1:7000/api/seniors'
   ]
@@ -425,9 +429,9 @@ export const getSeniors = async (): Promise<Senior[]> => {
   
   // 모든 서버 연결 실패 시 목업 데이터 사용
   const mockData: Senior[] = [
-    { senior_id: 1, name: '김OO', address: '싸파트 503호', health_info: '위험' },
-    { senior_id: 2, name: '이OO', address: '싸파트 504호', health_info: '안전' },
-    { senior_id: 3, name: '신OO', address: '싸파트 505호', health_info: '주의' },
+    { senior_id: 1, full_name: '김OO', address: '싸파트 503호', birth_date: '1950-01-01', health_info: '위험' },
+    { senior_id: 2, full_name: '이OO', address: '싸파트 504호', birth_date: '1955-02-15', health_info: '안전' },
+    { senior_id: 3, full_name: '신OO', address: '싸파트 505호', birth_date: '1960-03-20', health_info: '주의' },
   ]
   
   return new Promise((resolve) => {
@@ -440,27 +444,26 @@ export const getSeniors = async (): Promise<Senior[]> => {
 
 // 어르신 상세 조회 API
 export const getSeniorById = async (seniorId: number): Promise<Senior> => {
-  // 가능한 서버 주소들
+  // 가능한 서버 주소들 (프로덕션 서버 우선)
   const possibleUrls = [
-    `http://j13a503.p.ssafy.io:8000/seniors/${seniorId}`,
-    `http://j13a503.p.ssafy.io:8000/api/v1/seniors/${seniorId}`,
-    `http://localhost:3000/seniors/${seniorId}`,
-    `http://localhost:3001/seniors/${seniorId}`, 
-    `http://localhost:8080/seniors/${seniorId}`,
-    `http://127.0.0.1:3000/seniors/${seniorId}`,
-    `http://127.0.0.1:3001/seniors/${seniorId}`,
-    `http://127.0.0.1:8080/seniors/${seniorId}`,
-    `http://127.0.0.1:8000/seniors/${seniorId}`,
-    `http://127.0.0.1:8000/api/v1/seniors/${seniorId}`
+    `https://j13a503.p.ssafy.io/api/seniors/${seniorId}`,
+    `https://j13a503.p.ssafy.io/seniors/${seniorId}`,
+    `http://127.0.0.1:7000/seniors/${seniorId}`,
+    `http://127.0.0.1:7000/api/seniors/${seniorId}`
   ]
 
   for (const url of possibleUrls) {
     try {
       console.log(`상세 조회 시도 중: ${url}`)
+      
+      // 로그인 토큰 가져오기
+      const token = localStorage.getItem('access_token')
+      
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
         },
       })
 
@@ -470,6 +473,8 @@ export const getSeniorById = async (seniorId: number): Promise<Senior> => {
 
       const data = await response.json()
       console.log(`상세 조회 성공! 서버 주소: ${url}`, data)
+      console.log('📋 서버 응답 필드들:', Object.keys(data))
+      console.log('📋 device_id 필드:', data.device_id)
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
@@ -483,8 +488,9 @@ export const getSeniorById = async (seniorId: number): Promise<Senior> => {
   // 모든 서버 연결 실패 시 목업 데이터 사용
   const mockData: Senior = {
     senior_id: seniorId,
-    name: '김OO',
+    full_name: '김OO',
     address: '싸파트 503호',
+    birth_date: '1950-01-01',
     health_info: '위험'
   }
   
@@ -586,47 +592,95 @@ export const createSenior = async (seniorData: CreateSeniorRequest): Promise<Cre
   return await tryCreateSeniorWithDifferentDateFormats(seniorData, token)
 }
 
-// 어르신 정보 수정
+// 어르신 정보 수정 - 캐시 무효화를 위한 임시 주석
 export const updateSenior = async (seniorId: number, updateData: Partial<Senior>): Promise<void> => {
+  // 로그인 토큰 가져오기
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    throw new Error('로그인이 필요합니다')
+  }
+
   const possibleUrls = [
-    `http://j13a503.p.ssafy.io:8000/seniors/${seniorId}`,
-    `http://j13a503.p.ssafy.io:8000/api/v1/seniors/${seniorId}`,
-    `http://127.0.0.1:8000/seniors/${seniorId}`,
-    `http://127.0.0.1:8000/api/v1/seniors/${seniorId}`,
-    `http://localhost:3000/seniors/${seniorId}`,
-    `http://localhost:3001/seniors/${seniorId}`,
-    `http://localhost:8080/seniors/${seniorId}`,
-    `http://127.0.0.1:3000/seniors/${seniorId}`,
-    `http://127.0.0.1:3001/seniors/${seniorId}`,
-    `http://127.0.0.1:8080/seniors/${seniorId}`
+    'https://j13a503.p.ssafy.io/api/seniors'      // 프로덕션 서버 우선
   ]
+
+  console.log('🚀 어르신 수정 API 시작 - 프로덕션 서버만 사용')
+  console.log('📋 수정할 데이터:', updateData)
 
   for (const url of possibleUrls) {
     try {
-      console.log(`어르신 수정 시도 중: ${url}`)
+      console.log(`🔧 어르신 수정 시도 중: ${url}/${seniorId}`)
       
-      const response = await fetch(url, {
+      // FormData로 전송 (multipart/form-data) - Swagger 스펙에 맞게
+      const formData = new FormData()
+      
+      // 필수 필드들
+      formData.append('full_name', updateData.full_name || '')
+      formData.append('address', updateData.address || '')
+      formData.append('birth_date', updateData.birth_date || '')
+      
+      // 선택 필드들 (Swagger에서 optional로 표시됨)
+      if (updateData.guardian_contact && updateData.guardian_contact.trim() !== '') {
+        formData.append('guardian_contact', updateData.guardian_contact)
+      }
+      
+      if (updateData.health_info && updateData.health_info.trim() !== '') {
+        formData.append('health_info', updateData.health_info)
+      }
+      
+      // 프로필 이미지 (Swagger에서 optional로 표시됨)
+      if (updateData.profile_img) {
+        formData.append('profile_img', updateData.profile_img)
+      }
+      
+      // 전송할 데이터 로그
+      console.log('📤 FormData 내용:', Object.fromEntries(formData.entries()))
+      console.log('📤 health_info 값:', updateData.health_info)
+      
+      // 먼저 PUT 메서드로 시도
+      let response = await fetch(`${url}/${seniorId}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+          // Content-Type은 FormData 사용 시 자동 설정됨
         },
-        body: JSON.stringify(updateData),
+        body: formData,
       })
 
+      // PUT이 실패하면 PATCH로 시도
+      if (!response.ok && response.status === 404) {
+        console.log(`PUT 실패, PATCH로 재시도: ${url}/${seniorId}`)
+        response = await fetch(`${url}/${seniorId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData,
+        })
+      }
+
       if (response.ok) {
-        console.log(`성공! 서버 주소: ${url}`)
+        console.log(`✅ 어르신 수정 성공! 서버 주소: ${url}/${seniorId}`)
         return
       } else {
-        console.log(`${url} 실패: ${response.status}`)
+        const errorText = await response.text()
+        console.log(`❌ ${url}/${seniorId} 실패: ${response.status}`, errorText)
+        
+        // 400, 403 에러는 구체적인 메시지와 함께 던지기
+        if (response.status === 400) {
+          throw new Error(`잘못된 요청 형식: ${errorText}`)
+        } else if (response.status === 403) {
+          throw new Error(`권한 없음: ${errorText}`)
+        } else if (response.status === 500) {
+          throw new Error(`서버 내부 오류: ${errorText}`)
+        }
       }
     } catch (error) {
-      console.log(`${url} 연결 실패:`, error)
+      console.log(`${url}/${seniorId} 연결 실패:`, error)
     }
   }
 
-  // 모든 서버 연결 실패 시 더미 응답
-  console.log('모든 서버 연결 실패, 더미 응답 반환')
-  return Promise.resolve()
+  throw new Error('모든 서버 연결 실패')
 }
 
 // 알림 관련 API 타입 정의

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import ElderCard, { type Elder } from '../../components/elder/ElderCard'
+import ElderCard from '../../components/elder/ElderCard'
 import FilterBar, { type FilterValue } from '../../components/layout/FilterBar'
 import { getSeniors, type Senior } from '../../api/eldersApi'
 
@@ -28,22 +28,52 @@ export default function HomePage() {
     fetchSeniors()
   }, [])
 
-  // Senior 데이터를 Elder 데이터로 변환
-  const elders: Elder[] = useMemo(() => {
-    return seniors.map((senior) => ({
-      id: senior.senior_id,
-      name: senior.name,
-      birthDate: '정보 없음', // API에서 생년월일 정보가 없으므로 기본값
-      address: senior.address,
-      status: senior.health_info === '위험' ? '위험' : 
-              senior.health_info === '주의' ? '주의' : '안전' // health_info를 status로 매핑
-    }))
-  }, [seniors])
+  // health_info를 상태로 변환하는 함수
+  const getHealthStatus = (healthInfo: any): string => {
+    let status = '안전' // 기본값
+    
+    // 배열인 경우 처리
+    if (Array.isArray(healthInfo)) {
+      if (healthInfo.includes('위험')) status = '위험'
+      else if (healthInfo.includes('주의')) status = '주의'
+      else status = '안전'
+    }
+    // 문자열인 경우 JSON 파싱 시도
+    else if (typeof healthInfo === 'string') {
+      if (healthInfo.startsWith('[') && healthInfo.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(healthInfo)
+          if (Array.isArray(parsed)) {
+            if (parsed.includes('위험')) status = '위험'
+            else if (parsed.includes('주의')) status = '주의'
+            else status = '안전'
+          }
+        } catch (e) {
+          // 파싱 실패 시 문자열 직접 비교
+          if (healthInfo.includes('위험')) status = '위험'
+          else if (healthInfo.includes('주의')) status = '주의'
+          else status = '안전'
+        }
+      } else {
+        // 일반 문자열인 경우
+        if (healthInfo.includes('위험')) status = '위험'
+        else if (healthInfo.includes('주의')) status = '주의'
+        else status = '안전'
+      }
+    }
+    
+    return status
+  }
 
+  // 필터링된 어르신 목록
   const filtered = useMemo(() => {
-    if (filter === '전체') return elders
-    return elders.filter((e) => e.status === filter)
-  }, [elders, filter])
+    if (filter === '전체') return seniors
+    
+    return seniors.filter((senior) => {
+      const status = getHealthStatus(senior.health_info)
+      return status === filter
+    })
+  }, [seniors, filter])
 
   if (loading) {
     return (
@@ -81,8 +111,8 @@ export default function HomePage() {
             <p className="text-gray-500">등록된 어르신이 없습니다.</p>
           </div>
         ) : (
-          filtered.map((elder) => (
-            <ElderCard key={elder.id} elder={elder} />
+          filtered.map((senior) => (
+            <ElderCard key={senior.senior_id} elder={senior} />
           ))
         )}
       </div>

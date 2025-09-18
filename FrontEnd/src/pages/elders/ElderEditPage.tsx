@@ -15,10 +15,10 @@ export default function ElderEditPage() {
   const [profileImage, setProfileImage] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
-    name: '',
+    full_name: '',
     address: '',
     birth_date: '',
-    device_number: '',
+    device_id: '',
     guardian_contact: '',
     notes: ''
   })
@@ -29,14 +29,42 @@ export default function ElderEditPage() {
       try {
         setLoading(true)
         const data = await getSeniorById(parseInt(id))
+        console.log('🔍 어르신 상세 데이터:', data)
         setSenior(data)
+        // health_info를 문자열로 변환하는 함수
+        const parseHealthInfo = (healthInfo: any): string => {
+          if (!healthInfo) return ''
+          
+          // 배열인 경우 처리
+          if (Array.isArray(healthInfo)) {
+            return healthInfo.join(', ')
+          }
+          
+          // 문자열인 경우 JSON 파싱 시도
+          if (typeof healthInfo === 'string') {
+            if (healthInfo.startsWith('[') && healthInfo.endsWith(']')) {
+              try {
+                const parsed = JSON.parse(healthInfo)
+                if (Array.isArray(parsed)) {
+                  return parsed.join(', ')
+                }
+              } catch (e) {
+                // 파싱 실패 시 원본 문자열 사용
+              }
+            }
+            return healthInfo
+          }
+          
+          return String(healthInfo)
+        }
+
         setFormData({
-          name: data.name || '',
+          full_name: data.full_name || '',
           address: data.address || '',
           birth_date: data.birth_date || '',
-          device_number: data.device_number || '',
+          device_id: data.device_id || '',
           guardian_contact: data.guardian_contact || '',
-          notes: data.notes || ''
+          notes: parseHealthInfo(data.health_info)  // health_info를 파싱하여 특이사항으로 설정
         })
       } catch (err) {
         setError('어르신 정보를 불러오는데 실패했습니다.')
@@ -84,15 +112,29 @@ export default function ElderEditPage() {
       setError(null)
       
       await updateSenior(senior.senior_id, {
-        name: formData.name,
+        full_name: formData.full_name,
         address: formData.address,
         birth_date: formData.birth_date,
-        device_number: formData.device_number
+        guardian_contact: formData.guardian_contact,
+        health_info: formData.notes
       })
       
       window.location.href = `/elders/${senior.senior_id}?updated=true`
     } catch (err) {
-      setError('어르신 정보 수정에 실패했습니다. 다시 시도해주세요.')
+      const errorMessage = err instanceof Error ? err.message : '어르신 정보 수정에 실패했습니다.'
+      
+      if (errorMessage.includes('CORS')) {
+        setError('서버에서 어르신 수정 기능의 CORS 설정이 누락되었습니다. 백엔드 팀에 문의하세요.')
+      } else if (errorMessage.includes('500')) {
+        setError('서버 내부 오류가 발생했습니다. 백엔드 팀에 문의하세요.')
+      } else if (errorMessage.includes('400')) {
+        setError('잘못된 요청 형식입니다. 필수 필드를 확인해주세요.')
+      } else if (errorMessage.includes('403')) {
+        setError('권한이 없습니다. 로그인을 다시 시도해주세요.')
+      } else {
+        setError('어르신 정보 수정에 실패했습니다. 다시 시도해주세요.')
+      }
+      
       console.error('Update error:', err)
     } finally {
       setIsSubmitting(false)
@@ -171,8 +213,8 @@ export default function ElderEditPage() {
               label="이름" 
               required 
               placeholder="이름을 입력해주세요"
-              value={formData.name}
-              onChange={(value) => handleInputChange('name', value)}
+              value={formData.full_name}
+              onChange={(value) => handleInputChange('full_name', value)}
             />
 
             <div className="space-y-2">
@@ -203,14 +245,6 @@ export default function ElderEditPage() {
               placeholder="예) 010-1234-5678"
               value={formData.guardian_contact}
               onChange={(value) => handleInputChange('guardian_contact', value)}
-            />
-            <FormField 
-              icon={<Smartphone className="w-5 h-5" />}
-              label="연동 기기 번호" 
-              required 
-              placeholder="연동된 기기의 번호를 입력해주세요"
-              value={formData.device_number}
-              onChange={(value) => handleInputChange('device_number', value)}
             />
             
             {/* 특이사항 입력 */}

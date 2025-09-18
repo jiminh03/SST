@@ -15,8 +15,24 @@ export default function AddressSearch({ value, onChange, placeholder = "주소�
   // value prop이 변경될 때 기존 주소를 파싱하여 표시
   useEffect(() => {
     if (value && !selectedAddress) {
-      // 기존 주소가 있으면 selectedAddress로 설정
-      setSelectedAddress(value)
+      // 기존 주소에서 기본 주소와 상세주소 분리
+      // 일반적으로 "시/도 시/군/구 도로명" + "상세주소" 형태
+      const addressParts = value.split(' ')
+      let baseAddress = ''
+      let detailAddr = ''
+      
+      // 주소 패턴 분석 (간단한 휴리스틱)
+      if (addressParts.length > 3) {
+        // 앞의 3-4개 부분을 기본 주소로, 나머지를 상세주소로
+        const splitIndex = Math.min(4, addressParts.length - 1)
+        baseAddress = addressParts.slice(0, splitIndex).join(' ')
+        detailAddr = addressParts.slice(splitIndex).join(' ')
+      } else {
+        baseAddress = value
+      }
+      
+      setSelectedAddress(baseAddress)
+      setDetailAddress(detailAddr)
     }
   }, [value, selectedAddress])
 

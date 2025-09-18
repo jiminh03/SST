@@ -12,7 +12,6 @@ export default function RegisterPage() {
     address: '',
     guardian_contact: '',
     device_id: '',
-    health_info: '안전', // 기본값
     notes: '' // 특이사항
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -93,7 +92,7 @@ export default function RegisterPage() {
         birth_date: formData.birth_date,
         guardian_contact: formData.guardian_contact,
         device_id: formData.device_id,
-        health_info: formData.health_info,
+        health_info: formData.notes,
         profile_img: file || defaultImageFile
       })
 

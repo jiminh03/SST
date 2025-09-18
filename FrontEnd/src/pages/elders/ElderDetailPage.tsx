@@ -15,6 +15,27 @@ export default function ElderDetailPage() {
   const [showDetails, setShowDetails] = useState(false)
   const [showGuardianContact, setShowGuardianContact] = useState(false)
 
+  // 생년월일로부터 만 나이 계산
+  const calculateAge = (birthDate: string): string => {
+    if (!birthDate) return '정보 없음'
+    
+    const today = new Date()
+    const birth = new Date(birthDate)
+    
+    // 생년월일이 유효하지 않은 경우
+    if (isNaN(birth.getTime())) return '정보 없음'
+    
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    
+    // 아직 생일이 지나지 않은 경우 1살 빼기
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
+    }
+    
+    return `만 ${age}세`
+  }
+
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
@@ -34,6 +55,9 @@ export default function ElderDetailPage() {
         setError(null)
         const seniorId = parseInt(id)
         const data = await getSeniorById(seniorId)
+        console.log('🔍 어르신 상세 데이터:', data)
+        console.log('🔍 health_info 값:', data.health_info)
+        console.log('🔍 health_info 타입:', typeof data.health_info)
         setSenior(data)
       } catch (err) {
         setError('어르신 정보를 불러오는데 실패했습니다.')
@@ -88,15 +112,32 @@ export default function ElderDetailPage() {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
           <div className="flex items-start gap-6">
             <div className="relative">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shadow-lg">
-                <User className="w-16 h-16 text-white" />
+              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shadow-lg overflow-hidden">
+                {senior.profile_img ? (
+                  <img 
+                    src={senior.profile_img} 
+                    alt={senior.full_name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // 이미지 로드 실패 시 기본 아이콘 표시
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                      const parent = target.parentElement
+                      if (parent) {
+                        parent.innerHTML = '<svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>'
+                      }
+                    }}
+                  />
+                ) : (
+                  <User className="w-16 h-16 text-white" />
+                )}
               </div>
             </div>
             <div className="flex-1 pt-2">
-              <div className="text-lg font-bold text-gray-800 mb-2">{senior.name}</div>
+              <div className="text-lg font-bold text-gray-800 mb-2">{senior.full_name}</div>
               <div className="flex items-center gap-2 text-gray-500 mb-2">
                 <User className="w-4 h-4" />
-                <span className="text-sm">{senior.age || '정보 없음'}</span>
+                <span className="text-sm">{calculateAge(senior.birth_date)}</span>
               </div>
               <div className="flex items-center gap-2 text-gray-500 mb-2">
                 <MapPin className="w-4 h-4" />
@@ -104,7 +145,7 @@ export default function ElderDetailPage() {
               </div>
               <div className="flex items-center gap-2 text-gray-500 mb-3">
                 <Smartphone className="w-4 h-4" />
-                <span className="text-sm">{senior.device_number || '정보 없음'}</span>
+                <span className="text-sm">{senior.device_id || '정보 없음'}</span>
               </div>
               <button 
                 onClick={() => setShowDetails(!showDetails)}
@@ -128,7 +169,33 @@ export default function ElderDetailPage() {
             <div className="mt-3 px-4 py-3 bg-gray-200 rounded-xl">
               <h3 className="text-sm font-semibold text-gray-800 mb-2">특이사항</h3>
               <p className="text-sm text-gray-700">
-                {senior.health_info || '등록된 특이사항이 없습니다.'}
+                {(() => {
+                  let healthInfo = senior.health_info
+                  
+                  // 배열인 경우 처리
+                  if (Array.isArray(healthInfo)) {
+                    healthInfo = healthInfo.join(', ')
+                  }
+                  
+                  // 문자열인 경우 JSON 파싱 시도 (서버에서 "["안전"]" 형태로 올 수 있음)
+                  if (typeof healthInfo === 'string' && healthInfo.startsWith('[') && healthInfo.endsWith(']')) {
+                    try {
+                      const parsed = JSON.parse(healthInfo)
+                      if (Array.isArray(parsed)) {
+                        healthInfo = parsed.join(', ')
+                      }
+                    } catch (e) {
+                      // 파싱 실패 시 원본 문자열 사용
+                    }
+                  }
+                  
+                  // 빈 값이거나 "안전"만 있는 경우 처리
+                  if (!healthInfo || healthInfo.trim() === '' || healthInfo === '안전' || healthInfo === '["안전"]') {
+                    return '등록된 특이사항이 없습니다.'
+                  }
+                  
+                  return healthInfo
+                })()}
               </p>
             </div>
           )}
@@ -236,7 +303,7 @@ export default function ElderDetailPage() {
                 <Phone className="w-8 h-8 text-blue-600" />
               </div>
               <h2 className="text-xl font-bold text-gray-800 mb-2">보호자 연락처</h2>
-              <p className="text-gray-600 mb-6">{senior.name}님의 보호자</p>
+              <p className="text-gray-600 mb-6">{senior.full_name}님의 보호자</p>
               
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-center gap-2">
@@ -257,7 +324,7 @@ export default function ElderDetailPage() {
                 {senior.guardian_contact ? (
                   <button
                     onClick={async () => {
-                      const phoneNumber = senior.guardian_contact
+                      const phoneNumber = senior.guardian_contact!
                       try {
                         await navigator.clipboard.writeText(phoneNumber)
                       } catch (err) {
