@@ -1,13 +1,10 @@
-# app/routers/monitoring.py
-"""사용자 관리 및 모니터링 관련 라우터"""
+import os
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 
-from app.db import get_session
-# from app.services import monitoring_service
-# from app.schemas import senior_care as schemas
+from web.database import db
+
 
 router = APIRouter(prefix="/seniors", tags=["사용자 관리 및 모니터링"])
 
@@ -64,25 +61,3 @@ async def get_sensor_logs(senior_id: int, db: AsyncSession = Depends(get_session
     return []
 
 
-@router.post(
-    "/schedules/visits",
-    status_code=status.HTTP_201_CREATED,
-    summary="직원 방문 스케줄 등록",
-    tags=["사용자 관리 및 모니터링"]
-)
-async def create_visit_schedule(payload: schemas.VisitSchedule, db: AsyncSession = Depends(get_session)):
-    """특정 어르신에 대한 직원의 방문 일정을 등록합니다."""
-    # TODO: monitoring_service.create_visit(db, payload)
-    return {"message": "등록 성공"}
-
-
-@router.delete(
-    "/schedules/visits/{visit_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="직원 방문 스케줄 삭제",
-    tags=["사용자 관리 및 모니터링"]
-)
-async def delete_visit_schedule(visit_id: int, db: AsyncSession = Depends(get_session)):
-    """등록되어 있던 방문 일정을 삭제합니다."""
-    # TODO: monitoring_service.delete_visit(db, visit_id)
-    return

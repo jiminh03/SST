@@ -467,8 +467,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     get:
-      tags: ["사용자 관리 및 모니터링"]
-      summary: "사용자 리스트 조회"
+      tags: ["어르신 관리 및 모니터링"]
+      summary: "어르신 리스트 조회"
       description: "관리자가 담당하는 모든 어르신의 목록과 현재 위험도 상태를 조회합니다."
       security:
         - bearerAuth: []

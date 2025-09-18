@@ -29,19 +29,13 @@ class StaffInfo(BaseModel):
     class Config:
         from_attributes = True
 
-
-class LoginInfo(BaseModel):
-    email: str
-    password: str
-
-
 class SeniorCreate(BaseModel):
     """어르신 생성을 위한 모델"""
     profile_img: Optional[bytes] = None
     full_name: str
     address: str
     birth_date: date
-    guardian_contact: str
+    guardian_contact: Optional[str] = None
     health_info: Optional[List[str]] = None
 
 class SeniorUpdate(BaseModel):
@@ -60,7 +54,7 @@ class SeniorInfo(BaseModel):
     profile_img: Optional[bytes] = None
     full_name: str
     address: str
-    birth_date: Optional[date] = None
+    birth_date: date
     guardian_contact: Optional[str] = None
     health_info: Optional[List[str]] = None
 
@@ -188,3 +182,6 @@ class UserManager:
         result = await self.session.execute(query, {"staff_id": staff_id})
         senior_rows = result.mappings().all()
         return [SeniorInfo.model_validate(row) for row in senior_rows]
+    
+    async def link_staff_to_senior(self, staff_id: int, senior_id: int) -> None:
+        pass

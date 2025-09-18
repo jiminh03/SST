@@ -1,16 +1,15 @@
 import os
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from web.database import db
 from web.schemas.auth_schema import (
     LoginRequest, LoginResponse, StaffRegister, StaffEdit,
     SeniorRegister, SeniorEdit, Hub, ApiKey
 )
-from web.database import db
-
 from web.services.auth_service import WebAuthModule
+
 from common.modules.user_manager import UserManager, StaffCreate, SeniorCreate, StaffInfo, StaffUpdate, SeniorUpdate
 from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
@@ -86,7 +85,7 @@ async def register_staff(
 @router.put("/staffs", summary="직원 계정 정보 수정", responses={
     400: {"description": "잘못된 요청 형식 (필수 필드 누락 등)"},
     401: {"description": "인증 실패 (토큰 없음 또는 유효하지 않은 토큰)"},
-    403: {"description": "권한 없음 (해당 계정 생성 권한 부족)"}
+    403: {"description": "권한 없음"}
 })
 async def edit_staff(
     staff_data: StaffEdit,
@@ -130,7 +129,7 @@ async def register_senior(
 
     # 1. Create the senior user
     new_senior_info = SeniorCreate(
-        full_name=senior_data.name,
+        full_name=senior_data.full_name,
         address=senior_data.address
     )
     created_senior = await user_manager.create_senior(new_senior_info)

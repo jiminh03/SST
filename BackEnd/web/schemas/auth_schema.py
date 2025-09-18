@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional
 
+from common.modules.user_manager import SeniorCreate, SeniorUpdate
+
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -17,14 +19,13 @@ class StaffEdit(BaseModel):
     full_name: Optional[str] = None
     password: Optional[str] = None
 
-class SeniorRegister(BaseModel):
-    name: str
-    address: str
-    device_id: str
+class SeniorRegister(SeniorCreate):
+    pass
 
-class SeniorEdit(BaseModel):
-    name: Optional[str] = None
-    address: Optional[str] = None
+class SeniorEdit(SeniorUpdate):
+    full_name: str 
+    address: str 
+    birth_date: str 
 
 class Hub(BaseModel):
     device_id: str
