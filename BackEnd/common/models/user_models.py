@@ -23,11 +23,10 @@ class Staff(SQLModel, table=True):
     """복지기관 직원 정보를 저장하는 테이블"""
     __tablename__ = "staffs"
 
-    staff_id: Optional[int] = Field(default=None, primary_key=True)
-    login_id: str = Field(unique=True, index=True, description="로그인 ID")
+    staff_id: Optional[int] = Field(default=None, index= True, primary_key=True)
+    email: str = Field(unique=True, index=True, description="로그인 이메일")
     password_hash: str = Field(description="해시된 비밀번호")
     full_name: str = Field(description="직원 이름")
-    email: str = Field(description="이메일")
     created_at: datetime = Field(
         default_factory=datetime.utcnow, nullable=False
     )

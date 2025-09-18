@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # --- Pydantic 모델 정의 (OpenAPI schemas 기반) ---
 
 class LoginRequest(BaseModel):
-    login_id: str
+    email: str
     password: str
 
 class LoginResponse(BaseModel):

@@ -27,27 +27,27 @@ router = APIRouter(tags=["인증"])
 # --- Endpoints ---
 
 @router.post("/auth/login", response_model=LoginResponse, summary="직원 로그인 기능", responses={
-    401: {"description": "로그인 실패 (ID 또는 비밀번호 불일치)"}
+    401: {"description": "로그인 실패 (email 또는 비밀번호 불일치)"}
 })
 async def login_for_access_token(
     form_data: LoginRequest,
     db: AsyncSession = Depends(db.get_session)
 ):
     """
-    직원의 로그인 ID와 비밀번호를 받아 인증을 수행하고, 성공 시 JWT를 발급합니다.
+    직원의 로그인 email와 비밀번호를 받아 인증을 수행하고, 성공 시 JWT를 발급합니다.
     """
     user_manager = UserManager(db)
-    user = await user_manager.get_staff_by_login_id(form_data.login_id)
+    user = await user_manager.get_staff_by_email(form_data.email)
 
     if not user or not auth_module.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect login ID or password",
+            detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
     access_token = auth_module.create_access_token(
-        data={"sub": user.login_id, "email": user.email}
+        data={"sub": user.email, "email": user.email}
     )
     return {"access_token": access_token}
 
@@ -63,20 +63,19 @@ async def register_staff(
     새로운 직원(복지사)의 계정 정보를 등록합니다.
     """
     user_manager = UserManager(db)
-    existing_staff = await user_manager.get_staff_by_login_id(staff_data.login_id)
+    existing_staff = await user_manager.get_staff_by_email(staff_data.email)
     if existing_staff:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="A staff with this login ID already exists."
+            detail="A staff with this email already exists."
         )
 
     hashed_password = auth_module.get_password_hash(staff_data.password)
     
     new_staff_data = StaffCreate(
-        login_id=staff_data.login_id,
+        email=staff_data.email,
         password_hash=hashed_password,
         full_name=staff_data.full_name,
-        email=staff_data.email
     )
     
     await user_manager.create_staff(new_staff_data)

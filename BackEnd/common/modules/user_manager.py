@@ -9,10 +9,9 @@ from common.models.user_models import Staff, Senior, StaffSeniorMap
 
 
 class StaffCreate(BaseModel):
-    login_id: str
+    email: str
     password_hash: str
     full_name: str
-    email: Optional[str]
 
 
 class StaffUpdate(BaseModel):
@@ -23,17 +22,16 @@ class StaffUpdate(BaseModel):
 
 class StaffInfo(BaseModel):
     staff_id: int
-    login_id: str
+    email: str
     password_hash: str
     full_name: str
-    email: Optional[str]
 
     class Config:
         from_attributes = True
 
 
 class LoginInfo(BaseModel):
-    login_id: str
+    email: str
     password: str
 
 
@@ -118,12 +116,12 @@ class UserManager:
         else:
             return None
 
-    async def get_staff_by_login_id(self, login_id: str) -> Optional[Staff]:
+    async def get_staff_by_email(self, email: str) -> Optional[Staff]:
         """
-        로그인 ID를 사용하여 특정 직원을 조회합니다. (Raw SQL 사용)
+        로그인 이메일를 사용하여 특정 직원을 조회합니다. (Raw SQL 사용)
         """
-        query = text("SELECT * FROM staffs WHERE login_id = :login_id")
-        result = await self.session.execute(query, {"login_id": login_id})
+        query = text("SELECT * FROM staffs WHERE email = :email")
+        result = await self.session.execute(query, {"email": email})
         staff_info = result.mappings().first()
 
         if staff_info:

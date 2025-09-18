@@ -12,27 +12,26 @@ async def test_create_and_edit_staff(get_session: AsyncSession):
 
     # 1. Create a new staff member
     staff_to_create = StaffCreate(
-        login_id="test_staff_for_edit",
+        email="original_email",
         password_hash="hashed_password",
-        full_name="Test Staff Edit",
-        email="original_email"
+        full_name="original_name",
     )
     created_staff = await user_manager.create_staff(staff_to_create)
     
     assert created_staff is not None
     assert created_staff.email == "original_email"
-    assert created_staff.full_name == "Test Staff Edit" 
+    assert created_staff.full_name == "original_name" 
 
-    # 2. Edit the staff member's email
-    staff_update_data = StaffUpdate(email="updated_email")
+    # 2. Edit the staff member's full name
+    staff_update_data = StaffUpdate(full_name="edit_name")
     await user_manager.edit_staff(staff_id=created_staff.staff_id, staff_info=staff_update_data)
 
     # 3. Retrieve the staff member and verify the change
     updated_staff = await user_manager.get_staff_by_id(created_staff.staff_id)
 
     assert updated_staff is not None
-    assert updated_staff.email == "updated_email"
-    assert updated_staff.full_name == "Test Staff Edit"
+    assert updated_staff.email == "original_email"
+    assert updated_staff.full_name == "edit_name"
 
 @pytest.mark.asyncio
 async def test_create_and_edit_senior(get_session: AsyncSession):

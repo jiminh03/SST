@@ -106,13 +106,13 @@ class WebAuthModule:
         )
         try:
             payload = jwt.decode(token, self._secret_key, algorithms=[self._algorithm])
-            login_id: str = payload.get("sub")
-            if login_id is None:
+            email: str = payload.get("sub")
+            if email is None:
                 raise credentials_exception
         except JWTError:
             raise credentials_exception
         user_manager = UserManager(db)
-        user = await user_manager.get_staff_by_login_id(login_id=login_id)
+        user = await user_manager.get_staff_by_email(email=email)
         if user is None:
             raise credentials_exception
         return user

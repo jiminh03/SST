@@ -5,7 +5,7 @@ from datetime import datetime
 
 # 예시: 로그인 요청
 class LoginRequest(BaseModel):
-    login_id: str
+    email: str
     password: str
 
 # 예시: 로그인 응답

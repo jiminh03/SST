@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class LoginRequest(BaseModel):
-    login_id: str
+    email: str
     password: str
 
 class LoginResponse(BaseModel):
@@ -11,12 +11,10 @@ class LoginResponse(BaseModel):
 class StaffRegister(BaseModel):
     full_name: str
     email: str
-    login_id: str
     password: str
 
 class StaffEdit(BaseModel):
     full_name: Optional[str] = None
-    email: Optional[str] = None
     password: Optional[str] = None
 
 class SeniorRegister(BaseModel):
