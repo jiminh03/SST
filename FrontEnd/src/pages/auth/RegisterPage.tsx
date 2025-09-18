@@ -519,7 +519,7 @@ export default function RegisterPage() {
                     }}>
                       이미 계정이 있으신가요?{' '}
                       <span 
-                        onClick={handleBack}
+                        onClick={() => navigate('/auth/login')}
                         style={{
                           color: '#2563eb',
                           fontWeight: '500',

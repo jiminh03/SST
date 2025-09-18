@@ -267,59 +267,77 @@ export const getSeniorById = async (seniorId: number): Promise<Senior> => {
   })
 }
 
-// 어르신 등록 API
-export const createSenior = async (seniorData: Omit<Senior, 'senior_id'>): Promise<Senior> => {
+// 어르신 등록 API (multipart/form-data)
+export const createSenior = async (seniorData: {
+  full_name: string
+  address: string
+  birth_date: string
+  guardian_contact: string
+  device_id: string
+  health_info: string
+  profile_img: File
+}): Promise<{ senior_id: number }> => {
   // 가능한 서버 주소들
   const possibleUrls = [
-    'http://j13a503.p.ssafy.io:8000/seniors',
-    'http://j13a503.p.ssafy.io:8000/api/v1/seniors',
-    'http://127.0.0.1:8000/seniors',
-    'http://127.0.0.1:8000/api/v1/seniors',
-    'http://localhost:3000/seniors',
-    'http://localhost:3001/seniors', 
-    'http://localhost:8080/seniors',
-    'http://127.0.0.1:3000/seniors',
-    'http://127.0.0.1:3001/seniors',
-    'http://127.0.0.1:8080/seniors'
+    'http://127.0.0.1:7000/seniors',  // 로컬 개발 서버
+    'https://j13a503.p.ssafy.io/api/seniors'  // 프로덕션 서버
   ]
 
   for (const url of possibleUrls) {
     try {
-      console.log(`등록 시도 중: ${url}`)
+      console.log(`어르신 등록 시도 중: ${url}`)
+      console.log('요청 데이터:', seniorData)
+      
+      // FormData 생성
+      const formData = new FormData()
+      formData.append('full_name', seniorData.full_name)
+      formData.append('address', seniorData.address)
+      formData.append('birth_date', seniorData.birth_date)
+      formData.append('guardian_contact', seniorData.guardian_contact)
+      formData.append('device_id', seniorData.device_id)
+      formData.append('health_info', seniorData.health_info)
+      
+      // 프로필 사진이 기본 파일이 아닌 경우에만 추가
+      if (seniorData.profile_img && seniorData.profile_img.size > 0) {
+        formData.append('profile_img', seniorData.profile_img)
+      }
+
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(seniorData),
+        body: formData,
+        // 타임아웃 설정 (10초 - 파일 업로드이므로 더 길게)
+        signal: AbortSignal.timeout(10000)
       })
 
       if (!response.ok) {
+        if (response.status === 400 || response.status === 409) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || '어르신 등록 실패')
+        }
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
-      console.log(`등록 성공! 서버 주소: ${url}`, data)
+      console.log(`어르신 등록 성공! 서버 주소: ${url}`, data)
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
-      console.log(`${url} 등록 실패:`, errorMessage)
+      console.log(`${url} 어르신 등록 실패:`, errorMessage)
+      if (errorMessage.includes('어르신 등록 실패') || errorMessage.includes('디바이스 ID 중복') || errorMessage.includes('필수 필드')) {
+        throw error // 등록 실패는 즉시 에러로 처리
+      }
       continue
     }
   }
 
-  console.log('모든 서버 등록 실패, 목업 응답 사용')
-  
-  // 모든 서버 연결 실패 시 목업 응답 사용
-  const mockResponse: Senior = {
-    senior_id: Date.now(), // 임시 ID 생성
-    ...seniorData
-  }
-  
+  // 실제 서버 연결 실패 시 처리
+  console.log('모든 서버 연결 실패, 목업 응답 사용')
   return new Promise((resolve) => {
     setTimeout(() => {
-      console.log('목업 등록 응답:', mockResponse)
-      resolve(mockResponse)
+      console.log('목업 어르신 등록 성공:', seniorData)
+      resolve({
+        senior_id: Date.now() // 임시 ID 생성
+      })
     }, 1000)
   })
 }

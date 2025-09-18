@@ -78,11 +78,22 @@ export default function RegisterPage() {
       setIsSubmitting(true)
       setError(null)
 
+      // 프로필 사진 파일 가져오기
+      const profileImageFile = document.querySelector('input[type="file"]') as HTMLInputElement
+      const file = profileImageFile?.files?.[0]
+      
+      // 기본 이미지 파일 생성 (프로필 사진이 없을 때)
+      const defaultImageFile = new File([''], 'default.png', { type: 'image/png' })
+      
       // API 호출
       await createSenior({
-        name: formData.name,
+        full_name: formData.name,
         address: formData.address,
-        health_info: formData.healthInfo
+        birth_date: formData.birthDate,
+        guardian_contact: formData.guardianContact,
+        device_id: formData.deviceNumber,
+        health_info: formData.healthInfo,
+        profile_img: file || defaultImageFile
       })
 
       // 성공 시 홈 페이지로 이동 (강제 새로고침) - 등록 성공 파라미터 추가

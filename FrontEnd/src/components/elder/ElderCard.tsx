@@ -7,6 +7,7 @@ export interface Elder {
 }
 
 import { Link } from 'react-router-dom'
+import { User } from 'lucide-react'
 
 export default function ElderCard({ elder }: { elder: Elder }) {
   const statusClass =
@@ -34,12 +35,8 @@ export default function ElderCard({ elder }: { elder: Elder }) {
       </div>
 
       {/* 아바타 */}
-      <div className="w-20 h-20 rounded-full bg-zinc-100 flex items-center justify-center shadow">
-        <img
-          src="https://placehold.co/80x80"
-          alt="어르신"
-          className="rounded-full"
-        />
+      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shadow">
+        <User className="w-12 h-12 text-white" />
       </div>
 
       {/* 정보 */}
