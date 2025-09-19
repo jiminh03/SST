@@ -61,6 +61,15 @@ export default function RegisterPage() {
     }
   }
 
+  const handleImageDelete = () => {
+    setProfileImage(null)
+    // 파일 입력 필드 초기화
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    if (fileInput) {
+      fileInput.value = ''
+    }
+  }
+
 
   const handleSubmit = async () => {
     // 필수 필드 검증
@@ -156,6 +165,21 @@ export default function RegisterPage() {
                   className="hidden"
                 />
               </label>
+              
+              {/* 이미지 삭제 버튼 */}
+              {profileImage && (
+                <button 
+                  onClick={handleImageDelete}
+                  className="absolute -top-2 -right-2 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110 cursor-pointer"
+                  style={{ backgroundColor: '#ef4444', padding: '4px' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
             <p className="text-sm text-gray-600 mt-4">
               {profileImage ? '프로필 사진이 등록되었습니다' : '프로필 사진을 추가해주세요'}

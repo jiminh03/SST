@@ -15,6 +15,7 @@ export default function ElderEditPage() {
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null)
   const [imageLoading, setImageLoading] = useState(false)
+  const [imageDeleted, setImageDeleted] = useState(false)
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -149,6 +150,7 @@ export default function ElderEditPage() {
       const reader = new FileReader()
       reader.onload = (e) => {
         setProfileImage(e.target?.result as string)
+        setImageDeleted(false) // 새 이미지 선택 시 삭제 상태 해제
         // 새 이미지 선택 시 현재 이미지 URL 초기화
         if (currentImageUrl) {
           URL.revokeObjectURL(currentImageUrl)
@@ -156,6 +158,20 @@ export default function ElderEditPage() {
         }
       }
       reader.readAsDataURL(file)
+    }
+  }
+
+  const handleImageDelete = () => {
+    setProfileImage(null)
+    if (currentImageUrl) {
+      URL.revokeObjectURL(currentImageUrl)
+      setCurrentImageUrl(null)
+    }
+    setImageDeleted(true) // 이미지 삭제 상태 설정
+    // 파일 입력 필드 초기화
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    if (fileInput) {
+      fileInput.value = ''
     }
   }
 
@@ -174,8 +190,15 @@ export default function ElderEditPage() {
         senior_id: senior.senior_id,
         formData,
         hasImage: !!file,
-        imageFileName: file?.name
+        imageFileName: file?.name,
+        imageDeleted: imageDeleted
       })
+      
+      // 이미지 삭제된 경우 빈 파일 객체 생성
+      let imageToSend = file
+      if (imageDeleted && !file) {
+        imageToSend = new File([''], 'deleted.png', { type: 'image/png' })
+      }
       
       await updateSenior(senior.senior_id, {
         full_name: formData.full_name,
@@ -183,7 +206,7 @@ export default function ElderEditPage() {
         birth_date: formData.birth_date,
         guardian_contact: formData.guardian_contact,
         health_info: formData.notes,
-        profile_img: file as any // 이미지 파일 추가 (타입 단언 사용)
+        profile_img: imageToSend as any // 이미지 파일 또는 삭제된 이미지
       })
       
       console.log('✅ 수정 완료!')
@@ -281,6 +304,21 @@ export default function ElderEditPage() {
                   className="hidden"
                 />
               </label>
+              
+              {/* 이미지 삭제 버튼 */}
+              {(profileImage || currentImageUrl) && (
+                <button 
+                  onClick={handleImageDelete}
+                  className="absolute -top-1 -right-1 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-110 cursor-pointer"
+                  style={{ backgroundColor: '#ef4444', padding: '4px' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
