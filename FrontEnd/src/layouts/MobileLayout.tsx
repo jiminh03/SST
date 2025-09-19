@@ -9,6 +9,7 @@ import { Eye, EyeOff } from 'lucide-react'
 export default function MobileLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+  
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false)
@@ -198,7 +199,7 @@ export default function MobileLayout() {
                      display: 'flex',
                      flexDirection: 'column',
                      position: 'relative',
-                     paddingTop: '40px',
+                     paddingTop: '0px',
                      background: 'linear-gradient(to bottom, #ffffff 0%, #ffffff 40px, #f9fafb 100%)'
                    }}>
               {/* 상단 고정 Header */}

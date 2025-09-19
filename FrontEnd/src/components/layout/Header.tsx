@@ -78,7 +78,7 @@ export default function Header({ onDeleteClick }: HeaderProps) {
   }, [menuOpen])
 
   return (
-    <header className="relative flex h-20 flex-shrink-0 items-center justify-between px-4 bg-white shadow">
+    <header className="relative flex h-28 flex-shrink-0 items-center justify-between px-4 bg-white" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)', paddingTop: '35px' }}>
       <div className="flex items-center gap-2">
         {showBack && (
           <span
