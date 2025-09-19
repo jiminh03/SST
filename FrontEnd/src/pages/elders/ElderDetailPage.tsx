@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSeniorById } from '../../api/eldersApi'
 import type { Senior } from '../../api/eldersApi'
-import { Heart, MapPin, Clock, Camera, Phone, Activity, Home, Lightbulb, Thermometer, User, Smartphone } from 'lucide-react'
+import { Heart, MapPin, Clock, Camera, Phone, Activity, Home, Lightbulb, Thermometer, User } from 'lucide-react'
 
 export default function ElderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -184,10 +184,6 @@ export default function ElderDetailPage() {
               <div className="flex items-center gap-2 text-gray-500 mb-2">
                 <MapPin className="w-4 h-4" />
                 <span className="text-sm">{senior.address}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-500 mb-3">
-                <Smartphone className="w-4 h-4" />
-                <span className="text-sm">{senior.device_id || '정보 없음'}</span>
               </div>
               <button 
                 onClick={() => setShowDetails(!showDetails)}
