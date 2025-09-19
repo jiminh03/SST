@@ -121,6 +121,12 @@ const createSeniorWithFormat = async (seniorData: CreateSeniorRequest, token: st
       if (requestData.health_info) {
         formData.append('health_info', JSON.stringify(requestData.health_info))
       }
+      
+      // 프로필 이미지 추가
+      if (seniorData.profile_img) {
+        formData.append('profile_img', seniorData.profile_img)
+        console.log('📤 프로필 이미지 추가:', seniorData.profile_img.name, seniorData.profile_img.size, 'bytes')
+      }
 
       console.log('📤 FormData 전송:', Object.fromEntries(formData.entries()))
 

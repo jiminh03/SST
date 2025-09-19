@@ -1,8 +1,53 @@
 import { Link } from 'react-router-dom'
 import { User } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import type { Senior } from '../../api/eldersApi'
 
 export default function ElderCard({ elder }: { elder: Senior }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageLoading, setImageLoading] = useState(false)
+
+  // 인증된 이미지 로드
+  useEffect(() => {
+    if (elder.senior_id) {
+      console.log('🖼️ 이미지 로드 시작 - senior_id:', elder.senior_id)
+      setImageLoading(true)
+      const token = localStorage.getItem('access_token')
+      
+      // 프록시를 통한 이미지 API 호출
+      const imageApiUrl = `/api/seniors/${elder.senior_id}/profile-image`
+      console.log('🖼️ 이미지 API URL:', imageApiUrl)
+      console.log('🖼️ 토큰 존재:', !!token)
+      
+      fetch(imageApiUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        console.log('🖼️ 이미지 응답 상태:', response.status, response.statusText)
+        if (response.ok) {
+          return response.blob()
+        }
+        throw new Error(`Image load failed: ${response.status}`)
+      })
+      .then(blob => {
+        console.log('🖼️ 이미지 blob 크기:', blob.size)
+        const url = URL.createObjectURL(blob)
+        setImageUrl(url)
+        setImageLoading(false)
+        console.log('🖼️ 이미지 로드 성공!')
+      })
+      .catch(error => {
+        console.log('❌ 인증된 이미지 로드 실패:', error)
+        setImageUrl(null)
+        setImageLoading(false)
+      })
+    } else {
+      console.log('🖼️ senior_id가 없어서 이미지 로드 안함')
+    }
+  }, [elder.senior_id])
+
   // health_info를 상태로 변환 (위험/주의/안전)
   const getHealthStatus = (healthInfo: any): string => {
     let status = '안전' // 기본값
@@ -92,24 +137,23 @@ export default function ElderCard({ elder }: { elder: Senior }) {
       </div>
 
       {/* 아바타 */}
-      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shadow overflow-hidden">
-        {elder.profile_img ? (
+      <div className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden">
+        {imageLoading ? (
+          <div className="w-12 h-12 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+          </div>
+        ) : imageUrl ? (
           <img 
-            src={elder.profile_img} 
-            alt={elder.full_name}
+            src={imageUrl} 
+            alt={`${elder.full_name} 프로필`}
             className="w-full h-full object-cover"
             onError={(e) => {
-              // 이미지 로드 실패 시 기본 아이콘 표시
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              const parent = target.parentElement
-              if (parent) {
-                parent.innerHTML = '<svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>'
-              }
+              console.log('❌ 이미지 표시 실패:', imageUrl)
+              setImageUrl(null)
             }}
           />
         ) : (
-          <User className="w-12 h-12 text-white" />
+          <User className="w-12 h-12 text-gray-400" />
         )}
       </div>
 

@@ -1,19 +1,20 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Eye, EyeOff, User, Lock, Mail, Briefcase } from 'lucide-react'
-import { register } from '../../api/eldersApi'
+import { User, Phone, Calendar, MapPin, Heart, Wifi } from 'lucide-react'
+import { createSenior } from '../../api/eldersApi'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [formData, setFormData] = useState({
     full_name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
+    birth_date: '',
+    address: '',
+    guardian_contact: '',
+    health_info: '',
+    device_id: '',
+    profile_img: null as File | null
   })
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,6 +24,16 @@ export default function RegisterPage() {
       ...prev,
       [name]: value
     }))
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        profile_img: file
+      }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,57 +46,56 @@ export default function RegisterPage() {
       return
     }
     
-    if (!formData.email.trim()) {
-      setError('이메일을 입력해주세요.')
+    if (!formData.birth_date.trim()) {
+      setError('생년월일을 입력해주세요.')
       return
     }
     
-    // 이메일 형식 검사
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      setError('올바른 이메일 형식을 입력해주세요.')
+    if (!formData.address.trim()) {
+      setError('주소를 입력해주세요.')
       return
     }
     
-    
-    if (!formData.password) {
-      setError('비밀번호를 입력해주세요.')
-      return
-    }
-    
-    if (formData.password.length < 6) {
-      setError('비밀번호는 최소 6자 이상이어야 합니다.')
-      return
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.')
+    if (!formData.device_id.trim()) {
+      setError('연동 기기 번호를 입력해주세요.')
       return
     }
     
     setIsLoading(true)
     
     try {
-      await register({
+      // health_info를 배열로 변환 (빈 문자열이면 빈 배열)
+      const healthInfoArray = formData.health_info.trim() 
+        ? formData.health_info.split(',').map(item => item.trim()).filter(item => item)
+        : []
+      
+      await createSenior({
         full_name: formData.full_name,
-        email: formData.email,
-        password: formData.password
+        birth_date: formData.birth_date,
+        address: formData.address,
+        guardian_contact: formData.guardian_contact || undefined,
+        health_info: healthInfoArray,
+        device_id: formData.device_id,
+        profile_img: formData.profile_img || undefined
       })
       
-      console.log('회원가입 성공!')
-      alert('회원가입이 완료되었습니다. 로그인해주세요.')
-      navigate('/auth/login')
+      console.log('어르신 등록 성공!')
+      alert('어르신 등록이 완료되었습니다.')
+      navigate('/')
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '회원가입에 실패했습니다.'
+      const errorMessage = err instanceof Error ? err.message : '어르신 등록에 실패했습니다.'
       setError(errorMessage)
-      console.error('회원가입 에러 상세:', {
+      console.error('어르신 등록 에러 상세:', {
         error: err,
         message: errorMessage,
         formData: {
           full_name: formData.full_name,
-          email: formData.email,
-          passwordLength: formData.password?.length || 0,
-          confirmPasswordLength: formData.confirmPassword?.length || 0
+          birth_date: formData.birth_date,
+          address: formData.address,
+          guardian_contact: formData.guardian_contact,
+          health_info: formData.health_info,
+          device_id: formData.device_id,
+          profile_img: formData.profile_img?.name || '없음'
         }
       })
     } finally {
@@ -189,7 +199,7 @@ export default function RegisterPage() {
                   fontSize: '20px',
                   fontWeight: '600',
                   color: '#1f2937'
-                }}>회원가입</h1>
+                }}>어르신 등록</h1>
               </div>
 
               {/* 메인 컨텐츠 */}
@@ -220,10 +230,10 @@ export default function RegisterPage() {
                       fontSize: '14px',
                       color: '#6b7280',
                       marginTop: '4px'
-                    }}>담당자 회원가입</p>
+                    }}>어르신 등록</p>
                   </div>
 
-                  {/* 회원가입 폼 */}
+                  {/* 어르신 등록 폼 */}
                   <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {/* 에러 메시지 */}
                     {error && (
@@ -240,6 +250,36 @@ export default function RegisterPage() {
                         }}>{error}</p>
                       </div>
                     )}
+
+                    {/* 프로필 이미지 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151'
+                      }}>
+                        <User style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
+                        프로필 이미지
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          outline: 'none',
+                          transition: 'all 0.2s'
+                        }}
+                      />
+                    </div>
 
                     {/* 이름 입력 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -283,7 +323,7 @@ export default function RegisterPage() {
                       />
                     </div>
 
-                    {/* 이메일 입력 */}
+                    {/* 생년월일 입력 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <label style={{
                         display: 'flex',
@@ -293,16 +333,15 @@ export default function RegisterPage() {
                         fontWeight: '600',
                         color: '#374151'
                       }}>
-                        <Mail style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
-                        이메일
+                        <Calendar style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
+                        생년월일
                         <span style={{ color: '#ef4444' }}>*</span>
                       </label>
                       <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
+                        type="date"
+                        name="birth_date"
+                        value={formData.birth_date}
                         onChange={handleInputChange}
-                        placeholder="이메일을 입력해주세요"
                         style={{
                           width: '100%',
                           padding: '12px 16px',
@@ -325,8 +364,7 @@ export default function RegisterPage() {
                       />
                     </div>
 
-
-                    {/* 비밀번호 입력 */}
+                    {/* 주소 입력 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <label style={{
                         display: 'flex',
@@ -336,61 +374,39 @@ export default function RegisterPage() {
                         fontWeight: '600',
                         color: '#374151'
                       }}>
-                        <Lock style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
-                        비밀번호
+                        <MapPin style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
+                        주소
                         <span style={{ color: '#ef4444' }}>*</span>
                       </label>
-                      <div style={{ position: 'relative' }}>
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          name="password"
-                          value={formData.password}
-                          onChange={handleInputChange}
-                          placeholder="비밀번호를 입력해주세요"
-                          style={{
-                            width: '100%',
-                            padding: '12px 48px 12px 16px',
-                            backgroundColor: '#ffffff',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '8px',
-                            fontSize: '16px',
-                            outline: 'none',
-                            transition: 'all 0.2s'
-                          }}
-                          onFocus={(e) => {
-                            e.target.style.borderColor = '#3b82f6'
-                            e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
-                          }}
-                          onBlur={(e) => {
-                            e.target.style.borderColor = '#d1d5db'
-                            e.target.style.boxShadow = 'none'
-                          }}
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          style={{
-                            position: 'absolute',
-                            right: '12px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            color: '#9ca3af',
-                            cursor: 'pointer',
-                            transition: 'color 0.2s',
-                            background: 'none',
-                            border: 'none',
-                            padding: '0'
-                          }}
-                          onMouseEnter={(e) => e.target.style.color = '#4b5563'}
-                          onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
-                        >
-                          {showPassword ? <EyeOff style={{ width: '20px', height: '20px' }} /> : <Eye style={{ width: '20px', height: '20px' }} />}
-                        </button>
-                      </div>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        placeholder="주소를 입력해주세요"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          outline: 'none',
+                          transition: 'all 0.2s'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6'
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db'
+                          e.target.style.boxShadow = 'none'
+                        }}
+                        required
+                      />
                     </div>
 
-                    {/* 비밀번호 확인 입력 */}
+                    {/* 보호자 연락처 입력 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <label style={{
                         display: 'flex',
@@ -400,65 +416,123 @@ export default function RegisterPage() {
                         fontWeight: '600',
                         color: '#374151'
                       }}>
-                        <Lock style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
-                        비밀번호 확인
-                        <span style={{ color: '#ef4444' }}>*</span>
+                        <Phone style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
+                        보호자 연락처
                       </label>
-                      <div style={{ position: 'relative' }}>
-                        <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          name="confirmPassword"
-                          value={formData.confirmPassword}
-                          onChange={handleInputChange}
-                          placeholder="비밀번호를 다시 입력해주세요"
-                          style={{
-                            width: '100%',
-                            padding: '12px 48px 12px 16px',
-                            backgroundColor: '#ffffff',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '8px',
-                            fontSize: '16px',
-                            outline: 'none',
-                            transition: 'all 0.2s'
-                          }}
-                          onFocus={(e) => {
-                            e.target.style.borderColor = '#3b82f6'
-                            e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
-                          }}
-                          onBlur={(e) => {
-                            e.target.style.borderColor = '#d1d5db'
-                            e.target.style.boxShadow = 'none'
-                          }}
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          style={{
-                            position: 'absolute',
-                            right: '12px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            color: '#9ca3af',
-                            cursor: 'pointer',
-                            transition: 'color 0.2s',
-                            background: 'none',
-                            border: 'none',
-                            padding: '0'
-                          }}
-                          onMouseEnter={(e) => e.target.style.color = '#4b5563'}
-                          onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
-                        >
-                          {showConfirmPassword ? <EyeOff style={{ width: '20px', height: '20px' }} /> : <Eye style={{ width: '20px', height: '20px' }} />}
-                        </button>
-                      </div>
+                      <input
+                        type="tel"
+                        name="guardian_contact"
+                        value={formData.guardian_contact}
+                        onChange={handleInputChange}
+                        placeholder="보호자 연락처를 입력해주세요"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          outline: 'none',
+                          transition: 'all 0.2s'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6'
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db'
+                          e.target.style.boxShadow = 'none'
+                        }}
+                      />
                     </div>
 
-                    {/* 회원가입 버튼 */}
+                    {/* 특이사항 입력 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151'
+                      }}>
+                        <Heart style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
+                        특이사항
+                      </label>
+                      <input
+                        type="text"
+                        name="health_info"
+                        value={formData.health_info}
+                        onChange={handleInputChange}
+                        placeholder="특이사항을 입력해주세요 (쉼표로 구분)"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          outline: 'none',
+                          transition: 'all 0.2s'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6'
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db'
+                          e.target.style.boxShadow = 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* 연동 기기 번호 입력 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151'
+                      }}>
+                        <Wifi style={{ width: '16px', height: '16px', color: '#3b82f6' }} />
+                        연동 기기 번호
+                        <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="device_id"
+                        value={formData.device_id}
+                        onChange={handleInputChange}
+                        placeholder="연동 기기 번호를 입력해주세요"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          outline: 'none',
+                          transition: 'all 0.2s'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6'
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#d1d5db'
+                          e.target.style.boxShadow = 'none'
+                        }}
+                        required
+                      />
+                    </div>
+
+                    {/* 등록 버튼 */}
                     <div style={{ paddingTop: '16px' }}>
                       <button
                         type="submit"
-                        disabled={isLoading || !formData.full_name || !formData.email || !formData.password || !formData.confirmPassword}
+                        disabled={isLoading || !formData.full_name || !formData.birth_date || !formData.address || !formData.device_id}
                         style={{
                           width: '100%',
                           fontWeight: '600',
@@ -467,17 +541,17 @@ export default function RegisterPage() {
                           backgroundColor: '#000000',
                           color: '#ffffff',
                           border: 'none',
-                          cursor: isLoading || !formData.full_name || !formData.email || !formData.password || !formData.confirmPassword ? 'not-allowed' : 'pointer',
-                          opacity: isLoading || !formData.full_name || !formData.email || !formData.password || !formData.confirmPassword ? 0.5 : 1,
+                          cursor: isLoading || !formData.full_name || !formData.birth_date || !formData.address || !formData.device_id ? 'not-allowed' : 'pointer',
+                          opacity: isLoading || !formData.full_name || !formData.birth_date || !formData.address || !formData.device_id ? 0.5 : 1,
                           transition: 'background-color 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                          if (!isLoading && formData.full_name && formData.email && formData.password && formData.confirmPassword) {
+                          if (!isLoading && formData.full_name && formData.birth_date && formData.address && formData.device_id) {
                             e.target.style.backgroundColor = '#333333'
                           }
                         }}
                         onMouseLeave={(e) => {
-                          if (!isLoading && formData.full_name && formData.email && formData.password && formData.confirmPassword) {
+                          if (!isLoading && formData.full_name && formData.birth_date && formData.address && formData.device_id) {
                             e.target.style.backgroundColor = '#000000'
                           }
                         }}
@@ -497,38 +571,14 @@ export default function RegisterPage() {
                               borderRadius: '50%',
                               animation: 'spin 1s linear infinite'
                             }} />
-                            회원가입 중...
+                            등록 중...
                           </div>
                         ) : (
-                          '회원가입'
+                          '어르신 등록'
                         )}
                       </button>
                     </div>
                   </form>
-
-                  {/* 로그인 링크 */}
-                  <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                    <p style={{
-                      fontSize: '14px',
-                      color: '#6b7280'
-                    }}>
-                      이미 계정이 있으신가요?{' '}
-                      <span 
-                        onClick={() => navigate('/auth/login')}
-                        style={{
-                          color: '#2563eb',
-                          fontWeight: '500',
-                          textDecoration: 'underline',
-                          cursor: 'pointer',
-                          transition: 'color 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.target.style.color = '#1d4ed8'}
-                        onMouseLeave={(e) => e.target.style.color = '#2563eb'}
-                      >
-                        로그인하기
-                      </span>
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>

@@ -33,6 +33,13 @@ export default function RegisterPage() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
+      console.log('📷 이미지 파일 선택:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      })
+      
       // 파일 크기 체크 (5MB 제한)
       if (file.size > 5 * 1024 * 1024) {
         alert('파일 크기는 5MB 이하여야 합니다.')
@@ -47,6 +54,7 @@ export default function RegisterPage() {
 
       const reader = new FileReader()
       reader.onload = (e) => {
+        console.log('📷 이미지 미리보기 생성 완료')
         setProfileImage(e.target?.result as string)
       }
       reader.readAsDataURL(file)
@@ -81,6 +89,13 @@ export default function RegisterPage() {
       // 프로필 사진 파일 가져오기
       const profileImageFile = document.querySelector('input[type="file"]') as HTMLInputElement
       const file = profileImageFile?.files?.[0]
+      
+      console.log('📤 등록 시 파일 정보:', {
+        hasFile: !!file,
+        fileName: file?.name,
+        fileSize: file?.size,
+        fileType: file?.type
+      })
       
       // 기본 이미지 파일 생성 (프로필 사진이 없을 때)
       const defaultImageFile = new File([''], 'default.png', { type: 'image/png' })

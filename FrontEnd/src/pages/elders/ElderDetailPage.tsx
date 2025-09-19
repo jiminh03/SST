@@ -14,6 +14,8 @@ export default function ElderDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [showDetails, setShowDetails] = useState(false)
   const [showGuardianContact, setShowGuardianContact] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageLoading, setImageLoading] = useState(false)
 
   // 생년월일로부터 만 나이 계산
   const calculateAge = (birthDate: string): string => {
@@ -70,6 +72,47 @@ export default function ElderDetailPage() {
     fetchSenior()
   }, [id])
 
+  // 인증된 이미지 로드
+  useEffect(() => {
+    if (senior?.senior_id) {
+      console.log('🖼️ 상세페이지 이미지 로드 시작 - senior_id:', senior.senior_id)
+      setImageLoading(true)
+      const token = localStorage.getItem('access_token')
+      
+      // 프록시를 통한 이미지 API 호출
+      const imageApiUrl = `/api/seniors/${senior.senior_id}/profile-image`
+      console.log('🖼️ 상세페이지 이미지 API URL:', imageApiUrl)
+      console.log('🖼️ 상세페이지 토큰 존재:', !!token)
+      
+      fetch(imageApiUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        console.log('🖼️ 상세페이지 이미지 응답 상태:', response.status, response.statusText)
+        if (response.ok) {
+          return response.blob()
+        }
+        throw new Error(`Image load failed: ${response.status}`)
+      })
+      .then(blob => {
+        console.log('🖼️ 상세페이지 이미지 blob 크기:', blob.size)
+        const url = URL.createObjectURL(blob)
+        setImageUrl(url)
+        setImageLoading(false)
+        console.log('🖼️ 상세페이지 이미지 로드 성공!')
+      })
+      .catch(error => {
+        console.log('❌ 상세페이지 인증된 이미지 로드 실패:', error)
+        setImageUrl(null)
+        setImageLoading(false)
+      })
+    } else {
+      console.log('🖼️ 상세페이지 senior_id가 없어서 이미지 로드 안함')
+    }
+  }, [senior?.senior_id])
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center bg-orange-50">
@@ -112,24 +155,23 @@ export default function ElderDetailPage() {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
           <div className="flex items-start gap-6">
             <div className="relative">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shadow-lg overflow-hidden">
-                {senior.profile_img ? (
+              <div className="w-28 h-28 rounded-full flex items-center justify-center overflow-hidden">
+                {imageLoading ? (
+                  <div className="w-16 h-16 flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : imageUrl ? (
                   <img 
-                    src={senior.profile_img} 
+                    src={imageUrl} 
                     alt={senior.full_name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      // 이미지 로드 실패 시 기본 아이콘 표시
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                      const parent = target.parentElement
-                      if (parent) {
-                        parent.innerHTML = '<svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>'
-                      }
+                      console.log('❌ 이미지 표시 실패:', imageUrl)
+                      setImageUrl(null)
                     }}
                   />
                 ) : (
-                  <User className="w-16 h-16 text-white" />
+                  <User className="w-16 h-16 text-gray-400" />
                 )}
               </div>
             </div>

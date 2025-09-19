@@ -13,6 +13,8 @@ export default function ElderEditPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null)
+  const [imageLoading, setImageLoading] = useState(false)
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -66,6 +68,9 @@ export default function ElderEditPage() {
           guardian_contact: data.guardian_contact || '',
           notes: parseHealthInfo(data.health_info)  // health_info를 파싱하여 특이사항으로 설정
         })
+        
+        // 현재 프로필 이미지 로드
+        loadCurrentProfileImage(data.senior_id)
       } catch (err) {
         setError('어르신 정보를 불러오는데 실패했습니다.')
         console.error('Error fetching senior:', err)
@@ -76,6 +81,51 @@ export default function ElderEditPage() {
 
     fetchSenior()
   }, [id])
+
+  // 컴포넌트 언마운트 시 메모리 정리
+  useEffect(() => {
+    return () => {
+      if (currentImageUrl) {
+        URL.revokeObjectURL(currentImageUrl)
+      }
+    }
+  }, [currentImageUrl])
+
+  // 현재 프로필 이미지 로드 함수
+  const loadCurrentProfileImage = (seniorId: number) => {
+    console.log('🖼️ 편집페이지 현재 이미지 로드 시작 - senior_id:', seniorId)
+    setImageLoading(true)
+    const token = localStorage.getItem('access_token')
+    
+    // 프록시를 통한 이미지 API 호출
+    const imageApiUrl = `/api/seniors/${seniorId}/profile-image`
+    console.log('🖼️ 편집페이지 이미지 API URL:', imageApiUrl)
+    
+    fetch(imageApiUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(response => {
+      console.log('🖼️ 편집페이지 이미지 응답 상태:', response.status, response.statusText)
+      if (response.ok) {
+        return response.blob()
+      }
+      throw new Error(`Image load failed: ${response.status}`)
+    })
+    .then(blob => {
+      console.log('🖼️ 편집페이지 이미지 blob 크기:', blob.size)
+      const url = URL.createObjectURL(blob)
+      setCurrentImageUrl(url)
+      setImageLoading(false)
+      console.log('🖼️ 편집페이지 현재 이미지 로드 성공!')
+    })
+    .catch(error => {
+      console.log('❌ 편집페이지 현재 이미지 로드 실패:', error)
+      setCurrentImageUrl(null)
+      setImageLoading(false)
+    })
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -99,6 +149,11 @@ export default function ElderEditPage() {
       const reader = new FileReader()
       reader.onload = (e) => {
         setProfileImage(e.target?.result as string)
+        // 새 이미지 선택 시 현재 이미지 URL 초기화
+        if (currentImageUrl) {
+          URL.revokeObjectURL(currentImageUrl)
+          setCurrentImageUrl(null)
+        }
       }
       reader.readAsDataURL(file)
     }
@@ -176,23 +231,33 @@ export default function ElderEditPage() {
           {/* 프로필 사진 */}
           <div className="flex justify-center mb-6">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 shadow-xl flex items-center justify-center border-4 border-white ring-4 ring-gray-100 overflow-hidden">
-                {profileImage ? (
+              <div className="w-28 h-28 rounded-full flex items-center justify-center overflow-hidden">
+                {imageLoading ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-10 h-10 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : profileImage ? (
                   <img 
                     src={profileImage} 
-                    alt="프로필" 
+                    alt="새 프로필" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : currentImageUrl ? (
+                  <img 
+                    src={currentImageUrl} 
+                    alt="현재 프로필" 
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <User className="w-12 h-12 text-white" />
+                  <User className="w-20 h-20 text-gray-400" />
                 )}
               </div>
-              <label className="absolute -bottom-1 -right-2 text-white p-1 rounded-full shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer"
+              <label className="absolute -bottom-1 -right-2 text-white p-2 rounded-full shadow-xl transition-all duration-200 hover:scale-110 cursor-pointer"
                 style={{ backgroundColor: '#0088FF' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0066CC'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0088FF'}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -268,8 +333,14 @@ export default function ElderEditPage() {
 
           {/* 에러 메시지 */}
           {error && (
-            <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="fixed top-4 left-4 right-4 z-50 p-3 bg-red-50 border border-red-200 rounded-lg shadow-lg">
               <p className="text-red-600 text-sm text-center">{error}</p>
+              <button 
+                onClick={() => setError(null)}
+                className="absolute top-2 right-2 text-red-400 hover:text-red-600"
+              >
+                ✕
+              </button>
             </div>
           )}
 
