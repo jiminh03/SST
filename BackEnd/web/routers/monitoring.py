@@ -55,9 +55,8 @@ async def get_senior_details(
     user_manager = UserManager(db)
     senior_list = await user_manager.get_care_seniors(current_user.staff_id)
 
-    managed_senior_ids = {senior.senior_id for senior in senior_list}
+    managed_senior_ids = [senior.senior_id for senior in senior_list]
 
-    # 요청된 senior_id가 담당 목록에 있는지 확인합니다.
     if senior_id not in managed_senior_ids:
         raise HTTPException(
             status_code=403,
@@ -65,7 +64,17 @@ async def get_senior_details(
         )
 
     senior_info = await user_manager.get_senior_info_by_id(senior_id)
-    senior_detail = SeniorDetail.model_validate(senior_info)
+
+    data_dict = senior_info.model_dump()
+
+    # 2. 딕셔너리의 'profile_img' 필드를 원하는 URL 문자열로 덮어씁니다.
+    #    기존 profile_img 필드는 바이트 데이터이므로, 그 존재 여부를 확인합니다.
+    if senior_info.profile_img:
+        data_dict['profile_img'] = f"https://j13a503.p.ssafy.io/api/seniors/{senior_info.senior_id}/profile-image"
+    else:
+        data_dict['profile_img'] = None
+
+    senior_detail = SeniorDetail.model_validate(data_dict)
     
     return senior_detail
 
@@ -95,7 +104,7 @@ async def get_senior_details(
 
 
 @router.get(
-    "/seniors/{senior_id}/profile-image",
+    "/{senior_id}/profile-image",
     responses={
         200: {
             # 다양한 이미지 타입을 반환할 수 있음을 명시
@@ -127,7 +136,10 @@ async def get_senior_profile_image(
 
     # 1. DB에 이미지 데이터가 있는지 확인
     if not senior or not senior.profile_img:
-        return Response(status_code=404)
+        raise HTTPException(
+            status_code=404,
+            detail="프로필 이미지를 찾을 수 없습니다."
+        )
 
     # 2. 파싱 함수를 호출하여 이미지 데이터의 실제 MIME 타입 감지
     #    senior.profile_img[:16] -> 전체 데이터를 넘길 필요 없이 앞부분만 넘겨 효율적

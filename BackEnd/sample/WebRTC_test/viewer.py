@@ -71,11 +71,11 @@ async def run_viewer():
                 # ❗수정된 부분: len() 대신 .buffer_size를 사용합니다.
                 # ==========================================================
                 frame_size = frame.planes[0].buffer_size
-                print(
-                    f"📦 Frame received: pts={frame.pts}, "
-                    f"resolution={frame.width}x{frame.height}, "
-                    f"size={frame_size} bytes"
-                )
+                # print(
+                #     f"📦 Frame received: pts={frame.pts}, "
+                #     f"resolution={frame.width}x{frame.height}, "
+                #     f"size={frame_size} bytes"
+                # )
 
                 frame_queue.put(frame)
             except Exception as e:
@@ -109,9 +109,25 @@ async def run_viewer():
                 return
 
             offer = RTCSessionDescription(sdp=offer_data["sdp"], type=offer_data["type"])
+
+            # [추가된 부분 시작]
+            print("\n----------------------------------------")
+            print("📥 수신한 Offer SDP:")
+            print(offer.sdp)
+            print("----------------------------------------\n")
+            # [추가된 부분 끝]
+
             await pc.setRemoteDescription(offer)
             
             answer = await pc.createAnswer()
+
+            # [추가된 부분 시작]
+            print("\n----------------------------------------")
+            print("📤 생성한 Answer SDP:")
+            print(answer.sdp)
+            print("----------------------------------------\n")
+            # [추가된 부분 끝]
+            
             await pc.setLocalDescription(answer)
             
             answer_data = {

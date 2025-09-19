@@ -24,15 +24,10 @@ class SeniorSimpleInfo(BaseModel):
     def profile_img(self) -> Optional[str]:
         # senior_id를 사용하여 이미지 URL을 동적으로 생성합니다.
         # 이미지가 없는 경우를 대비해 None을 반환할 수도 있습니다.
-        return f"/seniors/{self.senior_id}/profile-image"
+        return f"https://j13a503.p.ssafy.io/api/seniors/{self.senior_id}/profile-image"
 
 class SeniorDetail(SeniorInfo):
-    @computed_field
-    @property
-    def profile_img(self) -> Optional[str]:
-        # senior_id를 사용하여 이미지 URL을 동적으로 생성합니다.
-        # 이미지가 없는 경우를 대비해 None을 반환할 수도 있습니다.
-        return f"/seniors/{self.senior_id}/profile-image"
+    profile_img:Optional[str]=None
 
 class EmergencyLog(BaseModel):
     log_id: int

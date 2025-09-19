@@ -145,7 +145,7 @@ async def register_senior(
     )
     created_senior = await user_manager.create_senior(new_senior_info)
     
-    user_manager.link_staff_to_senior(current_user.staff_id, created_senior.senior_id)
+    await user_manager.link_staff_to_senior(current_user.staff_id, created_senior.senior_id)
 
     existing_hub = await iot_manager.get_hub_by_device_id(device_id)
     if existing_hub is None:

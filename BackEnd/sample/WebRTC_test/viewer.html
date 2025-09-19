@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC 뷰어</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #1a73e8;
+        }
+
+        #video-container {
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #000;
+        }
+
+        video {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            display: block;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            margin: 0 5px;
+            transition: background-color 0.3s;
+        }
+
+        #startButton {
+            background-color: #28a745;
+            /* Green */
+        }
+
+        #startButton:hover {
+            background-color: #218838;
+        }
+
+        #stopButton {
+            background-color: #dc3545;
+            /* Red */
+        }
+
+        #stopButton:hover {
+            background-color: #c82333;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 1em;
+            color: #555;
+            min-height: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>WebRTC 스트리밍 뷰어 📹</h1>
+
+    <div id="video-container">
+        <video id="video" autoplay playsinline></video>
+    </div>
+
+    <div class="controls">
+        <button id="startButton">연결 시작</button>
+        <button id="stopButton" disabled>연결 종료</button>
+    </div>
+
+    <p id="status">대기 중...</p>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const video = document.getElementById('video');
+        const status = document.getElementById('status');
+
+        // Python 코드의 RTCPeerConnection에 해당
+        let pc = null;
+        // 시그널링 서버 주소
+        const signalingServerUrl = 'http://j13a503.p.ssafy.io:8080';
+
+        // WebRTC 설정 (STUN 서버)
+        const config = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
+        };
+
+        // 연결 시작 함수
+        async function start() {
+            if (pc) {
+                console.warn("이미 연결이 진행 중입니다.");
+                return;
+            }
+
+            startButton.disabled = true;
+            status.textContent = '시그널링 서버에서 Offer 요청 중...';
+
+            try {
+                // 1. 새 RTCPeerConnection 객체 생성
+                pc = new RTCPeerConnection(config);
+
+                // 2. 연결 상태 변경 이벤트 핸들러 설정
+                pc.onconnectionstatechange = () => {
+                    status.textContent = `✅ 연결 상태: ${pc.connectionState}`;
+                    if (pc.connectionState === 'connected') {
+                        stopButton.disabled = false;
+                    } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+                        stop();
+                    }
+                };
+
+                // 3. 비디오 트랙 수신 이벤트 핸들러 설정
+                // Python 코드의 @pc.on("track") 부분에 해당합니다.
+                // 브라우저에서는 수신된 스트림을 <video> 요소에 바로 연결하면 됩니다.
+                pc.ontrack = (event) => {
+                    console.log('비디오 트랙 수신:', event.streams[0]);
+                    if (video.srcObject !== event.streams[0]) {
+                        video.srcObject = event.streams[0];
+                        status.textContent = '🚀 스트림 수신 중...';
+                    }
+                };
+
+                // 4. 시그널링 서버로부터 Offer 받기
+                const response = await fetch(`${signalingServerUrl}/offer`);
+                if (!response.ok) {
+                    throw new Error(`Offer를 가져오지 못했습니다. 상태: ${response.status}`);
+                }
+                const offer = await response.json();
+
+                // ======================= [수정된 부분 시작] =======================
+                // 상대방(Unity)의 Offer 내용을 콘솔에 명확하게 출력합니다.
+                console.log("----------------------------------------");
+                console.log("📥 상대방(Unity)에게서 받은 Offer:", offer);
+                console.log("SDP 내용:\n", offer.sdp);
+                console.log("----------------------------------------");
+                // ======================== [수정된 부분 끝] ========================
+
+
+                // 5. 수신한 Offer를 RemoteDescription으로 설정
+                await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+                // 6. Answer 생성
+                const answer = await pc.createAnswer();
+
+
+                // ======================= [수정된 부분 시작] =======================
+                // 생성된 Answer 내용을 콘솔에 명확하게 출력합니다.
+                console.log("----------------------------------------");
+                console.log("📤 웹 페이지(브라우저)에서 생성한 Answer:", answer);
+                console.log("SDP 내용:\n", answer.sdp);
+                console.log("----------------------------------------");
+                // ======================== [수정된 부분 끝] ========================
+
+
+                // 7. 생성한 Answer를 LocalDescription으로 설정
+                await pc.setLocalDescription(answer);
+
+                // 8. 생성된 Answer를 시그널링 서버로 전송
+                status.textContent = 'Answer 전송 중...';
+                await fetch(`${signalingServerUrl}/answer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sdp: pc.localDescription.sdp,
+                        type: pc.localDescription.type
+                    })
+                });
+                console.log('Answer 전송 완료');
+
+            } catch (error) {
+                console.error('오류 발생:', error);
+                status.textContent = `❌ 오류: ${error.message}`;
+                stop(); // 오류 발생 시 연결 종료
+            }
+        }
+
+        // 연결 종료 함수
+        function stop() {
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            video.srcObject = null;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            status.textContent = '연결 종료됨.';
+            console.log('연결이 종료되었습니다.');
+        }
+
+        // 버튼 클릭 이벤트 리스너 등록
+        startButton.addEventListener('click', start);
+        stopButton.addEventListener('click', stop);
+
+    </script>
+</body>
+
+</html>

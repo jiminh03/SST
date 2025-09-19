@@ -1,3 +1,4 @@
+from datetime import date
 from pydantic import BaseModel
 from typing import Optional
 
@@ -25,7 +26,7 @@ class SeniorRegister(SeniorCreate):
 class SeniorEdit(SeniorUpdate):
     full_name: str 
     address: str 
-    birth_date: str 
+    birth_date: date 
 
 class Hub(BaseModel):
     device_id: str
