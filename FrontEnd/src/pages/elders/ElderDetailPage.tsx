@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSeniorById } from '../../api/eldersApi'
 import type { Senior } from '../../api/eldersApi'
-import { Heart, MapPin, Clock, Camera, Phone, Activity, Home, Lightbulb, Thermometer, User } from 'lucide-react'
+import { Heart, MapPin, Clock, Camera, Phone, Activity, Home, Lightbulb, Thermometer, User, Tv, Zap } from 'lucide-react'
 
 export default function ElderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -283,50 +283,66 @@ export default function ElderDetailPage() {
           {/* 구분선 */}
           <div className="mx-6 border-t border-gray-200" />
 
-          {/* 섹션 타이틀 */}
+          {/* 섹션 타이틀 - 문 */}
           <div className="px-6 pt-4 pb-3">
             <div className="flex items-center gap-2">
               <Home className="w-4 h-4 text-gray-600" />
-              <h2 className="text-base font-semibold text-gray-800">문 상태</h2>
+              <h2 className="text-base font-semibold text-gray-800">문</h2>
             </div>
           </div>
 
-          {/* 카드 그리드 - 문 상태 */}
+          {/* 카드 그리드 - 문 */}
           <div className="grid grid-cols-2 gap-4 px-6 pb-6">
             <RoomCard name="안방" time="15분 전" status="red" icon={<Home className="w-3 h-3" />} />
             <RoomCard name="화장실" time="15분 전" status="red" icon={<Home className="w-3 h-3" />} />
-            <RoomCard name="냉장고" time="활동 없음" status="red" icon={<Thermometer className="w-3 h-3" />} />
             <RoomCard name="현관문" time="15분 전" status="red" icon={<Home className="w-3 h-3" />} />
+            <RoomCard name="냉장고" time="활동 없음" status="red" icon={<Thermometer className="w-3 h-3" />} />
           </div>
 
           {/* 구분선 */}
           <div className="mx-6 border-t border-gray-200" />
 
+          {/* 섹션 타이틀 - 움직임 */}
           <div className="px-6 pt-4 pb-3">
             <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-600" />
-              <h2 className="text-base font-semibold text-gray-800">현재 위치</h2>
+              <Activity className="w-4 h-4 text-gray-600" />
+              <h2 className="text-base font-semibold text-gray-800">움직임</h2>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-6">
-            <SmallRoomCard name="안방" time="15분 전" status="red" icon={<Home className="w-3 h-3" />} />
-            <SmallRoomCard name="거실" time="15분 전" status="green" icon={<Home className="w-3 h-3" />} />
-            <SmallRoomCard name="화장실" time="15분 전" status="red" icon={<Home className="w-3 h-3" />} />
+            <SmallRoomCard name="안방" time="15분 전" status="red" icon={<Activity className="w-3 h-3" />} />
+            <SmallRoomCard name="거실" time="15분 전" status="green" icon={<Activity className="w-3 h-3" />} />
+            <SmallRoomCard name="화장실" time="15분 전" status="red" icon={<Activity className="w-3 h-3" />} />
           </div>
 
           {/* 구분선 */}
           <div className="mx-6 border-t border-gray-200" />
 
+          {/* 섹션 타이틀 - 조명 */}
           <div className="px-6 pt-4 pb-3">
             <div className="flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-gray-600" />
-              <h2 className="text-base font-semibold text-gray-800">조명 상태</h2>
+              <h2 className="text-base font-semibold text-gray-800">조명</h2>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 px-6 pb-6">
+            <SmallRoomCard name="안방" time="15분 전" status="red" icon={<Lightbulb className="w-3 h-3" />} />
+            <SmallRoomCard name="거실" time="15분 전" status="green" icon={<Lightbulb className="w-3 h-3" />} />
+            <SmallRoomCard name="화장실" time="15분 전" status="red" icon={<Lightbulb className="w-3 h-3" />} />
+          </div>
+
+          {/* 구분선 */}
+          <div className="mx-6 border-t border-gray-200" />
+
+          {/* 섹션 타이틀 - 기타 센서 */}
+          <div className="px-6 pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-gray-600" />
+              <h2 className="text-base font-semibold text-gray-800">기타</h2>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-8">
-            <SmallRoomCard name="안방 조명" time="15분 전" status="red" icon={<Lightbulb className="w-3 h-3" />} />
-            <SmallRoomCard name="거실 조명" time="15분 전" status="green" icon={<Lightbulb className="w-3 h-3" />} />
-            <SmallRoomCard name="화장실 조명" time="15분 전" status="red" icon={<Lightbulb className="w-3 h-3" />} />
+            <SmallRoomCard name="TV" time="15분 전" status="green" icon={<Tv className="w-3 h-3" />} />
           </div>
         </div>
         <div className="h-6" />
