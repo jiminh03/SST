@@ -166,14 +166,27 @@ export default function ElderEditPage() {
       setIsSubmitting(true)
       setError(null)
       
+      // 이미지 파일이 있는지 확인
+      const imageFile = document.querySelector('input[type="file"]') as HTMLInputElement
+      const file = imageFile?.files?.[0]
+      
+      console.log('🔄 수정 요청 시작:', {
+        senior_id: senior.senior_id,
+        formData,
+        hasImage: !!file,
+        imageFileName: file?.name
+      })
+      
       await updateSenior(senior.senior_id, {
         full_name: formData.full_name,
         address: formData.address,
         birth_date: formData.birth_date,
         guardian_contact: formData.guardian_contact,
-        health_info: formData.notes
+        health_info: formData.notes,
+        profile_img: file as any // 이미지 파일 추가 (타입 단언 사용)
       })
       
+      console.log('✅ 수정 완료!')
       window.location.href = `/elders/${senior.senior_id}?updated=true`
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '어르신 정보 수정에 실패했습니다.'
