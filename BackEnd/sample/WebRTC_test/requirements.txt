@@ -1,0 +1,3 @@
+# ~/sst_dev_and_dep/docker/signaling/requirements.txt
+aiohttp
+aiohttp-cors

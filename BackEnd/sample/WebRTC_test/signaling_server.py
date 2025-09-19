@@ -1,4 +1,7 @@
+# ~/sst_dev_and_dep/docker/signaling/signaling_server.py
+
 import asyncio
+import ssl
 from aiohttp import web
 import aiohttp_cors
 
@@ -8,14 +11,13 @@ answer_sdp = None
 
 async def handle_offer(request):
     """
-    POST: Broadcaster로부터 offer를 받아 저장합니다. 새로운 offer가 오면 기존 것을 덮어씁니다.
+    POST: Broadcaster로부터 offer를 받아 저장합니다.
     GET: Viewer가 저장된 offer를 가져갑니다.
     """
     global offer_sdp, answer_sdp
     
     if request.method == 'POST':
         data = await request.json()
-        # 새로운 offer를 저장하고, 이전 answer가 있었다면 초기화합니다.
         offer_sdp = data
         answer_sdp = None 
         print("Received and updated offer. Previous answer cleared.")
@@ -36,7 +38,6 @@ async def handle_answer(request):
     global offer_sdp, answer_sdp
     
     if request.method == 'POST':
-        # offer가 없는 상태에서 answer가 오면 무시 (또는 에러 처리)
         if not offer_sdp:
             print("Warning: Answer received but no offer exists.")
             return web.Response(status=400, text="Cannot accept answer without an offer")
@@ -51,7 +52,6 @@ async def handle_answer(request):
             print("Sending answer to broadcaster.")
             response_data = answer_sdp
             
-            # answer를 전달한 후에는 offer와 answer를 모두 초기화하여 다음 연결을 준비합니다.
             offer_sdp = None
             answer_sdp = None
             print("Session complete. Server state reset.")
@@ -60,25 +60,37 @@ async def handle_answer(request):
         else:
             return web.Response(status=404, text="No answer available")
 
-app = web.Application()
-cors = aiohttp_cors.setup(app, defaults={
-    "*": aiohttp_cors.ResourceOptions(
-        allow_credentials=True,
-        expose_headers="*",
-        allow_headers="*",
-    )
-})
-
-# 라우트 설정
-app.router.add_route('GET', '/offer', handle_offer)
-app.router.add_route('POST', '/offer', handle_offer)
-app.router.add_route('GET', '/answer', handle_answer) # Broadcaster가 answer를 가져가기 위한 GET 라우트 추가
-app.router.add_route('POST', '/answer', handle_answer)
-
-# CORS 설정 적용
-for route in list(app.router.routes()):
-    cors.add(route)
-
 if __name__ == '__main__':
-    print("Signaling server starting on http://localhost:8080")
-    web.run_app(app, host='0.0.0.0', port=8080)
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    
+    cert_path = '/app/certs/fullchain.pem'
+    key_path = '/app/certs/privkey.pem'
+    ssl_context.load_cert_chain(certfile=cert_path, keyfile=key_path)
+
+    app = web.Application()
+    
+    # ================================================================
+    # ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+    # [최종 수정] defaults 옵션으로 CORS를 한번만 설정하고, 수동 추가 코드는 모두 삭제합니다.
+    
+    # defaults 옵션을 사용해 앞으로 추가될 모든 라우트에 CORS를 자동으로 적용하도록 설정
+    cors = aiohttp_cors.setup(app, defaults={
+      # ngrok 주소는 계속 바뀌므로, 개발 중에는 모든 출처('*')를 허용합니다.
+      "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*",
+        )
+    })
+
+    # 라우트를 등록하면 CORS는 위 defaults 설정에 따라 자동으로 적용됩니다.
+    app.router.add_route('*', '/offer', handle_offer)
+    app.router.add_route('*', '/answer', handle_answer)
+
+    # 수동으로 CORS를 추가하는 코드는 충돌을 일으키므로 완전히 삭제합니다.
+    # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+    # ================================================================
+    
+    # 포트를 8080으로 다시 변경
+    print("Signaling server starting on https://0.0.0.0:8080")
+    web.run_app(app, host='0.0.0.0', port=8080, ssl_context=ssl_context)

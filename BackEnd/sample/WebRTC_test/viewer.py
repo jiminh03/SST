@@ -39,10 +39,23 @@ def opencv_display_thread():
 
 async def run_viewer():
     config = RTCConfiguration(
-        iceServers=[
-            RTCIceServer(urls=["stun:stun.l.google.com:19302"])
-        ]
-    )
+    iceServers=[
+        # A public STUN server for quick NAT traversal checks
+        RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
+
+        # ✨ Your CoTURN server information ✨
+        RTCIceServer(
+            urls=[
+                # Secure TURNS is tried first for better firewall traversal
+                "turns:j13a503.p.ssafy.io:5349?transport=tcp",
+                # Standard TURN over UDP is the fallback
+                "turn:j13a503.p.ssafy.io:3478?transport=udp"
+            ],
+            username="SST_ROOT",
+            credential="0olB5NVMTkCpWUnw" # Your actual password
+        )
+    ]
+)
 
     pc = RTCPeerConnection(configuration=config)
 
@@ -96,7 +109,7 @@ async def run_viewer():
         try:
             offer_data = None
             while not offer_data and not stop_event.is_set():
-                async with session.get('http://j13a503.p.ssafy.io:8080/offer') as response:
+                async with session.get('https://j13a503.p.ssafy.io:8080/offer') as response:
                     if response.status == 200:
                         offer_data = await response.json()
                         print("Received offer.")
@@ -136,7 +149,7 @@ async def run_viewer():
             }
             
             print("Sending answer to signaling server...")
-            async with session.post('http://j13a503.p.ssafy.io:8080/answer', json=answer_data) as response:
+            async with session.post('https://j13a503.p.ssafy.io:8080/answer', json=answer_data) as response:
                 if response.status != 200:
                     print(f"Failed to send answer. Status: {response.status}")
                     if not stop_event.is_set(): stop_event.set()
