@@ -5,6 +5,7 @@ SQLAlchemy
 sqlmodel
 pydantic
 python-jose[cryptography]
+python-multipart
 passlib[bcrypt]
 asyncpg
 bcrypt==4.0.1
