@@ -1,11 +1,15 @@
 import asyncio
 import json
 import cv2
-import numpy as np
-from aiohttp import ClientSession
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceServer, RTCConfiguration
-import threading
 import queue
+import threading
+from aiohttp import ClientSession
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceServer, RTCConfiguration, RTCIceCandidate
+from av import VideoFrame
+
+# 시그널링 서버 주소
+#SIGNALING_SERVER_URL = "http://j13a503.p.ssafy.io:8080"
+SIGNALING_SERVER_URL = "http://localhost:8080"
 
 # 스레드 간 프레임 공유를 위한 큐
 frame_queue = queue.Queue()
@@ -16,26 +20,21 @@ def opencv_display_thread():
     """OpenCV 창을 표시하고 프레임을 업데이트하는 스레드 함수"""
     while not stop_event.is_set():
         try:
-            # 큐에서 프레임을 가져옴 (최대 1초 대기)
             frame = frame_queue.get(timeout=1)
-            if frame is None: # 종료 신호
+            if frame is None:
                 break
             
             img = frame.to_ndarray(format="bgr24")
             cv2.imshow("Viewer", img)
             
-            # 'q'를 누르면 종료 플래그 설정
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 stop_event.set()
                 break
         except queue.Empty:
-            # 큐가 비어있으면 계속 진행
             continue
     
     print("Closing OpenCV window.")
     cv2.destroyAllWindows()
-
-
 
 async def run_viewer():
     config = RTCConfiguration(
@@ -43,16 +42,25 @@ async def run_viewer():
             RTCIceServer(urls=["stun:stun.l.google.com:19302"])
         ]
     )
-
     pc = RTCPeerConnection(configuration=config)
+    
+    # ▼▼▼ [수정 1] ICE 후보를 저장할 큐와 이벤트 핸들러 설정 ▼▼▼
+    ice_candidates_queue = asyncio.Queue()
+
+    @pc.on("icecandidate")
+    def on_icecandidate(candidate):
+        if candidate:
+            print("Generated ICE Candidate:", candidate)
+            ice_candidates_queue.put_nowait(candidate)
+    # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
         print(f"✅ Connection state is -> {pc.connectionState}")
         if pc.connectionState == "failed":
-            print("❌ Connection failed. Closing.")
-            stop_event.set()
-            await pc.close()
+            print("❌ Connection failed.")
+            if not stop_event.is_set():
+                stop_event.set()
 
     @pc.on("track")
     def on_track(track):
@@ -61,29 +69,14 @@ async def run_viewer():
             asyncio.ensure_future(display_track(track))
     
     async def display_track(track):
-        """수신된 비디오 프레임을 큐에 넣고 로그를 출력하는 역할"""
-        print("Video track display loop started.")
+        """수신된 비디오 프레임을 큐에 넣는 역할"""
         while not stop_event.is_set():
             try:
                 frame = await track.recv()
-                
-                # ==========================================================
-                # ❗수정된 부분: len() 대신 .buffer_size를 사용합니다.
-                # ==========================================================
-                frame_size = frame.planes[0].buffer_size
-                print(
-                    f"📦 Frame received: pts={frame.pts}, "
-                    f"resolution={frame.width}x{frame.height}, "
-                    f"size={frame_size} bytes"
-                )
-
                 frame_queue.put(frame)
-            except Exception as e:
-                # 오류 발생 시 루프를 중단하기 전에 stop_event를 설정합니다.
-                if not stop_event.is_set():
-                    print(f"Error receiving frame: {e}")
-                    stop_event.set()
-                break # 오류 발생 시 루프 즉시 종료
+            except Exception:
+                # 트랙이 종료되면 루프를 빠져나옴
+                break
         print("Stopping video track reception.")
 
     # OpenCV GUI 스레드 시작
@@ -92,21 +85,50 @@ async def run_viewer():
 
     # 시그널링 서버와 통신
     async with ClientSession() as session:
-        print("Requesting offer from signaling server...")
+        # ▼▼▼ [수정 2] ICE 후보를 교환하는 비동기 작업 정의 및 실행 ▼▼▼
+        async def send_ice_candidates():
+            """큐에 있는 자신의 ICE 후보(viewer)를 서버로 전송"""
+            while not stop_event.is_set():
+                candidate = await ice_candidates_queue.get()
+                try:
+                    cand_dict = candidate.to_dict()
+                    async with session.post(f'{SIGNALING_SERVER_URL}/ice?peer=viewer', json=cand_dict) as resp:
+                        if resp.status != 200:
+                            print(f"Failed to send ICE candidate, status: {resp.status}")
+                except Exception as e:
+                    if not stop_event.is_set(): print(f"Error sending ICE candidate: {e}")
+                ice_candidates_queue.task_done()
+
+        async def receive_ice_candidates():
+            """서버로부터 상대방(broadcaster)의 ICE 후보를 받아 등록"""
+            while not stop_event.is_set() and pc.iceConnectionState not in ["connected", "completed", "failed", "closed"]:
+                try:
+                    async with session.get(f'{SIGNALING_SERVER_URL}/ice?peer=viewer') as resp:
+                        if resp.status == 200:
+                            candidates_data = await resp.json()
+                            for cand_data in candidates_data:
+                                print("Received remote ICE candidate:", cand_data)
+                                await pc.addIceCandidate(RTCIceCandidate(**cand_data))
+                except Exception as e:
+                    if not stop_event.is_set(): print(f"Error receiving ICE candidates: {e}")
+                await asyncio.sleep(2)
+
+        send_task = asyncio.create_task(send_ice_candidates())
+        receive_task = asyncio.create_task(receive_ice_candidates())
+        # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
         try:
+            print("Requesting offer from signaling server...")
             offer_data = None
             while not offer_data and not stop_event.is_set():
-                async with session.get('http://j13a503.p.ssafy.io:8080/offer') as response:
+                async with session.get(f'{SIGNALING_SERVER_URL}/offer') as response:
                     if response.status == 200:
                         offer_data = await response.json()
                         print("Received offer.")
                     else:
-                        print(f"No offer available yet (status: {response.status}). Retrying in 5 seconds...")
-                        await asyncio.sleep(5)
-
-            if not offer_data:
-                if not stop_event.is_set(): stop_event.set()
-                return
+                        await asyncio.sleep(2)
+            
+            if not offer_data: return
 
             offer = RTCSessionDescription(sdp=offer_data["sdp"], type=offer_data["type"])
             await pc.setRemoteDescription(offer)
@@ -114,34 +136,37 @@ async def run_viewer():
             answer = await pc.createAnswer()
             await pc.setLocalDescription(answer)
             
-            answer_data = {
-                "sdp": pc.localDescription.sdp,
-                "type": pc.localDescription.type
-            }
+            answer_data = {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
             
             print("Sending answer to signaling server...")
-            async with session.post('http://j13a503.p.ssafy.io:8080/answer', json=answer_data) as response:
+            async with session.post(f'{SIGNALING_SERVER_URL}/answer', json=answer_data) as response:
                 if response.status != 200:
                     print(f"Failed to send answer. Status: {response.status}")
-                    if not stop_event.is_set(): stop_event.set()
                     return
 
         except Exception as e:
             if not stop_event.is_set():
                 print(f"Signaling failed: {e}")
-                stop_event.set()
             return
+        finally:
+            # 시그널링이 실패하면 ICE 교환 작업도 중단
+            if not offer_data or response.status != 200:
+                if not stop_event.is_set(): stop_event.set()
 
     print("Watching stream... Press 'q' on the video window to quit.")
     
+    # stop_event가 설정될 때까지 대기
     await asyncio.get_event_loop().run_in_executor(None, stop_event.wait)
 
-    print("Closing connection.")
+    print("Closing connection...")
+    # ▼▼▼ [수정 3] 종료 시 비동기 작업들 정리 ▼▼▼
+    send_task.cancel()
+    receive_task.cancel()
     await pc.close()
     
     frame_queue.put(None)
     thread.join()
-     
+            
 if __name__ == "__main__":
     try:
         asyncio.run(run_viewer())

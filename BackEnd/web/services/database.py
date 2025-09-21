@@ -9,3 +9,9 @@ db = db_manager.PostgressqlSessionManager(
     db_port=os.getenv("POSTGRES_PORT"),
     db_name=os.getenv("DB_NAME"),
 )
+
+red = db_manager.RedisSessionManager(
+    host=os.getenv("REDIS_HOST"),
+    port=os.getenv("REDIS_PORT"),
+    password=os.getenv("REDIS_PASSWORD"),
+)

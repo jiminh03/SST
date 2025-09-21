@@ -1,14 +1,14 @@
 import asyncio
 import json
 import cv2
-from aiohttp import ClientSession
+import ssl
+from aiohttp import ClientSession, TCPConnector
 
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, RTCIceServer, RTCConfiguration
 from av import VideoFrame
 
-# ▼▼▼ [수정 1] 시그널링 서버 주소를 http로 변경 ▼▼▼
-#SIGNALING_SERVER_URL = "http://j13a503.p.ssafy.io:8080"
-SIGNALING_SERVER_URL = "http://localhost:8080"
+# 시그널링 서버 주소
+SIGNALING_SERVER_URL = "https://j13a503.p.ssafy.io:8080" # HTTPS와 포트 확인
 
 class CameraStreamTrack(VideoStreamTrack):
     """OpenCV를 사용하여 카메라 영상을 스트리밍하는 비디오 트랙"""
@@ -38,13 +38,16 @@ async def run_broadcaster():
     )
     pc = RTCPeerConnection(configuration=config)
     
+    # ▼▼▼▼▼ [수정 1] ICE 후보를 저장할 큐와 이벤트 핸들러 설정 ▼▼▼▼▼
     ice_candidates_queue = asyncio.Queue()
 
     @pc.on("icecandidate")
     def on_icecandidate(candidate):
         if candidate:
             print("Generated ICE Candidate:", candidate)
+            # 생성된 후보를 큐에 넣어 비동기적으로 전송
             ice_candidates_queue.put_nowait(candidate)
+    # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     video_track = CameraStreamTrack()
     pc.addTrack(video_track)
@@ -57,10 +60,14 @@ async def run_broadcaster():
         "type": pc.localDescription.type
     }
     
-    # ▼▼▼ [수정 2] SSL 컨텍스트 및 TCPConnector 관련 코드 전체 삭제 ▼▼▼
-    # HTTP 통신에는 SSL 관련 설정이 필요 없으므로 해당 부분을 모두 제거합니다.
-    async with ClientSession() as session:
-    # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+    # 서버의 SSL 인증서 검증을 비활성화하는 SSL 컨텍스트 생성
+    # (주의: 실제 프로덕션에서는 보안상 권장되지 않습니다)
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    connector = TCPConnector(ssl=ssl_context)
+
+    async with ClientSession(connector=connector) as session:
         print("Sending offer to signaling server...")
         try:
             async with session.post(f'{SIGNALING_SERVER_URL}/offer', json=offer_data) as response:
@@ -74,14 +81,13 @@ async def run_broadcaster():
             await pc.close()
             return
         
+        # ▼▼▼▼▼ [수정 2] ICE 후보를 지속적으로 보내고 받는 비동기 작업 실행 ▼▼▼▼▼
         async def send_ice_candidates():
             """큐에 있는 자신의 ICE 후보를 서버로 전송"""
             while True:
                 candidate = await ice_candidates_queue.get()
                 try:
-                    # `candidate.to_dict()`를 사용하여 JSON 직렬화가 가능한 딕셔너리로 변환
-                    cand_dict = candidate.to_dict()
-                    async with session.post(f'{SIGNALING_SERVER_URL}/ice?peer=broadcaster', json=cand_dict) as resp:
+                    async with session.post(f'{SIGNALING_SERVER_URL}/ice?peer=broadcaster', json=json.loads(candidate.sdp)) as resp:
                         if resp.status != 200:
                             print(f"Failed to send ICE candidate, status: {resp.status}")
                 except Exception as e:
@@ -94,17 +100,19 @@ async def run_broadcaster():
                 try:
                     async with session.get(f'{SIGNALING_SERVER_URL}/ice?peer=broadcaster') as resp:
                         if resp.status == 200:
-                            candidates_data = await resp.json()
-                            for cand_data in candidates_data:
+                            candidates = await resp.json()
+                            for cand_data in candidates:
                                 print("Received remote ICE candidate:", cand_data)
-                                # 서버에서 받은 JSON 데이터를 RTCIceCandidate 객체로 변환
-                                await pc.addIceCandidate(RTCIceCandidate(**cand_data))
+                                candidate = RTCSessionDescription(sdp=cand_data['sdp'], type=cand_data['type']) # aiortc에 맞게 수정
+                                await pc.addIceCandidate(candidate)
                 except Exception as e:
                     print(f"Error receiving ICE candidates: {e}")
-                await asyncio.sleep(2)
+                await asyncio.sleep(2) # 2초 간격으로 폴링
 
+        # 비동기 작업들을 백그라운드에서 실행
         send_task = asyncio.create_task(send_ice_candidates())
         receive_task = asyncio.create_task(receive_ice_candidates())
+        # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
         print("Waiting for answer...")
         answer_data = None

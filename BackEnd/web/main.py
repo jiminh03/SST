@@ -12,8 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 # .env 파일 로드
 load_dotenv()
 
+import socketio
+
 from web.routers import auth, iot, monitoring
-from web.services.database import db
+from web.services.database import db, red
 
 # Lifespan 컨텍스트 매니저 정의
 @asynccontextmanager
@@ -28,6 +30,12 @@ async def lifespan(app: FastAPI):
 
 # FastAPI 앱 인스턴스 생성
 app = FastAPI(lifespan=lifespan)
+# Socket.IO 앱 인스턴스 생성
+sio = socketio.AsyncClient(async_mode='asgi', cors_allowed_origins='*')
+#Socket.IO 앱을 FastAPI 앱에 마운트
+# 이 한 줄이 '/socket.io' 경로로 들어오는 
+# HTTP 핸드셰이크와 WebSocket 연결을 모두 처리합니다.
+socket_app = socketio.ASGIApp(sio, app) # 실행시 진입점
 
 
 # CORS 미들웨어 설정

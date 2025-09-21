@@ -1,20 +1,17 @@
-from sqlmodel import SQLModel, create_engine, inspect
-from sqlalchemy.exc import OperationalError
 import os
 from dotenv import load_dotenv
 from typing import AsyncGenerator
 
-# --- 여기에 이전에 작성한 모든 SQLModel 클래스를 붙여넣으세요 ---
-# 예: Staff, Senior, StaffSeniorMap, IoTHub, AIWeight,
-#     EmergencyLog, VisitSchedule, SensorLog 등
-# from .models import * # 별도 파일로 관리하는 경우
 from common.models import *
 
-
+from sqlmodel import SQLModel, create_engine, inspect
+from sqlalchemy.exc import OperationalError
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
 from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+
+import redis.asyncio as redis
 
 class PostgressqlSessionManager:
     """데이터베이스 세션 생성 및 제공 클래스"""
@@ -62,7 +59,7 @@ class PostgressqlSessionManager:
                 await connection.execute(command)
                 await connection.commit()
                 print(
-                    f"✅ '{table_name}' 테이블이 하이퍼테이블로 성공적으로 전환되었습니다."
+                    f"'{table_name}' 테이블이 하이퍼테이블로 성공적으로 전환되었습니다."
                 )
         except Exception as e:
             if "already a hypertable" in str(e).lower():
@@ -109,3 +106,25 @@ class PostgressqlSessionManager:
         """FastAPI 의존성 주입을 위한 비동기 데이터베이스 세션 생성기"""
         async with self.AsyncSessionMaker() as session:
             yield session
+
+class RedisSessionManager:
+    """Redis 클라이언트 관리 클래스"""
+
+    def __init__(self, host, port, password):
+        self.redis_client = redis.Redis(
+            host=host, port=port, password=password, decode_responses=True
+        )
+
+    async def get_client(self):
+        """Redis 클라이언트 인스턴스를 반환합니다."""
+        return self.redis_client
+
+    async def ping(self):
+        """Redis 서버 연결 상태를 확인합니다."""
+        try:
+            await self.redis_client.ping()
+            print("✅ Redis에 성공적으로 연결되었습니다.")
+            return True
+        except redis.exceptions.ConnectionError as e:
+            print(f"Redis 연결 실패: {e}")
+            return False

@@ -265,14 +265,77 @@ components:
         - staff_id
         - visit_date
 
-    WebRTCSession:
+    WebRTCRobotOffer:
+      type: object
+      required:
+        - api_key
+        - offer_sdp
+      properties:
+        api_key:
+          type: string
+        offer_sdp:
+          type: object
+          description: "로봇에서 생성한 SDP Answer"
+    
+    WebRTCRobotAnswer:
+      type: object
+      required:
+        - api_key
+        - answer_sdp
+      properties:
+        api_key:
+          type: string
+        answer_sdp:
+          type: object
+          description: "로봇에서 생성한 SDP Answer"
+
+    WebRTCFEOffer:
+      type: object
+      required:
+        - senior_id
+        - offer_sdp
+      properties:
+        senior_id:
+          type: integer
+        offer_sdp:
+          type: object
+          description: "FE(수신자)에서 생성한 SDP Answer"
+    
+    WebRTCFEAnswer:
+      type: object
+      required:
+        - senior_id
+        - answer_sdp
+      properties:
+        senior_id:
+          type: integer
+        answer_sdp:
+          type: string
+          description: "FE(수신자)에서 생성한 SDP Answer"
+
+    WebRTCSessionResponse:
       type: object
       properties:
-        session_id:
+        websocket_url:
           type: string
-        status:
+          description: "Answer와 ICE Candidate를 교환할 WebSocket 주소"
+          example: "wss://your-domain.com/ws/webrtc/sess_a1b2c3d4"
+
+    ConnectionInfo:
+      type: object
+      required:
+        - sid
+        - session_type
+      properties:
+        sid:
           type: string
-          enum: [pending, active, closed]
+        session_type:
+          type: string
+          enum: ["fe", "hub"]
+        hub_id:
+          type: integer
+        staff_id:
+          type: integer
 
     SensorEventLog:
       type: object
@@ -339,6 +402,9 @@ components:
         risk_level:
           type: string
           enum: [안전, 주의, 위험]
+        reason:
+          type: string
+          description: 이상치 발생 원인
       required:
         - risk_level
         
@@ -572,36 +638,50 @@ paths:
       tags: ["실시간 통신 (WebSocket / WebRTC)"]
       summary: "WebRTC 영상 스트리밍 세션 등록"
       description: "관리자가 특정 로봇의 영상을 보기 위해 WebRTC 연결을 요청하고, 시그널링을 위한 세션을 생성합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebRTCRobotOffer"
       responses:
         "201":
           description: "세션 생성 성공"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebRTCSession"
+                $ref: "#/components/schemas/WebRTCSessionResponse" # <-- 3. 다음 단계를 위한 정보 반환
 
-  /webrtc/sessions/{session_id}:
+  /webrtc/sessions/{senior_id}:
     get:
       tags: ["실시간 통신 (WebSocket / WebRTC)"]
       summary: "WebRTC 영상 스트리밍 세션 조회"
       description: "생성된 WebRTC 세션의 현재 상태(연결 여부 등)를 조회합니다."
       parameters:
-        - name: session_id
+        - name: senior_id
           in: path
           required: true
           schema:
             type: string
       responses:
         "200":
-          description: "조회 성공"
+          description: "Answer 조회 성공. P2P 연결을 계속 진행합니다."
+        "404":
+          description: "해당 세션 ID에 대한 Answer가 아직 제출되지 않았거나, 세션이 만료되었습니다."
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebRTCSession"
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: "인증 실패. 해당 세션의 Answer를 조회할 권한이 없습니다."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  /ws/notifications:
+  /ws/staff:
     get:
-      tags: ["실시간 통신 (WebSocket / WebRTC)"]
+      tags: ["사용자 관리 및 모니터링"]
       summary: "실시간 알림 수신을 위한 WS 연결"
       description: "관리자(웹/앱)가 서버와 WebSocket 연결을 맺습니다. 이 채널을 통해 이상치 감지, 기기 연결 해제 등 모든 실시간 알림을 수신합니다. (This endpoint uses the WebSocket protocol)"
 

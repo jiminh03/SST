@@ -16,7 +16,10 @@ from common.modules.user_manager import UserManager, StaffCreate, SeniorCreate, 
 from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
 
-
+# jwt 토큰이 인코딩하는 정보
+class TokenInfo:
+    staff_id: int
+    email: str
 
 # --- FastAPI Router ---
 router = APIRouter(tags=["인증"])
@@ -44,7 +47,7 @@ async def login_for_access_token(
         )
     
     access_token = auth_module.create_access_token(
-        data={"sub": user.email, "email": user.email}
+        data={"staff_id": user.staff_id, "email": user.email}
     )
     return {"access_token": access_token}
 

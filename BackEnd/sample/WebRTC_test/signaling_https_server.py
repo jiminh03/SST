@@ -1,26 +1,31 @@
 import asyncio
+import ssl
 from aiohttp import web
 import aiohttp_cors
 
-# offer와 answer를 임시로 저장할 변수
+# 세션 정보를 저장할 변수들
 offer_sdp = None
 answer_sdp = None
 broadcaster_candidates = []
 viewer_candidates = []
 
+# 기존 handle_offer, handle_answer 함수는 그대로 둡니다...
+
 async def handle_offer(request):
     """
-    POST: Broadcaster로부터 offer를 받아 저장합니다. 새로운 offer가 오면 기존 것을 덮어씁니다.
+    POST: Broadcaster로부터 offer를 받아 저장합니다.
     GET: Viewer가 저장된 offer를 가져갑니다.
     """
-    global offer_sdp, answer_sdp
+    global offer_sdp, answer_sdp, broadcaster_candidates, viewer_candidates
     
     if request.method == 'POST':
         data = await request.json()
-        # 새로운 offer를 저장하고, 이전 answer가 있었다면 초기화합니다.
         offer_sdp = data
+        # 새로운 Offer가 오면 이전 세션 정보를 모두 초기화
         answer_sdp = None 
-        print("Received and updated offer. Previous answer cleared.")
+        broadcaster_candidates = []
+        viewer_candidates = []
+        print("Received and updated offer. Server state reset.")
         return web.Response(text="Offer received")
         
     elif request.method == 'GET':
@@ -35,10 +40,9 @@ async def handle_answer(request):
     POST: Viewer로부터 answer를 받아 저장합니다.
     GET: Broadcaster가 저장된 answer를 가져갑니다.
     """
-    global offer_sdp, answer_sdp
+    global answer_sdp
     
     if request.method == 'POST':
-        # offer가 없는 상태에서 answer가 오면 무시 (또는 에러 처리)
         if not offer_sdp:
             print("Warning: Answer received but no offer exists.")
             return web.Response(status=400, text="Cannot accept answer without an offer")
@@ -51,16 +55,10 @@ async def handle_answer(request):
     elif request.method == 'GET':
         if answer_sdp:
             print("Sending answer to broadcaster.")
-            response_data = answer_sdp
-            
-            # answer를 전달한 후에는 offer와 answer를 모두 초기화하여 다음 연결을 준비합니다.
-            offer_sdp = None
-            answer_sdp = None
-            print("Session complete. Server state reset.")
-            
-            return web.json_response(response_data)
+            return web.json_response(answer_sdp)
         else:
             return web.Response(status=404, text="No answer available")
+
 
 # ▼▼▼▼▼ ICE 후보 교환을 위한 핸들러 추가 ▼▼▼▼▼
 async def handle_ice_candidate(request):
@@ -97,36 +95,28 @@ async def handle_ice_candidate(request):
         return web.json_response(candidates)
 # ▲▲▲▲▲ ICE 후보 교환을 위한 핸들러 추가 ▲▲▲▲▲
 
-
 if __name__ == '__main__':
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    
+    cert_path = '/app/certs/fullchain.pem'
+    key_path = '/app/certs/privkey.pem'
+    ssl_context.load_cert_chain(certfile=cert_path, keyfile=key_path)
+
     app = web.Application()
-
-    # ▼▼▼ [수정] 이 방식으로 CORS를 설정하면 충돌이 발생하지 않습니다. ▼▼▼
-
-    # defaults 옵션을 사용해 앞으로 추가될 모든 라우트에 CORS를 자동으로 적용
+    
     cors = aiohttp_cors.setup(app, defaults={
         "*": aiohttp_cors.ResourceOptions(
                 allow_credentials=True,
                 expose_headers="*",
                 allow_headers="*",
-                allow_methods="*", # 모든 메서드를 허용하도록 명시
             )
     })
 
-    # 핸들러가 실제로 사용하는 GET, POST 메서드만 명시적으로 등록합니다.
-    # 이렇게 하면 aiohttp_cors가 OPTIONS 메서드를 자유롭게 사용할 수 있습니다.
-    app.router.add_get('/offer', handle_offer)
-    app.router.add_post('/offer', handle_offer)
+    app.router.add_route('*', '/offer', handle_offer)
+    app.router.add_route('*', '/answer', handle_answer)
+    # ▼▼▼▼▼ ICE 후보 교환을 위한 라우트 추가 ▼▼▼▼▼
+    app.router.add_route('*', '/ice', handle_ice_candidate)
+    # ▲▲▲▲▲ ICE 후보 교환을 위한 라우트 추가 ▲▲▲▲▲
     
-    app.router.add_get('/answer', handle_answer)
-    app.router.add_post('/answer', handle_answer)
-    
-    app.router.add_get('/ice', handle_ice_candidate)
-    app.router.add_post('/ice', handle_ice_candidate)
-
-    # 수동으로 cors.add()를 호출하는 코드는 모두 삭제합니다.
-    # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
-    # HTTP로 실행하려면 ssl_context=None 또는 생략
-    print("Signaling server starting on http://0.0.0.0:8080")
-    web.run_app(app, host='0.0.0.0', port=8080, ssl_context=None)
+    print("Signaling server starting on https://0.0.0.0:8080")
+    web.run_app(app, host='0.0.0.0', port=8080, ssl_context=ssl_context)
