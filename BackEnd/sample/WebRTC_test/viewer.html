@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,12 +16,10 @@
             background-color: #f4f6f8;
             color: #333;
         }
-
         h1 {
             color: #1a2533;
             margin-bottom: 20px;
         }
-
         #video-container {
             border: 1px solid #ddd;
             background-color: #000;
@@ -37,20 +34,17 @@
             justify-content: center;
             position: relative;
         }
-
         video {
             width: 100%;
             height: auto;
             display: block;
             border-radius: 8px;
         }
-
         #controls {
             margin-top: 25px;
             display: flex;
             gap: 15px;
         }
-
         button {
             padding: 12px 25px;
             font-size: 16px;
@@ -76,7 +70,6 @@
             background-color: #a0a0a0;
             cursor: not-allowed;
         }
-
         #status-container {
             margin-top: 20px;
             padding: 15px;
@@ -104,7 +97,6 @@
         }
     </style>
 </head>
-
 <body>
     <h1>WebRTC 스트림 뷰어</h1>
     <div id="video-container">
@@ -335,13 +327,11 @@
                 });
             }, 1000); // 1초마다 통계 업데이트
         }
-
         // 상태 메시지 업데이트 및 로깅
         function logStatus(message) {
             console.log(message);
             statusMessage.textContent = message;
         }
-
         // UI 상태 업데이트
         function updateUIForConnection(isConnecting) {
             connectButton.disabled = isConnecting;
@@ -354,5 +344,4 @@
 
     </script>
 </body>
-
 </html>

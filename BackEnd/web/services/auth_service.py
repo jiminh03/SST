@@ -107,7 +107,7 @@ class WebAuthModule:
         )
         try:
             payload = jwt.decode(token, self._secret_key, algorithms=[self._algorithm])
-            email: str = payload.get("sub")
+            email: str = payload.get("email")
             if email is None:
                 raise credentials_exception
         except JWTError:

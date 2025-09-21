@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # 프로젝트 구조에 맞게 경로를 수정해주세요.
 from web.schemas.iot_schema import SensorLogPayload
 from common.modules.sensor_log_manager import SensorLogManager
-from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate, HubBasicInfo
+from common.modules.iot_hub_manager import IotHubManager, HubCreate, HubUpdate, HubBasicInfo
 from common.modules.api_key_manager import ApiKeyRepository, ApiKeyManager
 from web.services.database import db
 

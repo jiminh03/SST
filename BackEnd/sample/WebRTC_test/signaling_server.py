@@ -8,6 +8,8 @@ import aiohttp_cors
 # offer와 answer를 임시로 저장할 변수
 offer_sdp = None
 answer_sdp = None
+broadcaster_candidates = []
+viewer_candidates = []
 
 async def handle_offer(request):
     """
