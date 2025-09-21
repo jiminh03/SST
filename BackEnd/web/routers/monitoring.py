@@ -16,7 +16,7 @@ from web.services.auth_service import WebAuthModule
 from web.services.img_parser import get_image_mimetype
 
 from common.modules.user_manager import UserManager, StaffCreate, SeniorCreate, StaffInfo, StaffUpdate, SeniorUpdate
-from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate
+from common.modules.iot_hub_manager import IotHubManager, HubCreate, HubUpdate
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
 
 

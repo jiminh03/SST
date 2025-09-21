@@ -4,7 +4,7 @@ from web.services.auth_service import auth_module
 from common.modules.api_key_manager import ApiKeyRepository
 from web.services.database import db,red
 
-from web.schemas.socket_event import SocketEvents
+from web.schemas.socket_event import ConnectEvents
 from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
 
 session_man = SessionManager(red)
@@ -20,13 +20,13 @@ class HubAuthPacket:
 AuthPacket = Union[HubAuthPacket, StaffAuthPacket]
     
 
-@sio.on(SocketEvents.CONNECT)
+@sio.on(ConnectEvents.CONNECT)
 async def connect(sid, environ):
     print(f"✅ [연결 시도] 클라이언트 접속. sid: {sid}")
     # 연결 직후 인증을 요청하는 메시지를 보낼 수 있습니다.
     await sio.emit('request_auth', to=sid)
 
-@sio.on(SocketEvents.AUTHENTICATE)
+@sio.on(ConnectEvents.AUTHENTICATE)
 async def authenticate(sid, data: AuthPacket):
     """클라이언트가 보낸 토큰으로 인증하고 Redis에 세션 정보를 저장합니다."""
     
@@ -40,7 +40,7 @@ async def authenticate(sid, data: AuthPacket):
             hub_id=hub_info.hub_id,
         )
         session_man.create_session(con_info)
-        await sio.emit(SocketEvents.AUTH_SUCCESS, {'id': staff_id, 'type': 'staff', 'role': staff_info['role']}, to=sid)
+        await sio.emit(ConnectEvents.AUTH_SUCCESS, to=sid)
     elif 'jwt' in data:
         jwt = data.get('jwt')
         user_info = await auth_module.get_current_user(jwt)
@@ -50,12 +50,12 @@ async def authenticate(sid, data: AuthPacket):
             staff_id=user_info.staff_id
         )
         session_man.create_session(con_info)
-        await sio.emit(SocketEvents.AUTH_SUCCESS, {'id': staff_id, 'type': 'staff', 'role': staff_info['role']}, to=sid)
+        await sio.emit(ConnectEvents.AUTH_SUCCESS, to=sid)
     else:
         print(f"[인증 실패] 유효하지 않은 인증 패킷입니다. sid: {sid}, data: {data}")
         await sio.disconnect(sid)
 
-@sio.on(SocketEvents.DISCONNECT)
+@sio.on(ConnectEvents.DISCONNECT)
 async def disconnect(sid):
     """연결 종료 시 Redis에서 매핑 정보를 삭제합니다."""
     session_man.delete_session(sid)

@@ -13,7 +13,7 @@ from web.schemas.auth_schema import (
 )
 
 from common.modules.user_manager import UserManager, StaffCreate, SeniorCreate, StaffInfo, StaffUpdate, SeniorUpdate
-from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate
+from common.modules.iot_hub_manager import IotHubManager, HubCreate, HubUpdate
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
 
 # jwt 토큰이 인코딩하는 정보
@@ -132,7 +132,7 @@ async def register_senior(
     새로운 어르신의 기본 정보와 디바이스를 시스템에 등록합니다.
     """
     user_manager = UserManager(db)
-    iot_manager = IoTHubManager(db)
+    iot_manager = IotHubManager(db)
 
     file_bytes = None
     if profile_img:
@@ -232,7 +232,7 @@ async def register_hub(
     """
     IoT 홈 허브를 시스템에 등록하고 API 키를 발급합니다.
     """
-    iot_manager = IoTHubManager(db)
+    iot_manager = IotHubManager(db)
     api_key_repo = ApiKeyRepository(db)
 
     # 1. Create the hub entry

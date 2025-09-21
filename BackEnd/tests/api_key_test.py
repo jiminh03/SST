@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from common.modules.iot_hub_manager import IoTHubManager, HubCreate, HubUpdate, HubBasicInfo
+from common.modules.iot_hub_manager import IotHubManager, HubCreate, HubUpdate, HubBasicInfo
 from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
 
 
@@ -19,7 +19,7 @@ async def test_add_api_key_and_check_duplication(get_session: AsyncSession):
     key_manager = ApiKeyManager()
     key_repo = ApiKeyRepository(db_session)
 
-    hub_manager = IoTHubManager(db_session)
+    hub_manager = IotHubManager(db_session)
 
     hub_id = (await hub_manager.add_hub(HubCreate(device_id="device1"))).hub_id
 
@@ -47,7 +47,7 @@ async def test_verify_succeeds_with_correct_key_and_hub_id(get_session: AsyncSes
     key_manager = ApiKeyManager()
     key_repo = ApiKeyRepository(db_session)
     
-    hub_manager = IoTHubManager(db_session)
+    hub_manager = IotHubManager(db_session)
     hub_id = (await hub_manager.add_hub(HubCreate(device_id="device1"))).hub_id
 
     api_key, hashed_key = key_manager.generate_api_key()
@@ -70,7 +70,7 @@ async def test_verify_fails_with_wrong_hub_id(get_session: AsyncSession):
     key_manager = ApiKeyManager()
     key_repo = ApiKeyRepository(db_session)
 
-    hub_manager = IoTHubManager(db_session)
+    hub_manager = IotHubManager(db_session)
     correct_hub_id = (await hub_manager.add_hub(HubCreate(device_id="device1"))).hub_id
     
     wrong_hub_id = 14
@@ -93,7 +93,7 @@ async def test_verify_fails_with_wrong_api_key(get_session: AsyncSession):
     key_manager = ApiKeyManager()
     key_repo = ApiKeyRepository(db_session)
     
-    hub_manager = IoTHubManager(db_session)
+    hub_manager = IotHubManager(db_session)
     hub_id = (await hub_manager.add_hub(HubCreate(device_id="device1"))).hub_id
 
     correct_api_key,correct_api_key_hash = key_manager.generate_api_key()

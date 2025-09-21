@@ -1,52 +1,53 @@
 #socket.io에서 핸들링할 이벤트 목록
 from web.main import sio
 from web.services.database import db,red
+from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
+from common.modules.webrtc_manager import WebRTCManager, WebRTCRobotOffer, WebRTCFEAnswer
+from common.modules.user_manager import UserManager
+from common.modules.iot_hub_manager import IotHubManager
+from web.schemas.socket_event import WebRTCEvents
 
 
-# --- 3. WebRTC 시그널링 이벤트 핸들러 ---
+rtc_man = WebRTCManager(red)
+sess_man = SessionManager(red)
 
-@sio.on('client:register_offer')
+# WebRTC 시그널링 이벤트 핸들러 ---
+
+@sio.on(WebRTCEvents.REGISTER_OFFER)
 async def on_register_offer(sid, data):
     """(로봇 -> 서버) 로봇이 Offer를 등록하는 이벤트"""
-    robot_id = await red.get(f"sid:{sid}")
-    if not robot_id: return
+    hub_man = IotHubManager(db.get_session())
 
-    print(f"📹 [Offer 수신] 로봇({robot_id})으로부터 Offer 수신")
-    
-    # 이 로봇(어르신)을 담당하는 FE의 sid를 찾습니다.
-    fe_sid = await find_fe_sid_for_senior(robot_id)
-    if fe_sid:
-        # FE에게 'server:new_offer' 이벤트를 보냅니다.
-        await sio.emit('server:new_offer', data, to=fe_sid)
-        print(f"🚀 [Offer 전달] FE({fe_sid})에게 Offer 전달 완료")
+    sess_info = await sess_man.get_session_by_sid(sid)
+    hub_info =  await hub_man.get_hub_info(sess_info.hub_id)
 
-@sio.on('client:send_answer')
+    await rtc_man.register_offer(hub_info.senior_id, WebRTCRobotOffer.from_dict(data))
+
+@sio.on(WebRTCEvents.NEW_OFFER)
+async def on_register_offer(sid, data):
+    """(서버 -> FE) 서버가 Offer를 FE에 전달하는 이벤트"""
+    offer = await rtc_man.get_offer(data.get('senior_id'))
+    if offer:
+        await sio.emit(WebRTCEvents.NEW_OFFER, offer)
+
+@sio.on(WebRTCEvents.SEND_ANSWER)
 async def on_send_answer(sid, data):
     """(FE -> 서버) FE가 Answer를 제출하는 이벤트"""
-    fe_id = await redis_client.get(f"sid:{sid}")
-    if not fe_id: return
+    await rtc_man.register_answer(data.get('senior_id'), WebRTCFEAnswer.from_dict(data))
+    
 
-    robot_id = data.get('robot_id')
-    print(f"📝 [Answer 수신] FE({fe_id})로부터 로봇({robot_id})을 위한 Answer 수신")
-
-    # Answer를 전달할 로봇의 sid를 찾습니다.
-    robot_sid = await redis_client.get(f"user:{robot_id}:sid")
-    if robot_sid:
-        # 로봇에게 'server:new_answer' 이벤트를 보냅니다.
-        await sio.emit('server:new_answer', data, to=robot_sid)
-        print(f"🚀 [Answer 전달] 로봇({robot_sid})에게 Answer 전달 완료")
-
-@sio.on('client:send_ice_candidate')
+@sio.on(WebRTCEvents.SEND_ICE_CANDIDATE)
 async def on_send_ice_candidate(sid, data):
     """(로봇/FE -> 서버) ICE Candidate를 중계하는 이벤트"""
-    sender_id = await redis_client.get(f"sid:{sid}")
+    #TODO: FE와 로봇이 서로의 sid를 알 수 있어야함
+    sender_id = await rtc_man.
     if not sender_id: return
 
     target_id = data.get('target_id') # 메시지에 상대방 ID를 포함해야 함
     print(f"🌐 [ICE 수신] {sender_id} -> {target_id} ICE Candidate 수신")
     
     # Candidate를 전달할 상대방의 sid를 찾습니다.
-    target_sid = await redis_client.get(f"user:{target_id}:sid")
+    target_sid = await rtc_man.get(f"user:{target_id}:sid")
     if target_sid:
         # 상대방에게 'server:new_ice_candidate' 이벤트를 보냅니다.
         await sio.emit('server:new_ice_candidate', data, to=target_sid)

@@ -37,7 +37,7 @@ class HubBasicInfo(BaseModel):
     status: Optional[str] = None
     api_key_hash: Optional[str] = None
 
-class IoTHubManager:
+class IotHubManager:
     # HubBasicInfo 모델의 필드를 기반으로 SELECT할 컬럼 목록을 동적으로 생성
     _HUB_BASIC_INFO_COLUMNS = ", ".join(HubBasicInfo.model_fields.keys())
 

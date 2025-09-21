@@ -6,7 +6,7 @@ import secrets
 from sqlmodel import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .iot_hub_manager import HubUpdate, IoTHubManager, HubBasicInfo
+from .iot_hub_manager import HubUpdate, IotHubManager, HubBasicInfo
 
 load_dotenv(dotenv_path=".env")
 API_KEY_LENGTH = int(os.getenv("API_KEY_LEN"))
@@ -43,7 +43,7 @@ class ApiKeyManager:
 class ApiKeyRepository:
     def __init__(self, session: AsyncSession): # DB 세션을 주입받음
         self.session = session
-        self.iot_hub_manager = IoTHubManager(session)
+        self.iot_hub_manager = IotHubManager(session)
 
     async def check_key_duplicated(self, hashed_key: str) -> bool:
         """key 중복을 확인하는 메서드"""
