@@ -81,6 +81,16 @@ class IotHubManager:
         if row:
             return HubBasicInfo.model_validate(row._mapping)
         return None
+    
+    async def get_hub_by_senior_id(self, senior_id: int) -> Optional[HubBasicInfo]:
+        """API 키 해시로 허브의 기본 정보를 조회하여 HubBasicInfo 객체로 반환합니다."""
+        query_str = f"SELECT {self._HUB_BASIC_INFO_COLUMNS} FROM iot_hubs WHERE senior_id = :senior_id"
+        query = text(query_str)
+        result = await self.session.execute(query, {"senior_id": senior_id}) 
+        row = result.first()
+        if row:
+            return HubBasicInfo.model_validate(row._mapping)
+        return None
 
     async def edit_hub_info(self, hub_id: int, update_data: HubUpdate) -> None:
         """허브 ID에 해당하는 허브의 정보를 선택적으로 수정합니다."""

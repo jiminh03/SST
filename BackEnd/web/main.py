@@ -16,6 +16,12 @@ import socketio
 
 from web.routers import auth, iot, monitoring
 from web.services.database import db, red
+from web.services.websocket import sio
+
+import web.event.connection_event
+import web.event.webrtc_event
+#import web.event.noti_event
+
 
 # Lifespan 컨텍스트 매니저 정의
 @asynccontextmanager
@@ -30,8 +36,7 @@ async def lifespan(app: FastAPI):
 
 # FastAPI 앱 인스턴스 생성
 app = FastAPI(lifespan=lifespan)
-# Socket.IO 앱 인스턴스 생성
-sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+
 #Socket.IO 앱을 FastAPI 앱에 마운트
 # 이 한 줄이 '/socket.io' 경로로 들어오는 
 # HTTP 핸드셰이크와 WebSocket 연결을 모두 처리합니다.
@@ -39,19 +44,19 @@ socket_app = socketio.ASGIApp(sio, app) # 실행시 진입점
 
 
 # CORS 미들웨어 설정
-origins = [
-    "http://localhost",
-    "http://localhost:8080",
-    "http://i13a106.p.ssafy.io:8080",
-]
+# origins = [
+#     "http://localhost",
+#     "http://localhost:8080",
+#     "http://i13a106.p.ssafy.io:8080",
+# ]
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 실제 운영 환경에서는 origins 변수 사용 권장
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],  # 실제 운영 환경에서는 origins 변수 사용 권장
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 # --- 라우터 등록 --- 
 
@@ -69,4 +74,4 @@ def read_root():
 
 # 이 파일을 직접 실행할 때를 위한 코드
 if __name__ == "__main__":
-    uvicorn.run("web.main:app", host="0.0.0.0", port=int(os.getenv("MAIN_SERV_PORT")), reload=True)
+    uvicorn.run("web.main:socket_app", host="0.0.0.0", port=int(os.getenv("MAIN_SERV_PORT")), reload=True)

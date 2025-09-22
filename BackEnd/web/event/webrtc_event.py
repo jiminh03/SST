@@ -1,5 +1,5 @@
 #socket.io에서 핸들링할 이벤트 목록
-from web.main import sio
+from web.services.websocket import sio
 from web.services.database import db,red
 from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
 from common.modules.webrtc_manager import WebRTCManager
@@ -16,8 +16,9 @@ sess_man = SessionManager(red)
 @sio.on(WebRTCEvents.REGISTER_OFFER)
 async def on_register_offer(sid, senior_id, data):
     """(로봇 -> 서버) 로봇이 Offer를 등록하는 이벤트"""
-    staff_id = await UserManager(db.get_session()).get_senior_staff(senior_id).staff_id
-    recv_sid = await SessionManager(red).get_session_by_staff_id(staff_id).sid
+    async with db.get_session() as session:
+        staff_id = (await UserManager(session).get_senior_staff(senior_id)).staff_id
+        recv_sid = await SessionManager(red).get_session_by_staff_id(staff_id).sid
 
     await rtc_man.register_offer(senior_id, data)
     await sio.emit(WebRTCEvents.NEW_OFFER, data, to=recv_sid)
@@ -32,10 +33,11 @@ async def on_check_offer(sid, senior_id):
 @sio.on(WebRTCEvents.SEND_ANSWER)
 async def on_send_answer(sid, senior_id, data):
     """(FE -> 서버) FE가 Answer를 제출하는 이벤트"""
-    device_id = await UserManager(db.get_session()).get_senior_info_by_id(senior_id).device_id
-    hub_info = await IotHubManager(db.get_session()).get_hub_by_device_id(device_id)
-    recv_sid = await SessionManager(red).get_session_by_hub_id(hub_info.hub_id).sid
-    
+    async with db.get_session() as session:
+        device_id = await UserManager(session).get_senior_info_by_id(senior_id).device_id
+        hub_info = await IotHubManager(session).get_hub_by_device_id(device_id)
+        recv_sid = await SessionManager(red).get_session_by_hub_id(hub_info.hub_id).sid
+        
     await rtc_man.register_answer(senior_id, data)
     await sio.emit(WebRTCEvents.NEW_ANSWER, data, to=recv_sid)
 
@@ -50,15 +52,15 @@ async def on_check_answer(sid, senior_id):
 async def on_send_ice_candidate(sid, senior_id, data):
     """(로봇/FE -> 서버) ICE Candidate를 중계하는 이벤트"""
     sess_info = await sess_man.get_session_by_sid(sid)
-    if sess_info.session_type == SessionType.HUB:
-        staff_id = await UserManager(db.get_session()).get_senior_staff(senior_id).staff_id
-        recv_sid = await SessionManager(red).get_session_by_staff_id(staff_id).sid        
-    elif sess_info.session_type == SessionType.FE:
-        device_id = await UserManager(db.get_session()).get_senior_info_by_id(senior_id).device_id
-        hub_info = await IotHubManager(db.get_session()).get_hub_by_device_id(device_id)
-        recv_sid = await SessionManager(red).get_session_by_hub_id(hub_info.hub_id).sid
-    else:
-        return
+    async with db.get_session() as session:
+        if sess_info.session_type == SessionType.HUB:
+            staff_id = (await UserManager(session).get_senior_staff(senior_id)).staff_id
+            recv_sid = await SessionManager(red).get_session_by_staff_id(staff_id).sid        
+        elif sess_info.session_type == SessionType.FE:
+            hub_info = await IotHubManager(session).get_hub_by_senior_id(senior_id)
+            recv_sid = await SessionManager(red).get_session_by_hub_id(hub_info.hub_id).sid
+        else:
+            return
    
     if recv_sid:
         # 상대방에게 'server:new_ice_candidate' 이벤트를 보냅니다.

@@ -3,7 +3,7 @@ import enum
 class SensorTypeEnum(str, enum.Enum):
     DOOR_BEDROOM = "door_bedroom"
     DOOR_BATHROOM = "door_bathroom"
-    DOOR_ENTRANCE = "door_entrancedoor_fridge" 
+    DOOR_ENTRANCE = "door_entrance" 
     DOOR_FRIDGE = "door_fridge" 
     PIR_BEDROOM = "pir_bedroom"
     PIR_LIVINGROOM = "pir_livingroom"

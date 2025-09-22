@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from typing import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from common.models import *
 
@@ -101,8 +102,14 @@ class PostgressqlSessionManager:
 
         except Exception as e:
             print(f"데이터베이스 작업 중 오류가 발생했습니다: {e}")
-
+    
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+        """FastAPI 의존성 주입을 위한 비동기 데이터베이스 세션 생성기"""
+        async with self.AsyncSessionMaker() as session:
+            yield session
+
+    @asynccontextmanager
+    async def get_session2(self) -> AsyncGenerator[AsyncSession, None]:
         """FastAPI 의존성 주입을 위한 비동기 데이터베이스 세션 생성기"""
         async with self.AsyncSessionMaker() as session:
             yield session

@@ -1,5 +1,5 @@
 from typing import Union
-from web.main import sio
+from web.services.websocket import sio
 from web.services.auth_service import auth_module
 from common.modules.api_key_manager import ApiKeyRepository
 from web.services.database import db,red
@@ -24,23 +24,24 @@ AuthPacket = Union[HubAuthPacket, StaffAuthPacket]
 async def connect(sid, environ):
     print(f"✅ [연결 시도] 클라이언트 접속. sid: {sid}")
     # 연결 직후 인증을 요청하는 메시지를 보낼 수 있습니다.
-    await sio.emit('request_auth', to=sid)
+    await sio.emit(ConnectEvents.REQUEST_AUTH, to=sid)
 
 @sio.on(ConnectEvents.AUTHENTICATE)
 async def authenticate(sid, data: AuthPacket):
     """클라이언트가 보낸 토큰으로 인증하고 Redis에 세션 정보를 저장합니다."""
     
     if 'api_key' in data:
-        api_key = data.get('api_key')
-        apikey_repo = ApiKeyRepository(db.get_session())
-        hub_info = await apikey_repo.get_hub_by_api_key(api_key)
-        con_info = ConnectionInfo(
-            sid=sid,
-            session_type=SessionType.HUB,
-            hub_id=hub_info.hub_id,
-        )
-        session_man.create_session(con_info)
-        await sio.emit(ConnectEvents.AUTH_SUCCESS, to=sid)
+        async with db.get_session() as session:
+            api_key = data.get('api_key')
+            apikey_repo = ApiKeyRepository(session)
+            hub_info = await apikey_repo.get_hub_by_api_key(api_key)
+            con_info = ConnectionInfo(
+                sid=sid,
+                session_type=SessionType.HUB,
+                hub_id=hub_info.hub_id,
+            )
+            await session_man.create_session(con_info)
+            await sio.emit(ConnectEvents.AUTH_SUCCESS, to=sid)
     elif 'jwt' in data:
         jwt = data.get('jwt')
         user_info = await auth_module.get_current_user(jwt)
@@ -49,7 +50,7 @@ async def authenticate(sid, data: AuthPacket):
             session_type=SessionType.FE,
             staff_id=user_info.staff_id
         )
-        session_man.create_session(con_info)
+        await session_man.create_session(con_info)
         await sio.emit(ConnectEvents.AUTH_SUCCESS, to=sid)
     else:
         print(f"[인증 실패] 유효하지 않은 인증 패킷입니다. sid: {sid}, data: {data}")

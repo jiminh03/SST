@@ -48,7 +48,6 @@ class SeniorInfo(BaseModel):
     profile_img: Optional[bytes] = None
     full_name: str
     address: str
-    device_id:str
     birth_date: date
     guardian_contact: Optional[str] = None
     health_info: Optional[str] = None
