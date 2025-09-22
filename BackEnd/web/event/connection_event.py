@@ -31,7 +31,7 @@ async def authenticate(sid, data: AuthPacket):
     """클라이언트가 보낸 토큰으로 인증하고 Redis에 세션 정보를 저장합니다."""
     
     if 'api_key' in data:
-        async with db.get_session() as session:
+        async for session in db.get_session():
             api_key = data.get('api_key')
             apikey_repo = ApiKeyRepository(session)
             hub_info = await apikey_repo.get_hub_by_api_key(api_key)
@@ -44,7 +44,8 @@ async def authenticate(sid, data: AuthPacket):
             await sio.emit(ConnectEvents.AUTH_SUCCESS, to=sid)
     elif 'jwt' in data:
         jwt = data.get('jwt')
-        user_info = await auth_module.get_current_user(jwt)
+        async for session in db.get_session():
+            user_info = await auth_module.get_current_user(jwt, session)
         con_info = ConnectionInfo(
             sid=sid,
             session_type=SessionType.FE,
@@ -59,6 +60,6 @@ async def authenticate(sid, data: AuthPacket):
 @sio.on(ConnectEvents.DISCONNECT)
 async def disconnect(sid):
     """연결 종료 시 Redis에서 매핑 정보를 삭제합니다."""
-    session_man.delete_session(sid)
+    await session_man.delete_session(sid)
     print(f"👋 [연결 종료] 클라이언트 연결 끊김. sid: {sid}")
 

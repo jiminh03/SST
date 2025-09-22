@@ -3,6 +3,7 @@
 
 import os
 
+import redis
 import uvicorn
 from fastapi import FastAPI
 from dotenv import load_dotenv
@@ -31,6 +32,13 @@ async def lifespan(app: FastAPI):
     await db.create_db_and_tables()
     await db.convert_to_hypertable("sensor_logs", "timestamp")
     print("--- DB tables created successfully. ---")
+    # 연결 확인
+    try:
+        await red.ping()
+        print("Redis connect successfully")
+    except redis.exceptions.ConnectionError as e:
+        print(f"Redis connect fail: {e}")
+        exit()
     yield
     print("--- FastAPI app shutdown. ---")
 

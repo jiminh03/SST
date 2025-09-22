@@ -66,14 +66,26 @@ class CameraStreamTrack(VideoStreamTrack):
 
 @sio.event
 async def connect():
-    logger.info(f"✅ 서버에 연결되었습니다. SID: {sio.sid}")
-    logger.info("🔑 연결이 수립되어 인증을 시도합니다.")
-    await sio.emit(ConnectEvents.AUTHENTICATE, {"api_key": API_KEY})
+    """
+    서버와 안정적인 연결이 '완전히' 수립된 것이 보장되는 유일한 장소입니다.
+    이제 우리가 주도권을 갖고 인증을 시작합니다.
+    """
+    logger.info(f"✅ 서버에 연결되었습니다. SID: {sio.sid}. 이제 인증을 시도합니다.")
+    try:
+        # 연결이 보장된 이곳에서 인증 정보를 보냅니다.
+        await sio.emit(ConnectEvents.AUTHENTICATE, {'api_key': API_KEY})
+        logger.info("🚀 인증 정보를 서버로 전송했습니다.")
+    except Exception as e:
+        logger.error(f"인증 정보 전송 중 오류 발생: {e}")
 
 @sio.on(ConnectEvents.REQUEST_AUTH)
-async def on_request_auth():
-    logger.info("🔑 인증을 요청받았습니다. API 키로 인증을 시도합니다.")
-    await sio.emit(ConnectEvents.AUTHENTICATE, {"api_key": API_KEY})
+async def on_request_auth(data=None):
+    """
+    서버가 보내는 인증 요청은 이제 무시합니다.
+    왜냐하면 connect 핸들러에서 우리가 알아서 보낼 것이기 때문입니다.
+    """
+    logger.info("ℹ️ 서버로부터 인증 요청을 받았지만, connect 핸들러에서 처리하므로 무시합니다.")
+    pass # 아무것도 하지 않음
 
 @sio.on(ConnectEvents.AUTH_SUCCESS)
 async def on_auth_success():

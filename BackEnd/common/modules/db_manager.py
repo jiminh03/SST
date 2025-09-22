@@ -108,11 +108,9 @@ class PostgressqlSessionManager:
         async with self.AsyncSessionMaker() as session:
             yield session
 
-    @asynccontextmanager
-    async def get_session2(self) -> AsyncGenerator[AsyncSession, None]:
-        """FastAPI 의존성 주입을 위한 비동기 데이터베이스 세션 생성기"""
-        async with self.AsyncSessionMaker() as session:
-            yield session
+    async def get_session_maker(self) -> AsyncGenerator[AsyncSession, None]:
+        """세션 생성기 접근"""
+        return self.AsyncSessionMaker()
 
 class RedisSessionManager:
     """Redis 클라이언트 관리 클래스"""
