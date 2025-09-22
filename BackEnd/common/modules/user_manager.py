@@ -128,6 +128,20 @@ class UserManager:
         senior_rows = result.mappings().all()
         return [SeniorInfo.model_validate(row) for row in senior_rows]
     
+    async def get_senior_staff(self, senior_id: int) -> StaffInfo:
+        """데이터베이스에 등록된 어르신 목록 중 담당하고 있는 어르신 목록을 조회합니다. (Raw SQL 사용)"""
+        query = text(
+            """
+            SELECT s.*
+            FROM staffs AS s
+            JOIN staff_senior_map AS ssm ON s.staff_id = ssm.staff_id
+            WHERE ssm.senior_id = :senior_id
+            """
+        )
+        result = await self.session.execute(query, {"senior_id": senior_id})
+        staff_rows = result.mappings().all()
+        return StaffInfo.model_validate(staff_rows[0])
+    
     async def link_staff_to_senior(self, staff_id: int, senior_id: int) -> None:
         """직원과 어르신을 연결합니다."""
         if await self.get_staff_by_id(staff_id) is None:

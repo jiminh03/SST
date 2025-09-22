@@ -18,6 +18,8 @@ class WebRTCEvents(str, Enum):
     # 클라이언트 -> 서버 (Client to Server)
     REGISTER_OFFER = 'client:register_offer'      # 로봇이 서버로 Offer를 등록
     SEND_ANSWER = 'client:send_answer'          # FE가 서버로 Answer를 전송
+    CHECK_OFFER = 'client:check_offer' #이미 등록된 offer 확인
+    CHECK_ANSWER = 'client:check_answer' #이미 등록된 answer 확인
     SEND_ICE_CANDIDATE = 'client:send_ice_candidate' # 로봇 또는 FE가 ICE Candidate를 서버로 전송
 
     # 서버 -> 클라이언트 (Server to Client)
