@@ -165,8 +165,7 @@ export default function MobileLayout() {
           height: '840px',
           backgroundColor: '#000000',
           borderRadius: '48px',
-          padding: '8px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+          padding: '8px'
         }}>
           {/* 폰 화면 */}
           <div style={{

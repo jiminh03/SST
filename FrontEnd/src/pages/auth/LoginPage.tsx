@@ -39,8 +39,42 @@ export default function LoginPage() {
       // 홈페이지로 이동
       navigate('/home')
     } catch (err) {
-      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.')
       console.error('로그인 에러:', err)
+      
+      // 에러 메시지 처리
+      let errorMessage = '로그인에 실패했습니다.'
+      
+      if (err instanceof Error) {
+        const message = err.message
+        
+        // 네트워크 에러 처리
+        if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
+          errorMessage = '네트워크 연결을 확인해주세요.'
+        }
+        // 타임아웃 에러 처리
+        else if (message.includes('timeout') || message.includes('AbortError')) {
+          errorMessage = '서버 응답이 지연되고 있습니다. 다시 시도해주세요.'
+        }
+        // 서버에서 온 구체적인 에러 메시지 우선 사용
+        if (message && !message.includes('HTTP error') && !message.includes('Failed to fetch') && !message.includes('timeout')) {
+          errorMessage = message
+        }
+        // HTTP 상태 코드별 처리 (서버 메시지가 없을 때만)
+        else if (message.includes('401')) {
+          errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.'
+        }
+        else if (message.includes('403')) {
+          errorMessage = '접근 권한이 없습니다.'
+        }
+        else if (message.includes('404')) {
+          errorMessage = '서버를 찾을 수 없습니다.'
+        }
+        else if (message.includes('500')) {
+          errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+        }
+      }
+      
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }

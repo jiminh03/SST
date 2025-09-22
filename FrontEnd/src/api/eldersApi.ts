@@ -183,11 +183,53 @@ export const login = async (loginData: LoginRequest): Promise<LoginResponse> => 
       })
 
       if (!response.ok) {
-        if (response.status === 401) {
+        let errorMessage = '로그인에 실패했습니다.'
+        
+        try {
           const errorData: LoginError = await response.json()
-          throw new Error(errorData.message || '로그인 실패')
+          // 서버에서 온 구체적인 메시지 사용
+          if (errorData.message) {
+            errorMessage = errorData.message
+          } else {
+            // 서버 메시지가 없으면 상태 코드별 기본 메시지
+            switch (response.status) {
+              case 401:
+                errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.'
+                break
+              case 403:
+                errorMessage = '접근 권한이 없습니다.'
+                break
+              case 404:
+                errorMessage = '서버를 찾을 수 없습니다.'
+                break
+              case 500:
+                errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+                break
+              default:
+                errorMessage = `서버 오류 (${response.status})`
+            }
+          }
+        } catch (parseError) {
+          // JSON 파싱 실패 시 상태 코드에 따른 기본 메시지
+          switch (response.status) {
+            case 401:
+              errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.'
+              break
+            case 403:
+              errorMessage = '접근 권한이 없습니다.'
+              break
+            case 404:
+              errorMessage = '서버를 찾을 수 없습니다.'
+              break
+            case 500:
+              errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+              break
+            default:
+              errorMessage = `서버 오류 (${response.status})`
+          }
         }
-        throw new Error(`HTTP error! status: ${response.status}`)
+        
+        throw new Error(errorMessage)
       }
 
       const data: LoginResponse = await response.json()

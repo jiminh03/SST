@@ -152,7 +152,7 @@ export default function ElderDetailPage() {
     <div ref={scrollRef} className="h-full overflow-y-auto bg-gray-200">
       {/* 히어로 영역 */}
       <section className="relative px-6 pt-6 pb-4">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
           <div className="flex items-start gap-6">
             <div className="relative">
               <div className="w-28 h-28 rounded-full flex items-center justify-center overflow-hidden">
@@ -242,7 +242,7 @@ export default function ElderDetailPage() {
 
       {/* 콘텐츠 카드 컨테이너 - 스크롤 시 확장 연출 */}
       <div className={`relative transition-all duration-300 ease-out ${scrolled ? 'mt-0 rounded-[40px]' : 'mt-2'} `}>
-        <div className={`bg-white shadow-lg border border-gray-100 ${scrolled ? 'rounded-2xl pt-4' : 'rounded-2xl pt-4'} `}>
+        <div className={`bg-white border border-gray-100 ${scrolled ? 'rounded-2xl pt-4' : 'rounded-2xl pt-4'} `}>
           {/* 상단 액션/배너 영역 */}
           <div className="px-6 pb-6 space-y-4">
             {/* 상태 알림 배너 */}
@@ -260,7 +260,7 @@ export default function ElderDetailPage() {
             <div className="grid grid-cols-2 gap-3">
               <button 
                 onClick={() => navigate(`/camera?from=${id}`)}
-                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors shadow-sm hover:shadow-md"
+                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors"
                 style={{ backgroundColor: '#ffffff' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
@@ -270,7 +270,7 @@ export default function ElderDetailPage() {
               </button>
               <button
                 onClick={() => setShowGuardianContact(true)}
-                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors shadow-sm hover:shadow-md"
+                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors"
                 style={{ backgroundColor: '#ffffff' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
@@ -424,7 +424,7 @@ function StatusDot({ color }: { color: 'red' | 'yellow' | 'green' }) {
 
 function RoomCard({ name, time, status, icon }: { name: string; time: string; status: 'red' | 'yellow' | 'green'; icon: React.ReactNode }) {
   return (
-    <div className="relative rounded-lg bg-white shadow-sm border border-gray-200 px-3 py-3 hover:shadow-md transition-all duration-200">
+    <div className="relative rounded-lg bg-white border border-gray-200 px-3 py-3 transition-all duration-200">
       <div className="flex items-center justify-center mb-2">
         <div className="flex items-center gap-2">
           <span className="text-base font-medium text-gray-800 whitespace-nowrap">{name}</span>
@@ -438,7 +438,7 @@ function RoomCard({ name, time, status, icon }: { name: string; time: string; st
 
 function SmallRoomCard({ name, time, status, icon }: { name: string; time: string; status: 'red' | 'yellow' | 'green'; icon: React.ReactNode }) {
   return (
-    <div className="relative rounded-lg bg-white shadow-sm border border-gray-200 px-3 py-3 hover:shadow-md transition-all duration-200">
+    <div className="relative rounded-lg bg-white border border-gray-200 px-3 py-3 transition-all duration-200">
       <div className="flex items-center justify-center mb-2">
         <div className="flex items-center gap-2">
           <span className="text-base font-medium text-gray-800 whitespace-nowrap">{name}</span>
