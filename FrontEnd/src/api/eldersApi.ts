@@ -11,6 +11,22 @@ export interface Senior {
   created_at?: string
 }
 
+// 센서 상태 관련 타입 정의
+export interface SensorStatus {
+  sensor_id: string
+  sensor_type: 'door' | 'pir' | 'light' | 'tv'
+  location: string
+  status: 'active' | 'inactive' | 'error'
+  value: any
+  last_updated: string
+}
+
+export interface SeniorSensorData {
+  senior_id: number
+  sensors: SensorStatus[]
+  last_updated: string
+}
+
 // 로그인 관련 API 타입 정의
 export interface LoginRequest {
   email: string
@@ -488,6 +504,56 @@ export const getSeniors = async (): Promise<Senior[]> => {
       resolve(mockData)
     }, 500)
   })
+}
+
+// 어르신 센서 상태 조회 API
+export const getSeniorSensorData = async (seniorId: number): Promise<SeniorSensorData> => {
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    throw new Error('인증 토큰이 없습니다.')
+  }
+
+  const possibleUrls = [
+    `https://j13a503.p.ssafy.io/api/seniors/${seniorId}/sensors`,  // 프로덕션 서버
+    `https://j13a503.p.ssafy.io/seniors/${seniorId}/sensors`,      // 대체 URL
+    `https://j13a503.p.ssafy.io/api/sensors/${seniorId}`,          // 대체 URL
+  ]
+
+  for (const url of possibleUrls) {
+    try {
+      console.log(`센서 데이터 조회 시도: ${url}`)
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log(`${url} 센서 데이터 없음, 다음 URL 시도`)
+          continue
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data: SeniorSensorData = await response.json()
+      console.log(`센서 데이터 조회 성공! 서버 주소: ${url}`)
+      return data
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+      console.log(`${url} 센서 데이터 조회 실패:`, errorMessage)
+      
+      // 마지막 URL이면 에러 throw
+      if (url === possibleUrls[possibleUrls.length - 1]) {
+        throw error
+      }
+    }
+  }
+
+  throw new Error('모든 서버에서 센서 데이터를 가져올 수 없습니다.')
 }
 
 // 어르신 상세 조회 API

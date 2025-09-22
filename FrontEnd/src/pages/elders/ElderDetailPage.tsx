@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getSeniorById } from '../../api/eldersApi'
-import type { Senior } from '../../api/eldersApi'
-import { Heart, MapPin, Clock, Camera, Phone, Activity, Home, Lightbulb, Thermometer, User, Tv, Zap } from 'lucide-react'
+import { getSeniorById, getSeniorSensorData } from '../../api/eldersApi'
+import type { Senior, SensorStatus } from '../../api/eldersApi'
+import { MapPin, Camera, Phone, Activity, Home, Lightbulb, User, Zap } from 'lucide-react'
 
 export default function ElderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -16,6 +16,10 @@ export default function ElderDetailPage() {
   const [showGuardianContact, setShowGuardianContact] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imageLoading, setImageLoading] = useState(false)
+  
+  // 센서 데이터 상태
+  const [sensorData, setSensorData] = useState<Record<string, SensorStatus>>({})
+  
 
   // 생년월일로부터 만 나이 계산
   const calculateAge = (birthDate: string): string => {
@@ -113,6 +117,62 @@ export default function ElderDetailPage() {
     }
   }, [senior?.senior_id])
 
+  // 센서 데이터 API로 가져오기
+  useEffect(() => {
+    if (senior?.senior_id) {
+      const fetchSensorData = async () => {
+        try {
+          console.log('📡 센서 데이터 조회 시작 - senior_id:', senior.senior_id)
+          
+          const sensorData = await getSeniorSensorData(senior.senior_id)
+          console.log('📡 센서 데이터 조회 성공:', sensorData)
+          
+          // 센서 데이터를 키-값 형태로 변환
+          const sensorMap: Record<string, SensorStatus> = {}
+          sensorData.sensors.forEach(sensor => {
+            sensorMap[sensor.sensor_id] = sensor
+          })
+          
+          setSensorData(sensorMap)
+        } catch (error) {
+          console.error('❌ 센서 데이터 조회 실패:', error)
+          // 에러가 발생해도 기본값으로 설정
+          setSensorData({})
+        }
+      }
+      
+      fetchSensorData()
+      
+      // 30초마다 센서 데이터 새로고침
+      const interval = setInterval(fetchSensorData, 30000)
+      
+      return () => clearInterval(interval)
+    }
+  }, [senior?.senior_id])
+
+
+  // 센서 상태 가져오기 함수
+  const getSensorStatus = (sensorType: string, location: string): { status: 'red' | 'yellow' | 'green'; time: string } => {
+    const sensorKey = `${sensorType}_${location}`
+    const sensor = sensorData[sensorKey]
+    
+    if (sensor) {
+      return {
+        status: sensor.status === 'active' ? 'green' : 'red',
+        time: new Date(sensor.last_updated).toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      }
+    }
+    
+    // 기본값 (센서 데이터가 없을 때)
+    return {
+      status: 'red',
+      time: '15분 전'
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center bg-orange-50">
@@ -165,7 +225,7 @@ export default function ElderDetailPage() {
                     src={imageUrl} 
                     alt={senior.full_name}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
+                    onError={() => {
                       console.log('❌ 이미지 표시 실패:', imageUrl)
                       setImageUrl(null)
                     }}
@@ -260,7 +320,7 @@ export default function ElderDetailPage() {
             <div className="grid grid-cols-2 gap-3">
               <button 
                 onClick={() => navigate(`/camera?from=${id}`)}
-                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors"
+                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
                 style={{ backgroundColor: '#ffffff' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
@@ -270,7 +330,7 @@ export default function ElderDetailPage() {
               </button>
               <button
                 onClick={() => setShowGuardianContact(true)}
-                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center gap-2 transition-colors"
+                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
                 style={{ backgroundColor: '#ffffff' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
@@ -293,10 +353,26 @@ export default function ElderDetailPage() {
 
           {/* 카드 그리드 - 문 */}
           <div className="grid grid-cols-2 gap-4 px-6 pb-6">
-            <RoomCard name="안방" time="15분 전" status="red" icon={<Home className="w-3 h-3" />} />
-            <RoomCard name="화장실" time="15분 전" status="red" icon={<Home className="w-3 h-3" />} />
-            <RoomCard name="현관문" time="15분 전" status="red" icon={<Home className="w-3 h-3" />} />
-            <RoomCard name="냉장고" time="활동 없음" status="red" icon={<Thermometer className="w-3 h-3" />} />
+            <RoomCard 
+              name="안방" 
+              time={getSensorStatus('door', 'bedroom').time} 
+              status={getSensorStatus('door', 'bedroom').status} 
+            />
+            <RoomCard 
+              name="화장실" 
+              time={getSensorStatus('door', 'bathroom').time} 
+              status={getSensorStatus('door', 'bathroom').status} 
+            />
+            <RoomCard 
+              name="현관문" 
+              time={getSensorStatus('door', 'entrance').time} 
+              status={getSensorStatus('door', 'entrance').status} 
+            />
+            <RoomCard 
+              name="냉장고" 
+              time={getSensorStatus('door', 'fridge').time} 
+              status={getSensorStatus('door', 'fridge').status} 
+            />
           </div>
 
           {/* 구분선 */}
@@ -310,9 +386,21 @@ export default function ElderDetailPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-6">
-            <SmallRoomCard name="안방" time="15분 전" status="red" icon={<Activity className="w-3 h-3" />} />
-            <SmallRoomCard name="거실" time="15분 전" status="green" icon={<Activity className="w-3 h-3" />} />
-            <SmallRoomCard name="화장실" time="15분 전" status="red" icon={<Activity className="w-3 h-3" />} />
+            <SmallRoomCard 
+              name="안방" 
+              time={getSensorStatus('pir', 'bedroom').time} 
+              status={getSensorStatus('pir', 'bedroom').status} 
+            />
+            <SmallRoomCard 
+              name="거실" 
+              time={getSensorStatus('pir', 'livingroom').time} 
+              status={getSensorStatus('pir', 'livingroom').status} 
+            />
+            <SmallRoomCard 
+              name="화장실" 
+              time={getSensorStatus('pir', 'bathroom').time} 
+              status={getSensorStatus('pir', 'bathroom').status} 
+            />
           </div>
 
           {/* 구분선 */}
@@ -326,9 +414,21 @@ export default function ElderDetailPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-6">
-            <SmallRoomCard name="안방" time="15분 전" status="red" icon={<Lightbulb className="w-3 h-3" />} />
-            <SmallRoomCard name="거실" time="15분 전" status="green" icon={<Lightbulb className="w-3 h-3" />} />
-            <SmallRoomCard name="화장실" time="15분 전" status="red" icon={<Lightbulb className="w-3 h-3" />} />
+            <SmallRoomCard 
+              name="안방" 
+              time={getSensorStatus('light', 'bedroom').time} 
+              status={getSensorStatus('light', 'bedroom').status} 
+            />
+            <SmallRoomCard 
+              name="거실" 
+              time={getSensorStatus('light', 'livingroom').time} 
+              status={getSensorStatus('light', 'livingroom').status} 
+            />
+            <SmallRoomCard 
+              name="화장실" 
+              time={getSensorStatus('light', 'bathroom').time} 
+              status={getSensorStatus('light', 'bathroom').status} 
+            />
           </div>
 
           {/* 구분선 */}
@@ -342,7 +442,11 @@ export default function ElderDetailPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-8">
-            <SmallRoomCard name="TV" time="15분 전" status="green" icon={<Tv className="w-3 h-3" />} />
+            <SmallRoomCard 
+              name="TV" 
+              time={getSensorStatus('tv', 'livingroom').time} 
+              status={getSensorStatus('tv', 'livingroom').status} 
+            />
           </div>
         </div>
         <div className="h-6" />
@@ -422,7 +526,7 @@ function StatusDot({ color }: { color: 'red' | 'yellow' | 'green' }) {
   return <span className={`w-3 h-3 shrink-0 aspect-square rounded-full ${colorClass}`} />
 }
 
-function RoomCard({ name, time, status, icon }: { name: string; time: string; status: 'red' | 'yellow' | 'green'; icon: React.ReactNode }) {
+function RoomCard({ name, time, status }: { name: string; time: string; status: 'red' | 'yellow' | 'green' }) {
   return (
     <div className="relative rounded-lg bg-white border border-gray-200 px-3 py-3 transition-all duration-200">
       <div className="flex items-center justify-center mb-2">
@@ -436,7 +540,7 @@ function RoomCard({ name, time, status, icon }: { name: string; time: string; st
   )
 }
 
-function SmallRoomCard({ name, time, status, icon }: { name: string; time: string; status: 'red' | 'yellow' | 'green'; icon: React.ReactNode }) {
+function SmallRoomCard({ name, time, status }: { name: string; time: string; status: 'red' | 'yellow' | 'green' }) {
   return (
     <div className="relative rounded-lg bg-white border border-gray-200 px-3 py-3 transition-all duration-200">
       <div className="flex items-center justify-center mb-2">
