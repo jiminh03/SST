@@ -1,10 +1,6 @@
 import redis.asyncio as redis
 import json
 from typing import Optional, Type, Union
-from common.schemas.rtc_payloads import (
-    WebRTCRobotOffer,
-    WebRTCFEAnswer
-)
 
 class WebRTCManager:
     """Redis에 WebRTC 패킷을 등록하고 조회하는 작업을 관리합니다."""
@@ -20,7 +16,7 @@ class WebRTCManager:
         """Answer에 대한 Redis 키를 생성합니다."""
         return f"webrtc:answer:senior:{senior_id}"
 
-    async def register_offer(self, senior_id: int, offer_packet: WebRTCRobotOffer):
+    async def register_offer(self, senior_id: int, offer_packet):
         """
         Offer 패킷을 senior_id를 키로 사용하여 Redis에 등록합니다.
 
@@ -32,7 +28,7 @@ class WebRTCManager:
         await self.redis.set(key, offer_packet.to_json())
         print(f"Registered offer for senior {senior_id} with key '{key}'")
 
-    async def register_answer(self, senior_id: int, answer_packet: WebRTCFEAnswer):
+    async def register_answer(self, senior_id: int, answer_packet):
         """
         Answer 패킷을 senior_id를 키로 사용하여 Redis에 등록합니다.
 
@@ -44,7 +40,7 @@ class WebRTCManager:
         await self.redis.set(key, answer_packet.to_json())
         print(f"Registered answer for senior {senior_id} with key '{key}'")
 
-    async def get_offer(self, senior_id: int) -> Optional[WebRTCRobotOffer]:
+    async def get_offer(self, senior_id: int) :
         """
         Redis에서 Offer 패킷을 조회하고 역직렬화합니다.
 
@@ -59,11 +55,11 @@ class WebRTCManager:
         data = await self.redis.get(key)
         if data:
             print(f"Found offer for senior {senior_id} with key '{key}'")
-            return WebRTCRobotOffer.from_dict(json.loads(data))
+            return data
         print(f"No offer found for senior {senior_id} with key '{key}'")
         return None
 
-    async def get_answer(self, senior_id: int) -> Optional[WebRTCFEAnswer]:
+    async def get_answer(self, senior_id: int):
         """
         Redis에서 Answer 패킷을 조회하고 역직렬화합니다.
 
@@ -78,7 +74,7 @@ class WebRTCManager:
         data = await self.redis.get(key)
         if data:
             print(f"Found answer for senior {senior_id} with key '{key}'")
-            return WebRTCFEAnswer.from_dict(json.loads(data))
+            return data
         print(f"No answer found for senior {senior_id} with key '{key}'")
         return None
     
