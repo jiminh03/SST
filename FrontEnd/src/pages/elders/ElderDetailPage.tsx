@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSeniorById, getSeniorSensorData } from '../../api/eldersApi'
 import type { Senior, SensorStatus } from '../../api/eldersApi'
-import { MapPin, Camera, Phone, Activity, Home, Lightbulb, User, Zap } from 'lucide-react'
+import { MapPin, Camera, Phone, Activity, Home, Lightbulb, User, Zap, Video } from 'lucide-react'
 
 export default function ElderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -318,6 +318,16 @@ export default function ElderDetailPage() {
 
             {/* 액션 카드 2열 */}
             <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => navigate(`/webrtc/${id}`)}
+                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
+                style={{ backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+              >
+                <Video className="w-4 h-4" />
+                <span className="text-sm font-medium">실시간 영상</span>
+              </button>
               <button 
                 onClick={() => navigate(`/camera?from=${id}`)}
                 className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
