@@ -95,7 +95,7 @@ const tryCreateSeniorWithDifferentDateFormats = async (seniorData: CreateSeniorR
 // 특정 형식으로 어르신 등록 시도
 const createSeniorWithFormat = async (seniorData: CreateSeniorRequest, token: string): Promise<CreateSeniorResponse> => {
   const possibleUrls = [
-    'https://j13a503.p.ssafy.io/api/seniors',
+    '/api/seniors',
     'http://127.0.0.1:7000/seniors'
   ]
 
@@ -180,7 +180,7 @@ const createSeniorWithFormat = async (seniorData: CreateSeniorRequest, token: st
 export const login = async (loginData: LoginRequest): Promise<LoginResponse> => {
   // 프로덕션 서버 사용
   const possibleUrls = [
-    'https://j13a503.p.ssafy.io/api/auth/login'  // 프로덕션 서버
+    '/api/auth/login'  // 프록시를 통해 요청
   ]
 
   for (const url of possibleUrls) {
@@ -280,7 +280,7 @@ export const login = async (loginData: LoginRequest): Promise<LoginResponse> => 
 export const register = async (registerData: RegisterRequest): Promise<void> => {
   // 프로덕션 서버 사용
   const possibleUrls = [
-    'https://j13a503.p.ssafy.io/api/staffs'  // 프로덕션 서버
+    '/api/staffs'  // 프록시를 통해 요청
   ]
 
   for (const url of possibleUrls) {
@@ -454,8 +454,8 @@ export const getSeniors = async (): Promise<Senior[]> => {
 
   // 가능한 서버 주소들 (프로덕션 서버 우선)
   const possibleUrls = [
-    'https://j13a503.p.ssafy.io/api/seniors',
-    'https://j13a503.p.ssafy.io/seniors',
+    '/api/seniors',
+    '/seniors',
     'http://127.0.0.1:7000/seniors',
     'http://127.0.0.1:7000/api/seniors'
   ]
@@ -514,9 +514,9 @@ export const getSeniorSensorData = async (seniorId: number): Promise<SeniorSenso
   }
 
   const possibleUrls = [
-    `https://j13a503.p.ssafy.io/api/seniors/${seniorId}/sensors`,  // 프로덕션 서버
-    `https://j13a503.p.ssafy.io/seniors/${seniorId}/sensors`,      // 대체 URL
-    `https://j13a503.p.ssafy.io/api/sensors/${seniorId}`,          // 대체 URL
+    `/api/seniors/${seniorId}/sensors`,  // 프록시를 통해 요청
+    `/seniors/${seniorId}/sensors`,      // 대체 URL
+    `/api/sensors/${seniorId}`,          // 대체 URL
   ]
 
   for (const url of possibleUrls) {
@@ -560,8 +560,8 @@ export const getSeniorSensorData = async (seniorId: number): Promise<SeniorSenso
 export const getSeniorById = async (seniorId: number): Promise<Senior> => {
   // 가능한 서버 주소들 (프로덕션 서버 우선)
   const possibleUrls = [
-    `https://j13a503.p.ssafy.io/api/seniors/${seniorId}`,
-    `https://j13a503.p.ssafy.io/seniors/${seniorId}`,
+    `/api/seniors/${seniorId}`,
+    `/seniors/${seniorId}`,
     `http://127.0.0.1:7000/seniors/${seniorId}`,
     `http://127.0.0.1:7000/api/seniors/${seniorId}`
   ]
@@ -715,7 +715,7 @@ export const updateSenior = async (seniorId: number, updateData: Partial<Senior>
   }
 
   const possibleUrls = [
-    'https://j13a503.p.ssafy.io/api/seniors'      // 프로덕션 서버 우선
+    '/api/seniors'      // 프록시를 통해 요청
   ]
 
   console.log('🚀 어르신 수정 API 시작 - 프로덕션 서버만 사용')
@@ -813,7 +813,7 @@ export interface Notification {
 export const getNotifications = async (): Promise<Notification[]> => {
   const possibleUrls = [
     'http://127.0.0.1:7000/notifications',
-    'https://j13a503.p.ssafy.io/api/notifications'
+    '/api/notifications'
   ]
 
   for (const url of possibleUrls) {
@@ -879,7 +879,7 @@ export const getNotifications = async (): Promise<Notification[]> => {
 export const markNotificationAsRead = async (notificationId: number): Promise<void> => {
   const possibleUrls = [
     `http://127.0.0.1:7000/notifications/${notificationId}/read`,
-    `https://j13a503.p.ssafy.io/api/notifications/${notificationId}/read`
+    `/api/notifications/${notificationId}/read`
   ]
 
   for (const url of possibleUrls) {
@@ -923,7 +923,7 @@ export const markNotificationAsRead = async (notificationId: number): Promise<vo
 export const deleteNotification = async (notificationId: number): Promise<void> => {
   const possibleUrls = [
     `http://127.0.0.1:7000/notifications/${notificationId}`,
-    `https://j13a503.p.ssafy.io/api/notifications/${notificationId}`
+    `/api/notifications/${notificationId}`
   ]
 
   for (const url of possibleUrls) {

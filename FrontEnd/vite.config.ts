@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 5175,  // 포트 고정
     proxy: {
       '/api': {
         target: 'https://j13a503.p.ssafy.io',
