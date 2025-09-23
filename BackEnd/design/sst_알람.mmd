@@ -1,0 +1,40 @@
+sequenceDiagram
+    participant AI as "AI 실행 서버"
+    participant Redis as "Redis (메시지 큐)"
+    participant Backend as "백엔드 서버"
+    participant Hub as "IoT 허브"
+    participant FE as "FE (관리자 웹)"
+
+    %% 1. 이상치 감지 및 이벤트 발행
+    Note over AI: 생활 패턴에서 이상치 발견!
+    AI->>Redis: 1. 긴급 상황 의심 메시지 발행 (Publish)
+    Redis-->>Backend: 2. 메시지 수신 (Subscribe)
+
+    %% 2. 백엔드에서 허브로 안전 확인 요청
+    activate Backend
+    Backend->>Hub: 3. emit('server:request_safety_check')
+    deactivate Backend
+
+    %% 3. 허브의 응답 및 로봇 작동
+    activate Hub
+    Hub-->>Backend: 4. emit('hub:ack_safety_check')
+    Note over Hub: 안전 확인 로봇 작동 시작
+    deactivate Hub
+
+    %% 4. 허브의 최종 결과 보고 (세 가지 경우)
+    alt 안전한 경우
+        Hub->>Backend: 5a. emit('hub:report_senior_is_safe')
+        activate Backend
+        Backend-->>FE: 6a. emit('server:senior_is_safe')
+        deactivate Backend
+    else 응급 상황인 경우
+        Hub->>Backend: 5b. emit('hub:report_emergency')
+        activate Backend
+        Backend-->>FE: 6b. emit('server:emergency_situation')
+        deactivate Backend
+    else 확인 작업 실패한 경우
+        Hub->>Backend: 5c. emit('hub:report_check_failed')
+        activate Backend
+        Backend-->>FE: 6c. emit('server:safety_check_failed')
+        deactivate Backend
+    end
