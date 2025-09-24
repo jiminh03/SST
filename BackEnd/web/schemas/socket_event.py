@@ -23,11 +23,17 @@ class WebRTCEvents(str, Enum):
     NEW_ANSWER = 'server:new_answer'            # 서버가 로봇에게 새로운 Answer를 전달
     NEW_ICE_CANDIDATE = 'server:new_ice_candidate' # 서버가 로봇 또는 FE에게 ICE Candidate를 전달
 
-from enum import Enum
-
 class AlarmEvents(str, Enum):
     """알람 관련 소켓 이벤트 이름 목록"""
-    
-    REQUEST_SAFETY_CHECK = "request_safety_check" # 서버 -> IoT Hub: 로봇에게 노인의 안전 확인을 요청
-    SENIOR_IS_SAFE = "senior_is_safe" # IoT Hub -> 서버: 로봇의 안전 확인 결과, 노인이 안전함을 보고
-    EMERGENCY_SITUATION = "emergency_situation" # IoT Hub -> 서버 / 서버 -> FE: 응급 상황 발생을 보고 및 전파
+
+    # 서버 -> 클라이언트 이벤트
+    REQUEST_SAFETY_CHECK = "server:request_safety_check"  # 서버 -> Hub: 안전 확인 요청
+    EMERGENCY_SITUATION = "server:emergency_situation"     # 서버 -> FE: 응급 상황 전파
+    SENIOR_IS_SAFE = "server:senior_is_safe"               # 서버 -> FE: 안전 상태 전파
+    SAFETY_CHECK_FAILED = "server:safety_check_failed"     # 서버 -> FE: 안전 확인 실패 전파 (추가됨)
+
+    # 클라이언트 -> 서버 이벤트
+    ACK_SAFETY_CHECK = "hub:ack_safety_check"              # Hub -> 서버: 안전 확인 요청 수신 응답 (추가됨)
+    REPORT_SENIOR_IS_SAFE = "hub:report_senior_is_safe"    # Hub -> 서버: 안전 확인 결과 보고 (안전)
+    REPORT_EMERGENCY = "hub:report_emergency"              # Hub -> 서버: 안전 확인 결과 보고 (응급)
+    REPORT_CHECK_FAILED = "hub:report_check_failed"        # Hub -> 서버: 안전 확인 실패 보고
