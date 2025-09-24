@@ -6,6 +6,10 @@ from common.models.enums import SensorTypeEnum
 
 from common.modules.user_manager import SeniorInfo
 
+from pydantic import BaseModel, computed_field
+from typing import List, Optional
+from datetime import datetime
+
 
 class SeniorSimpleInfo(BaseModel):
     # SeniorInfo로부터 직접 매핑될 필드들
@@ -51,3 +55,40 @@ class SensorLogList(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+
+class FrontendSensorItem(BaseModel):
+    """프론트엔드로 보낼 개별 센서의 상태 정보"""
+    sensor_id: str      # 예: "door_bedroom"
+    sensor_type: str    # 예: "door"
+    location: str       # 예: "bedroom"
+    value: bool         # 예: true
+    last_updated: datetime
+
+    # Config 설정은 Pydantic이 객체 속성에서 값을 읽도록 합니다.
+    class Config:
+        from_attributes = True
+
+    @computed_field
+    @property
+    def status(self) -> str:
+        """sensor_value(bool)를 기반으로 'active' 또는 'inactive' 상태를 계산합니다."""
+        return "active" if self.value else "inactive"
+
+class FrontendSensorStatusPayload(BaseModel):
+    """최종적으로 프론트엔드에 전달될 전체 센서 상태 페이로드"""
+    senior_id: int
+    sensors: List[FrontendSensorItem]
+
+    class Config:
+        from_attributes = True
+
+    @computed_field
+    @property
+    def last_updated(self) -> Optional[datetime]:
+        """센서 목록 중 가장 최근의 timestamp를 찾아 반환합니다."""
+        if not self.sensors:
+            return None
+        return max(sensor.last_updated for sensor in self.sensors)
+    

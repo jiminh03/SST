@@ -14,7 +14,6 @@ class SensorDataItem(BaseModel):
     event_description: Optional[str] = None
     timestamp: datetime
 
-
 class SensorLogPayload(BaseModel):
     """
     IoT 허브에서 수신하는 전체 센서 이벤트 로그의 형식을 정의하는 메인 모델
