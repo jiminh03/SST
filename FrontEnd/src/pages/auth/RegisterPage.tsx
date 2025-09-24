@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Eye, EyeOff, User, Lock, Mail, Briefcase } from 'lucide-react'
+import { Eye, EyeOff, User, Lock, Mail } from 'lucide-react'
 import { register } from '../../api/eldersApi'
 
 export default function RegisterPage() {
@@ -382,8 +382,8 @@ export default function RegisterPage() {
                             border: 'none',
                             padding: '0'
                           }}
-                          onMouseEnter={(e) => e.target.style.color = '#4b5563'}
-                          onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+                          onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#4b5563'}
+                          onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#9ca3af'}
                         >
                           {showPassword ? <EyeOff style={{ width: '20px', height: '20px' }} /> : <Eye style={{ width: '20px', height: '20px' }} />}
                         </button>
@@ -446,8 +446,8 @@ export default function RegisterPage() {
                             border: 'none',
                             padding: '0'
                           }}
-                          onMouseEnter={(e) => e.target.style.color = '#4b5563'}
-                          onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+                          onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#4b5563'}
+                          onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#9ca3af'}
                         >
                           {showConfirmPassword ? <EyeOff style={{ width: '20px', height: '20px' }} /> : <Eye style={{ width: '20px', height: '20px' }} />}
                         </button>
@@ -473,12 +473,12 @@ export default function RegisterPage() {
                         }}
                         onMouseEnter={(e) => {
                           if (!isLoading && formData.full_name && formData.email && formData.password && formData.confirmPassword) {
-                            e.target.style.backgroundColor = '#333333'
+                            (e.target as HTMLElement).style.backgroundColor = '#333333'
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (!isLoading && formData.full_name && formData.email && formData.password && formData.confirmPassword) {
-                            e.target.style.backgroundColor = '#000000'
+                            (e.target as HTMLElement).style.backgroundColor = '#000000'
                           }
                         }}
                       >
@@ -522,8 +522,8 @@ export default function RegisterPage() {
                           cursor: 'pointer',
                           transition: 'color 0.2s'
                         }}
-                        onMouseEnter={(e) => e.target.style.color = '#1d4ed8'}
-                        onMouseLeave={(e) => e.target.style.color = '#2563eb'}
+                        onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#1d4ed8'}
+                        onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#2563eb'}
                       >
                         로그인하기
                       </span>

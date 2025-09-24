@@ -147,7 +147,7 @@ export default function ElderCard({ elder }: { elder: Senior }) {
             src={imageUrl} 
             alt={`${elder.full_name} 프로필`}
             className="w-full h-full object-cover"
-            onError={(e) => {
+            onError={() => {
               console.log('❌ 이미지 표시 실패:', imageUrl)
               setImageUrl(null)
             }}

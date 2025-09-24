@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Camera, User, Phone, Smartphone, Calendar } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { User, Phone, Smartphone, Calendar } from 'lucide-react'
+// import { useNavigate } from 'react-router-dom'
 import AddressSearch from '../../components/common/AddressSearch'
 import { createSenior } from '../../api/eldersApi'
 
 export default function RegisterPage() {
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
   const [formData, setFormData] = useState({
     full_name: '',
     birth_date: '',

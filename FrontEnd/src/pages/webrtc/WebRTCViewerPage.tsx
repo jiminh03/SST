@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Settings, RefreshCw } from 'lucide-react';
+import { Settings, RefreshCw } from 'lucide-react';
 import WebRTCViewer from '../../components/webrtc/WebRTCViewer';
 
 const WebRTCViewerPage: React.FC = () => {
   const { seniorId } = useParams<{ seniorId: string }>();
   const navigate = useNavigate();
   const [jwt, setJwt] = useState<string>('');
-  const [serverUrl, setServerUrl] = useState<string>('https://j13a503.p.ssafy.io');
+  const [serverUrl] = useState<string>('https://j13a503.p.ssafy.io');
   const [error, setError] = useState<string>('');
   const [status, setStatus] = useState<string>('초기화 중...');
 
@@ -43,9 +43,9 @@ const WebRTCViewerPage: React.FC = () => {
     setError(errorMessage);
   };
 
-  const handleStatusChange = (newStatus: string) => {
-    setStatus(newStatus);
-  };
+  // const handleStatusChange = (newStatus: string) => {
+  //   setStatus(newStatus);
+  // };
 
   if (!seniorId) {
     return (
@@ -270,7 +270,7 @@ const WebRTCViewerPage: React.FC = () => {
                     jwt={jwt}
                     serverUrl={serverUrl}
                     onError={handleError}
-                    onStatusChange={handleStatusChange}
+                    // onStatusChange={handleStatusChange}
                   />
                 ) : (
                   <div style={{

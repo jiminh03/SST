@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+// import { useState } from 'react'
+// import { useNavigate } from 'react-router-dom'
 import { Key, LogOut, UserX } from 'lucide-react'
 
 export default function SettingsPage() {
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
 
   const handlePasswordChange = () => {
     // URL 파라미터로 비밀번호 변경 모달 표시

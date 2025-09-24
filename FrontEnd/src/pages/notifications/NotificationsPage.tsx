@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { getNotifications, markNotificationAsRead, deleteNotification as deleteNotificationApi, type Notification } from '../../api/eldersApi'
 
 export default function NotificationsPage() {
@@ -82,7 +82,7 @@ export default function NotificationsPage() {
     navigate(`/camera?streaming=true&seniorId=${notification.seniorId}&seniorName=${notification.seniorName}`)
   }
 
-  const unreadCount = notifications.filter(n => !n.isRead).length
+  // const unreadCount = notifications.filter(n => !n.isRead).length
 
   if (loading) {
     return (
