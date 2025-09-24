@@ -23,8 +23,7 @@ AuthPacket = Union[HubAuthPacket, StaffAuthPacket]
 @sio.on(ConnectEvents.CONNECT)
 async def connect(sid, environ):
     print(f"✅ [연결 시도] 클라이언트 접속. sid: {sid}")
-    # 연결 직후 인증을 요청하는 메시지를 보낼 수 있습니다.
-    await sio.emit(ConnectEvents.REQUEST_AUTH, to=sid)
+    #TODO: 추후 일정 시간 인증이 안되면 연결을 끊는 기능이 필요
 
 @sio.on(ConnectEvents.AUTHENTICATE)
 async def authenticate(sid, data: AuthPacket):

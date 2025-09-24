@@ -24,3 +24,9 @@ class SensorLogPayload(BaseModel):
     """
     api_key: str
     sensor_data: List[SensorDataItem]
+
+class SeniorIdRequest(BaseModel):
+    api_key: str
+
+class SeniorIdResponse(BaseModel):
+    senior_id: int

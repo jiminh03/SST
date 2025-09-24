@@ -657,25 +657,6 @@ paths:
         '404':
           description: "어르신 또는 프로필 이미지를 찾을 수 없습니다."
 
-  # 실시간 통신
-  /webrtc/sessions:
-    post:
-      tags: ["실시간 통신 (WebSocket / WebRTC)"]
-      summary: "WebRTC 영상 스트리밍 세션 등록"
-      description: "관리자가 특정 로봇의 영상을 보기 위해 WebRTC 연결을 요청하고, 시그널링을 위한 세션을 생성합니다."
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WebRTCRobotOffer"
-      responses:
-        "201":
-          description: "세션 생성 성공"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WebRTCSessionRequest"
 
   /webrtc/sessions/{senior_id}:
     get:
@@ -725,7 +706,29 @@ paths:
       responses:
         "201":
           description: "로그 전송 성공"
-  
+  /iot/senior_id:
+    get:
+      tags: ["IoT"]
+      summary: "어르신 ID 조회"
+      description: "허브가 담당한 어르신의 id를 조회합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                api_key:
+                  type: string
+      responses:
+        "201":
+          description: "로그 전송 성공"
+          content:
+            application/json:
+              schema:
+                properties:
+                  senior_id:
+                    type: integer
+
   /ws/hub:
     get:
       tags: ["IoT"]

@@ -54,18 +54,19 @@ async def on_check_answer(sid, senior_id):
 @sio.on(WebRTCEvents.SEND_ICE_CANDIDATE)
 async def on_send_ice_candidate(sid, senior_id, data):
     """(로봇/FE -> 서버) ICE Candidate를 중계하는 이벤트"""
-    sess_info = await sess_man.get_session_by_sid(sid)
-    async for session in db.get_session():
-        if sess_info.session_type == SessionType.HUB:
-            staff_id = (await UserManager(session).get_senior_staff(senior_id)).staff_id
-            recv_sid = (await SessionManager(red).get_session_by_staff_id(staff_id)).sid        
-        elif sess_info.session_type == SessionType.FE:
-            hub_info = await IotHubManager(session).get_hub_by_senior_id(senior_id)
-            recv_sid = await SessionManager(red).get_session_by_hub_id(hub_info.hub_id).sid
-        else:
-            return
+    if data:
+        sess_info = await sess_man.get_session_by_sid(sid)
+        async for session in db.get_session():
+            if sess_info.session_type == SessionType.HUB:
+                staff_id = (await UserManager(session).get_senior_staff(senior_id)).staff_id
+                recv_sid = (await SessionManager(red).get_session_by_staff_id(staff_id)).sid        
+            elif sess_info.session_type == SessionType.FE:
+                hub_info = await IotHubManager(session).get_hub_by_senior_id(senior_id)
+                recv_sid = (await SessionManager(red).get_session_by_hub_id(hub_info.hub_id)).sid
+            else:
+                return
    
-    if recv_sid:
-        # 상대방에게 'server:new_ice_candidate' 이벤트를 보냅니다.
-        print(f"[ICE 전송] {sid} -> {recv_sid} ICE Candidate 수신")
-        await sio.emit(WebRTCEvents.SEND_ICE_CANDIDATE, data, to=recv_sid)
+        if recv_sid:
+            # 상대방에게 'server:new_ice_candidate' 이벤트를 보냅니다.
+            print(f"[ICE 전송] {sid} -> {recv_sid} ICE Candidate 수신")
+            await sio.emit(WebRTCEvents.NEW_ICE_CANDIDATE, data, to=recv_sid)

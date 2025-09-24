@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # 프로젝트 구조에 맞게 경로를 수정해주세요.
-from web.schemas.iot_schema import SensorLogPayload
+from web.schemas.iot_schema import SeniorIdRequest, SeniorIdResponse, SensorLogPayload
 from common.modules.sensor_log_manager import SensorLogManager
 from common.modules.iot_hub_manager import IotHubManager, HubCreate, HubUpdate, HubBasicInfo
 from common.modules.api_key_manager import ApiKeyRepository, ApiKeyManager
@@ -45,3 +45,51 @@ async def receive_sensor_logs(
     await db_session.commit()
     
     return {"message": "Logs have been successfully saved."}
+
+
+@router.get(
+    "/senior_id",
+    response_model=SeniorIdResponse,
+    status_code=status.HTTP_200_OK,
+    summary="어르신 ID 조회",
+    responses={
+        401: {"description": "인증 실패 (유효하지 않은 API 키)"},
+        404: {"description": "해당 허브에 할당된 어르신을 찾을 수 없음"},
+    }
+)
+async def get_senior_id_by_api_key(
+    # GET 요청이므로 Query Parameter로 api_key를 받습니다.
+    # Query(...)를 사용하면 필수 값으로 지정되며, Swagger UI에도 명확하게 표시됩니다.
+    req: SeniorIdRequest,
+    db_session: AsyncSession = Depends(db.get_session)
+):
+    """
+    허브의 API 키를 사용하여 담당하고 있는 어르신의 고유 ID를 조회합니다.
+
+    **[주요 로직]**
+    1. 쿼리 파라미터로 받은 `api_key`가 유효한지 데이터베이스에서 확인합니다.
+    2. API 키가 유효하지 않으면 `401 Unauthorized` 오류를 반환합니다.
+    3. API 키가 유효하면, 해당 키에 연결된 허브(Hub) 정보를 조회합니다.
+    4. 허브에 할당된 어르신 ID(`senior_id`)가 없으면 `404 Not Found` 오류를 반환합니다.
+    5. 어르신 ID가 존재하면, 해당 ID를 JSON 형식으로 반환합니다.
+    """
+    # ApiKeyRepository를 사용하여 데이터베이스와 상호작용합니다.
+    api_key_repo = ApiKeyRepository(db_session)
+    hub = await api_key_repo.get_hub_by_api_key(req.api_key)
+    
+    # API 키가 데이터베이스에 존재하지 않거나 유효하지 않은 경우
+    if hub is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid API key"
+        )
+
+    # 허브는 존재하지만, 아직 어르신과 연결되지 않은 경우
+    if hub.senior_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No senior assigned to this hub"
+        )
+        
+    # 성공적으로 조회된 경우, Pydantic 모델에 맞춰 응답을 반환합니다.
+    return SeniorIdResponse(senior_id=hub.senior_id)
