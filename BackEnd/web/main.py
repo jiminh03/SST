@@ -69,7 +69,7 @@ socket_app = socketio.ASGIApp(sio, app) # 실행시 진입점
 # --- 라우터 등록 --- 
 
 app.include_router(auth.router)
-#app.include_router(ai.router)
+app.include_router(ai.router)
 app.include_router(iot.router)
 app.include_router(monitoring.router)
 #app.include_router(realtime.router)

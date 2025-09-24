@@ -2,11 +2,15 @@ from enum import Enum
 
 class ConnectEvents(str, Enum):
     """소켓 통신에서 사용되는 이벤트 이름 목록"""
-    #TODO: 인증 실패 이벤트도 필요
+    
+    # 서버 -> 클라이언트
+    REQUEST_AUTH = 'request_auth'
+    AUTH_SUCCESS = 'auth_success'
+    
+    # 클라이언트 -> 서버
     CONNECT = 'connect'
     DISCONNECT = 'disconnect'
     AUTHENTICATE = 'authenticate'
-    AUTH_SUCCESS = 'auth_success'
 
 class WebRTCEvents(str, Enum):
     """WebRTC 시그널링을 위한 소켓 이벤트 이름 목록"""
@@ -31,6 +35,7 @@ class AlarmEvents(str, Enum):
     EMERGENCY_SITUATION = "server:emergency_situation"     # 서버 -> FE: 응급 상황 전파
     SENIOR_IS_SAFE = "server:senior_is_safe"               # 서버 -> FE: 안전 상태 전파
     SAFETY_CHECK_FAILED = "server:safety_check_failed"     # 서버 -> FE: 안전 확인 실패 전파 (추가됨)
+    NOTIFY_SENSOR_EVENT = "server:notify_sensor_event"     # 서버 -> FE: 센서 이벤트 전파 (추가됨)"
 
     # 클라이언트 -> 서버 이벤트
     ACK_SAFETY_CHECK = "hub:ack_safety_check"              # Hub -> 서버: 안전 확인 요청 수신 응답 (추가됨)
