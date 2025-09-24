@@ -3,6 +3,8 @@
 
 import os
 
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import redis
 import uvicorn
 from fastapi import FastAPI
@@ -45,6 +47,18 @@ async def lifespan(app: FastAPI):
 # FastAPI 앱 인스턴스 생성
 app = FastAPI(lifespan=lifespan)
 
+# --- 라우터 등록 --- 
+
+app.include_router(auth.router)
+#app.include_router(ai.router)
+app.include_router(iot.router)
+app.include_router(monitoring.router)
+#app.include_router(realtime.router)
+
+# 기본 루트 엔드포인트
+app.mount("/", StaticFiles(directory="dist", html=True), name="static")
+
+
 #Socket.IO 앱을 FastAPI 앱에 마운트
 # 이 한 줄이 '/socket.io' 경로로 들어오는 
 # HTTP 핸드셰이크와 WebSocket 연결을 모두 처리합니다.
@@ -66,19 +80,6 @@ socket_app = socketio.ASGIApp(sio, app) # 실행시 진입점
 #     allow_headers=["*"],
 # )
 
-# --- 라우터 등록 --- 
-
-app.include_router(auth.router)
-#app.include_router(ai.router)
-app.include_router(iot.router)
-app.include_router(monitoring.router)
-#app.include_router(realtime.router)
-
-
-# 기본 루트 엔드포인트
-@app.get("/")
-def read_root():
-    return {"message": "Server is running successfully!"}
 
 # 이 파일을 직접 실행할 때를 위한 코드
 if __name__ == "__main__":
