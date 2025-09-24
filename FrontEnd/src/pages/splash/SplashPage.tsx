@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+// import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export default function SplashPage() {
@@ -112,8 +112,8 @@ export default function SplashPage() {
                     cursor: 'pointer',
                     transition: 'background-color 0.2s'
                   }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#333333'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#000000'}
+                  onMouseEnter={(e) => (e.target as HTMLElement).style.backgroundColor = '#333333'}
+                  onMouseLeave={(e) => (e.target as HTMLElement).style.backgroundColor = '#000000'}
                 >
                   로그인
                 </button>
@@ -131,12 +131,12 @@ export default function SplashPage() {
                     transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.borderColor = '#9ca3af'
-                    e.target.style.backgroundColor = '#f9fafb'
+                    (e.target as HTMLElement).style.borderColor = '#9ca3af';
+                    (e.target as HTMLElement).style.backgroundColor = '#f9fafb';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.borderColor = '#d1d5db'
-                    e.target.style.backgroundColor = 'transparent'
+                    (e.target as HTMLElement).style.borderColor = '#d1d5db';
+                    (e.target as HTMLElement).style.backgroundColor = 'transparent';
                   }}
                 >
                   회원가입

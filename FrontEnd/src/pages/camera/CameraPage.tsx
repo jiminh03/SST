@@ -1,8 +1,8 @@
-import { useSearchParams } from 'react-router-dom'
+// import { useSearchParams } from 'react-router-dom'
 
 export default function CameraPage() {
-  const [searchParams] = useSearchParams()
-  const from = searchParams.get('from')
+  // const [searchParams] = useSearchParams()
+  // const from = searchParams.get('from')
 
   return (
     <div className="h-full bg-gray-50">

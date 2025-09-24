@@ -317,8 +317,8 @@ export default function LoginPage() {
                             border: 'none',
                             padding: '0'
                           }}
-                          onMouseEnter={(e) => e.target.style.color = '#4b5563'}
-                          onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+                          onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#4b5563'}
+                          onMouseLeave={(e) => (e.target as HTMLElement).style.color = '#9ca3af'}
                         >
                           {showPassword ? <EyeOff style={{ width: '20px', height: '20px' }} /> : <Eye style={{ width: '20px', height: '20px' }} />}
                         </button>
@@ -343,12 +343,12 @@ export default function LoginPage() {
                       }}
                       onMouseEnter={(e) => {
                         if (!isLoading && formData.email && formData.password) {
-                          e.target.style.backgroundColor = '#333333'
+                          (e.target as HTMLElement).style.backgroundColor = '#333333'
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!isLoading && formData.email && formData.password) {
-                          e.target.style.backgroundColor = '#000000'
+                          (e.target as HTMLElement).style.backgroundColor = '#000000'
                         }
                       }}
                     >
@@ -427,12 +427,12 @@ export default function LoginPage() {
                           transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.borderColor = '#9ca3af'
-                          e.target.style.backgroundColor = '#f9fafb'
+                          (e.target as HTMLElement).style.borderColor = '#9ca3af';
+                          (e.target as HTMLElement).style.backgroundColor = '#f9fafb';
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.borderColor = '#d1d5db'
-                          e.target.style.backgroundColor = 'transparent'
+                          (e.target as HTMLElement).style.borderColor = '#d1d5db';
+                          (e.target as HTMLElement).style.backgroundColor = 'transparent';
                         }}
                       >
                         회원가입

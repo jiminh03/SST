@@ -25,41 +25,41 @@ interface AuthenticateData {
   jwt: string;
 }
 
-interface CheckOfferData {
-  seniorId: number;
-}
+// interface CheckOfferData {
+//   seniorId: number;
+// }
 
-interface SendAnswerData {
-  seniorId: number;
-  answer: {
-    sdp: string;
-    type: 'answer';
-  };
-}
+// interface SendAnswerData {
+//   seniorId: number;
+//   answer: {
+//     sdp: string;
+//     type: 'answer';
+//   };
+// }
 
-interface SendIceCandidateData {
-  seniorId: number;
-  candidate: {
-    candidate: string;
-    sdpMLineIndex: number | null;
-    sdpMid: string | null;
-  };
-}
+// interface SendIceCandidateData {
+//   seniorId: number;
+//   candidate: {
+//     candidate: string;
+//     sdpMLineIndex: number | null;
+//     sdpMid: string | null;
+//   };
+// }
 
 interface WebRTCViewerProps {
   seniorId: number;
   jwt: string;
   serverUrl: string;
   onError?: (error: string) => void;
-  onStatusChange?: (status: string) => void;
+  // onStatusChange?: (status: string) => void;
 }
 
 const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
   seniorId,
   jwt,
   serverUrl,
-  onError,
-  onStatusChange
+  onError
+  // onStatusChange
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -144,7 +144,7 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
         if (!offerData) {
           console.log(`Senior ID ${seniorId}에 대한 Offer가 아직 없습니다. 10초 후 다시 시도합니다.`);
           setTimeout(() => {
-            const checkData: CheckOfferData = { seniorId };
+            // const checkData: CheckOfferData = { seniorId };
             socket.emit(WebRTCEvents.CHECK_OFFER, seniorId);
           }, 10000);
           return;
@@ -410,19 +410,19 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
       };
 
       // 연결 타임아웃 설정 (30초)
-      const connectionTimeout = setTimeout(() => {
-        if (peerConnection.connectionState === 'connecting') {
-          console.log('연결 타임아웃 - 재시도합니다...');
-          setConnectionStatus('연결 타임아웃 - 재시도 중...');
-          cleanup();
-          setTimeout(() => {
-            initializeWebRTC();
-          }, 2000);
-        }
-      }, 30000);
+      // const connectionTimeout = setTimeout(() => {
+        // if (peerConnection.connectionState === 'connecting') {
+        //   console.log('연결 타임아웃 - 재시도합니다...');
+        //   setConnectionStatus('연결 타임아웃 - 재시도 중...');
+        //   cleanup();
+        //   setTimeout(() => {
+        //     initializeWebRTC();
+        //   }, 2000);
+        // }
+      // }, 30000);
 
       // Offer 확인 요청
-      const checkData: CheckOfferData = { seniorId };
+      // const checkData: CheckOfferData = { seniorId };
       socket.emit(WebRTCEvents.CHECK_OFFER, seniorId);
       console.log(`Senior ID ${seniorId}의 Offer를 서버에 요청합니다...`);
 
@@ -448,12 +448,12 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
     setConnectionStatus('연결 해제됨');
   };
 
-  const handleReconnect = () => {
-    cleanup();
-    setTimeout(() => {
-      initializeWebRTC();
-    }, 1000);
-  };
+  // const handleReconnect = () => {
+  //   cleanup();
+  //   setTimeout(() => {
+  //     initializeWebRTC();
+  //   }, 1000);
+  // };
 
   return (
     <div style={{

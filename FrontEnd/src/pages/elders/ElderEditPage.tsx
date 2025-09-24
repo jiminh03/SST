@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSeniorById, updateSenior } from '../../api/eldersApi'
 import type { Senior } from '../../api/eldersApi'
-import { User, MapPin, Smartphone, Calendar, Camera, Phone } from 'lucide-react'
+import { User, Calendar, Phone } from 'lucide-react'
 import AddressSearch from '../../components/common/AddressSearch'
 
 export default function ElderEditPage() {
