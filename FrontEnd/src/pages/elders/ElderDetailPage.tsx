@@ -43,21 +43,14 @@ export default function ElderDetailPage() {
     })
   }, [])
 
-  // Socket.IO 연결 및 이벤트 핸들러 (WebRTC와 동일한 방식)
+  // Socket.IO 연결 및 이벤트 핸들러 (HomePage에서 이미 연결됨)
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      console.log('❌ ElderDetailPage: JWT 토큰이 없습니다');
-      return;
+    // Socket이 연결되어 있는지 확인
+    if (socket && socket.connected) {
+      console.log('✅ ElderDetailPage: Socket 이미 연결됨:', socket.id);
+    } else {
+      console.log('⚠️ ElderDetailPage: Socket 연결 대기 중...');
     }
-
-    console.log('🔍 ElderDetailPage: Socket 연결 시도 중...');
-    console.log('🔍 ElderDetailPage: connectSocket 함수 호출');
-    
-    // Socket Context를 통해 연결 (WebRTC와 동일한 방식)
-    connectSocket('https://j13a503.p.ssafy.io', token)
-    
-    console.log('🔍 ElderDetailPage: connectSocket 호출 완료');
 
     // Socket 연결 성공 핸들러 (WebRTC와 동일한 방식)
     const handleConnect = () => {

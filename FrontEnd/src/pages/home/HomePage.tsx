@@ -2,12 +2,25 @@ import { useMemo, useState, useEffect } from 'react'
 import ElderCard from '../../components/elder/ElderCard'
 import FilterBar, { type FilterValue } from '../../components/layout/FilterBar'
 import { getSeniors, type Senior } from '../../api/eldersApi'
+import { useSocket } from '../../contexts/SocketContext'
 
 export default function HomePage() {
   const [filter, setFilter] = useState<FilterValue>('전체')
   const [seniors, setSeniors] = useState<Senior[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Socket Context 사용
+  const { connectSocket } = useSocket()
+
+  // Socket 연결 (앱 시작 시점)
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      console.log('🏠 HomePage: Socket 연결 시작')
+      connectSocket('https://j13a503.p.ssafy.io', token)
+    }
+  }, [connectSocket])
 
   // API에서 어르신 데이터 가져오기
   useEffect(() => {
