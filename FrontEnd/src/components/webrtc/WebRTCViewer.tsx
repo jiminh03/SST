@@ -2,13 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../../contexts/SocketContext';
 
 // Socket.IO 이벤트 타입 정의
-const ConnectEvents = {
-  CONNECT: 'connect',
-  DISCONNECT: 'disconnect',
-  AUTHENTICATE: 'authenticate',
-  AUTH_SUCCESS: 'auth_success'
-} as const;
-
 const WebRTCEvents = {
   REGISTER_OFFER: 'client:register_offer',
   SEND_ANSWER: 'client:send_answer',
@@ -21,9 +14,6 @@ const WebRTCEvents = {
 } as const;
 
 // WebRTC 관련 타입 정의
-interface AuthenticateData {
-  jwt: string;
-}
 
 // interface CheckOfferData {
 //   seniorId: number;

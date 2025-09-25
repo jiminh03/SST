@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSeniorById, getSeniorSensorData } from '../../api/eldersApi'
 import type { Senior, SensorStatus } from '../../api/eldersApi'
-import { MapPin, Camera, Phone, Activity, Home, Lightbulb, User, Zap, Video } from 'lucide-react'
+import { MapPin, Phone, Activity, Home, Lightbulb, User, Zap, Video } from 'lucide-react'
 import { useSocket } from '../../contexts/SocketContext'
 
 export default function ElderDetailPage() {
