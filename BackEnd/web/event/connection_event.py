@@ -21,17 +21,11 @@ AuthPacket = Union[HubAuthPacket, StaffAuthPacket]
     
 
 @sio.on(ConnectEvents.CONNECT)
-async def connect(sid, environ):
+async def connect(sid, environ, auth: AuthPacket):
     print(f"✅ [연결 시도] 클라이언트 접속. sid: {sid}")
-    #TODO: 추후 일정 시간 인증이 안되면 연결을 끊는 기능이 필요
-
-@sio.on(ConnectEvents.AUTHENTICATE)
-async def authenticate(sid, data: AuthPacket):
-    """클라이언트가 보낸 토큰으로 인증하고 Redis에 세션 정보를 저장합니다."""
-    
-    if 'api_key' in data:
+    if 'token' in auth:
         async for session in db.get_session():
-            api_key = data.get('api_key')
+            api_key = auth.get('api_key')
             apikey_repo = ApiKeyRepository(session)
             hub_info = await apikey_repo.get_hub_by_api_key(api_key)
             con_info = ConnectionInfo(
@@ -41,8 +35,8 @@ async def authenticate(sid, data: AuthPacket):
             )
             await session_man.create_session(con_info)
             await sio.emit(ConnectEvents.AUTH_SUCCESS, to=sid)
-    elif 'jwt' in data:
-        jwt = data.get('jwt')
+    elif 'jwt' in auth:
+        jwt = auth.get('jwt')
         async for session in db.get_session():
             user_info = await auth_module.get_current_user(jwt, session)
         con_info = ConnectionInfo(
@@ -53,8 +47,14 @@ async def authenticate(sid, data: AuthPacket):
         await session_man.create_session(con_info)
         await sio.emit(ConnectEvents.AUTH_SUCCESS, to=sid)
     else:
-        print(f"[인증 실패] 유효하지 않은 인증 패킷입니다. sid: {sid}, data: {data}")
+        print(f"[인증 실패] 유효하지 않은 인증 패킷입니다. sid: {sid}, data: {auth}")
         await sio.disconnect(sid)
+    #TODO: 추후 일정 시간 인증이 안되면 연결을 끊는 기능이 필요
+
+@sio.on(ConnectEvents.AUTHENTICATE)
+async def authenticate(sid, data: AuthPacket):
+    """클라이언트가 보낸 토큰으로 인증하고 Redis에 세션 정보를 저장합니다."""
+    print("deprecated event")
 
 @sio.on(ConnectEvents.DISCONNECT)
 async def disconnect(sid):

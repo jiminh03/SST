@@ -1,13 +1,10 @@
-# app/main.py
-# app 폴더의 메인 실행 파일
-
 import os
 
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import redis
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
@@ -81,7 +78,6 @@ socket_app = socketio.ASGIApp(sio, app) # 실행시 진입점
 #     allow_methods=["*"],
 #     allow_headers=["*"],
 # )
-
 
 # 이 파일을 직접 실행할 때를 위한 코드
 if __name__ == "__main__":
