@@ -4,16 +4,22 @@ import FilterBar, { type FilterValue } from '../../components/layout/FilterBar'
 import { getSeniors, type Senior } from '../../api/eldersApi'
 import { useSocket } from '../../contexts/SocketContext'
 
+// Senior 타입에 status 속성을 추가해야 합니다. (eldersApi.ts 파일 등에서 수정)
+// export interface Senior {
+//   // ... 기존 속성들
+//   status?: '위험' | '주의' | '안전';
+// }
+
 export default function HomePage() {
   const [filter, setFilter] = useState<FilterValue>('전체')
   const [seniors, setSeniors] = useState<Senior[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
-  // Socket Context 사용
-  const { connectSocket } = useSocket()
 
-  // Socket 연결 (앱 시작 시점)
+  // 1. 소켓 컨텍스트에서 이벤트 리스너 함수들도 가져옵니다.
+  const { connectSocket, addEventListener, removeEventListener } = useSocket()
+
+  // Socket 연결 (앱 시작 시점) - 기존과 동일
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (token) {
@@ -22,14 +28,67 @@ export default function HomePage() {
     }
   }, [connectSocket])
 
-  // API에서 어르신 데이터 가져오기
+  // 2. 소켓 이벤트 리스너를 등록하여 상태를 실시간으로 업데이트합니다.
   useEffect(() => {
+    const handleStatusChange = (data: { senior_id: number; status: '위험' | '주의' | '안전' }) => {
+      console.log(`⚡️ 홈 화면 상태 변경 이벤트 수신: 어르신 ID ${data.senior_id} -> ${data.status}`);
+      
+      setSeniors(prevSeniors =>
+        prevSeniors.map(senior =>
+          senior.senior_id === data.senior_id
+            ? { ...senior, status: data.status } // 해당 어르신의 status만 변경
+            : senior
+        )
+      )
+    }
+
+    // 이벤트 리스너 등록
+    addEventListener('server:notify_senior_status_change', handleStatusChange)
+
+    // 컴포넌트 언마운트 시 리스너 제거
+    return () => {
+      removeEventListener('server:notify_senior_status_change', handleStatusChange)
+    }
+  }, [addEventListener, removeEventListener])
+
+
+  // 3. API에서 어르신 데이터를 가져올 때 초기 'status' 값을 설정합니다.
+  useEffect(() => {
+    // health_info를 기반으로 초기 상태를 결정하는 내부 함수
+    const getInitialStatus = (healthInfo: any): '위험' | '주의' | '안전' => {
+      let status: '위험' | '주의' | '안전' = '안전';
+      let info = healthInfo;
+      
+      if (typeof info === 'string') {
+        try {
+          info = JSON.parse(info)
+        } catch (e) {
+          // 파싱 실패 시 문자열로 처리
+        }
+      }
+      
+      if (Array.isArray(info)) {
+        if (info.includes('위험')) status = '위험'
+        else if (info.includes('주의')) status = '주의'
+      } else if (typeof info === 'string') {
+        if (info.includes('위험')) status = '위험'
+        else if (info.includes('주의')) status = '주의'
+      }
+
+      return status;
+    }
+
     const fetchSeniors = async () => {
       try {
         setLoading(true)
         setError(null)
         const data = await getSeniors()
-        setSeniors(data)
+        // API 응답 데이터에 'status' 속성을 추가하여 상태를 초기화합니다.
+        const seniorsWithStatus = data.map(senior => ({
+          ...senior,
+          status: getInitialStatus(senior.health_info)
+        }))
+        setSeniors(seniorsWithStatus)
       } catch (err) {
         setError('어르신 목록을 불러오는데 실패했습니다.')
         console.error('Error fetching seniors:', err)
@@ -41,52 +100,15 @@ export default function HomePage() {
     fetchSeniors()
   }, [])
 
-  // health_info를 상태로 변환하는 함수
-  const getHealthStatus = (healthInfo: any): string => {
-    let status = '안전' // 기본값
-    
-    // 배열인 경우 처리
-    if (Array.isArray(healthInfo)) {
-      if (healthInfo.includes('위험')) status = '위험'
-      else if (healthInfo.includes('주의')) status = '주의'
-      else status = '안전'
-    }
-    // 문자열인 경우 JSON 파싱 시도
-    else if (typeof healthInfo === 'string') {
-      if (healthInfo.startsWith('[') && healthInfo.endsWith(']')) {
-        try {
-          const parsed = JSON.parse(healthInfo)
-          if (Array.isArray(parsed)) {
-            if (parsed.includes('위험')) status = '위험'
-            else if (parsed.includes('주의')) status = '주의'
-            else status = '안전'
-          }
-        } catch (e) {
-          // 파싱 실패 시 문자열 직접 비교
-          if (healthInfo.includes('위험')) status = '위험'
-          else if (healthInfo.includes('주의')) status = '주의'
-          else status = '안전'
-        }
-      } else {
-        // 일반 문자열인 경우
-        if (healthInfo.includes('위험')) status = '위험'
-        else if (healthInfo.includes('주의')) status = '주의'
-        else status = '안전'
-      }
-    }
-    
-    return status
-  }
-
-  // 필터링된 어르신 목록
+  // 4. 필터링된 어르신 목록 (이제 매우 간단해집니다)
   const filtered = useMemo(() => {
     if (filter === '전체') return seniors
     
-    return seniors.filter((senior) => {
-      const status = getHealthStatus(senior.health_info)
-      return status === filter
-    })
+    // 복잡한 getHealthStatus 함수 대신, 객체의 status 속성을 직접 비교합니다.
+    return seniors.filter((senior) => senior.status === filter)
   }, [seniors, filter])
+
+  // --- 이하 렌더링(JSX) 부분은 기존 코드와 동일합니다. ---
 
   if (loading) {
     return (
@@ -121,7 +143,9 @@ export default function HomePage() {
       <div className="pt-0 px-4 pb-4 space-y-3">
         {filtered.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500">등록된 어르신이 없습니다.</p>
+            <p className="text-gray-500">
+              {filter === '전체' ? '등록된 어르신이 없습니다.' : `'${filter}' 상태의 어르신이 없습니다.`}
+            </p>
           </div>
         ) : (
           filtered.map((senior) => (

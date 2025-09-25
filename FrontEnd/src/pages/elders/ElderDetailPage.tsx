@@ -107,7 +107,7 @@ export default function ElderDetailPage() {
         detail: {
           type: 'warning',
           title: '⚠️ 상태 변경',
-          message: `어르신 상태가 ${data.current_status}로 변경되었습니다.`
+          message: `어르신 상태가 ${data.status}로 변경되었습니다.`
         }
       })
       window.dispatchEvent(event)
