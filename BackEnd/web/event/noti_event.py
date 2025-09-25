@@ -7,11 +7,19 @@ from web.services.database import db,red
 from web.schemas.socket_event import NotifyEvents
 
 @sio.on(NotifyEvents.CLIENT_REQUEST_INITIAL_STATUS)
-async def notify_initial_status(sid: str, status_list: list[SeniorStatus]):
+async def notify_initial_status(sid: str):
     """
     클라이언트로부터 받은 어르신 상태 목록을 검증하고 다시 전송합니다.
     Pydantic이 데이터 유효성 검사를 자동으로 수행합니다.
     """
+
+    sso = SeniorStatusObserver(red)
+    sses_man = SessionManager(red)
+    staff_id = (await sses_man.get_session_by_sid(sid)).staff_id
+    
+    async for session in db.get_session():
+        senior_list = await UserManager(session).get_care_seniors(staff_id)
+    status_list = [sso.get_status(s.senior_id) for s in senior_list]
     
     # 1. Pydantic 모델 리스트를 JSON 직렬화가 가능한 dict 리스트로 변환
     #    - 리스트의 각 status 객체에 대해 model_dump()를 호출합니다.
