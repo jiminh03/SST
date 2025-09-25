@@ -42,3 +42,23 @@ class AlarmEvents(str, Enum):
     REPORT_SENIOR_IS_SAFE = "hub:report_senior_is_safe"    # Hub -> 서버: 안전 확인 결과 보고 (안전)
     REPORT_EMERGENCY = "hub:report_emergency"              # Hub -> 서버: 안전 확인 결과 보고 (응급)
     REPORT_CHECK_FAILED = "hub:report_check_failed"        # Hub -> 서버: 안전 확인 실패 보고
+
+class NotifyEvents(str, Enum):
+    """프론트엔드-백엔드 간 소켓 통신 이벤트 목록"""
+
+    # --- 센서 로그 이벤트 (Sensor Log Events) ---
+    # 1. 서버 -> FE: 센서 변경에 따른 실시간 로그 전송 또는 FE 요청에 대한 응답
+    SERVER_SEND_SENSOR_LOG = "server:send_sensor_log"
+    
+    # 2. FE -> 서버: 특정 시점의 센서 로그 조회 요청
+    CLIENT_REQUEST_SENSOR_LOG = "client:request_sensor_log"
+    
+    # --- 상태 전송 이벤트 (Status Transmission Events) ---
+    # 3. 서버 -> FE: 어르신 상태 변경 실시간 알림
+    SERVER_NOTIFY_SENIOR_STATUS_CHANGE = "server:notify_senior_status_change"
+
+    # 4. FE -> 서버: 페이지 첫 진입 시 전체 상태 데이터 요청
+    CLIENT_REQUEST_INITIAL_STATUS = "client:request_initial_status"
+
+    # 5. 서버 -> FE: FE의 요청에 대한 전체 초기 상태 데이터 전송
+    SERVER_SEND_INITIAL_STATUS = "server:send_initial_status"

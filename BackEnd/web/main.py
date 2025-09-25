@@ -17,7 +17,7 @@ load_dotenv()
 
 import socketio
 
-from web.routers import auth, iot, monitoring
+from web.routers import auth, iot, monitoring, test
 from web.services.database import db, red
 from web.services.websocket import sio
 
@@ -54,6 +54,8 @@ app.include_router(auth.router)
 app.include_router(iot.router)
 app.include_router(monitoring.router)
 #app.include_router(realtime.router)
+
+app.include_router(test.router)
 
 # 기본 루트 엔드포인트
 app.mount("/", StaticFiles(directory="dist", html=True), name="static")

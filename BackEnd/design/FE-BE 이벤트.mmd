@@ -1,0 +1,39 @@
+sequenceDiagram
+    participant Client as Frontend
+    participant Server as Backend
+
+    %% 1. 센서 로그 이벤트 (Sensor Log Events)
+    Note over Client, Server: 1. 센서 로그 이벤트 (Sensor Log Events)
+
+    %% 1.1 서버 주도 (Server-initiated)
+    Server->>Client: server:send_sensor_log (센서 변경 발생 시)
+    activate Client
+    Note left of Client: 이벤트 핸들러 실행 (UI 업데이트)
+    deactivate Client
+
+    %% 1.2 클라이언트 요청 (Client-initiated)
+    Client->>Server: client:request_sensor_log (로그 조회 요청)
+    activate Server
+    Server->>Client: server:send_sensor_log (요청에 대한 응답)
+    deactivate Server
+    activate Client
+    Note left of Client: 수신된 로그로 UI 업데이트
+    deactivate Client
+
+    %% 2. 상태 전송 이벤트 (Status Transmission Events)
+    Note over Client, Server: 2. 상태 전송 이벤트 (Status Transmission Events)
+
+    %% 2.1 서버 주도 (Server-initiated status update)
+    Server->>Client: server:notify_senior_status_change (상태 변경 발생 시)
+    activate Client
+    Note left of Client: 변경된 상태로 UI 업데이트
+    deactivate Client
+
+    %% 2.2 클라이언트의 초기 상태 요청 (Client's initial status request)
+    Client->>Server: client:request_initial_status (최초 전체 상태 요청)
+    activate Server
+    Server->>Client: server:send_initial_status (전체 상태 데이터 전송)
+    deactivate Server
+    activate Client
+    Note left of Client: 받은 전체 상태로 UI 초기화
+    deactivate Client

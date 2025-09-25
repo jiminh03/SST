@@ -1,49 +1,43 @@
+from web.services.websocket import sio
+from web.services.senior_status_observer import SeniorStatus, SeniorStatusObserver
 import asyncio
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-from common.modules.iot_hub_manager import IotHubManager
+from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
 from common.modules.user_manager import UserManager
-from services.websocket import sio
-from web.schemas.socket_event import AlarmEvents
-from common.modules.session_manager import SessionManager
 from web.services.database import db,red
-from web.services.safety_alarm import notify_emergency_situation, notify_safety_check_failed
+from web.schemas.socket_event import NotifyEvents
+
+@sio.on(NotifyEvents.CLIENT_REQUEST_INITIAL_STATUS)
+async def notify_initial_status(sid: str, status_list: list[SeniorStatus]):
+    """
+    클라이언트로부터 받은 어르신 상태 목록을 검증하고 다시 전송합니다.
+    Pydantic이 데이터 유효성 검사를 자동으로 수행합니다.
+    """
+    
+    # 1. Pydantic 모델 리스트를 JSON 직렬화가 가능한 dict 리스트로 변환
+    #    - 리스트의 각 status 객체에 대해 model_dump()를 호출합니다.
+    statuses_to_send = [s.model_dump(mode='json') for s in status_list]
+    
+    # 2. 변환된 데이터를 클라이언트로 전송
+    await sio.emit(
+        NotifyEvents.SERVER_SEND_INITIAL_STATUS, 
+        statuses_to_send, 
+        to=sid
+    )
+    
+    print(f"✅ 이벤트 전송: {NotifyEvents.SERVER_SEND_INITIAL_STATUS}, 받는 이: {sid}")
 
 
-sess_man = SessionManager(red)
-
-#TODO:hub iot 오작동, 로봇 고장 같은 확인 실패도 핸들링해야함
-
-@sio.on(AlarmEvents.REPORT_SENIOR_IS_SAFE)
-async def handle_report_senior_is_safe(sid, data):
-    """Hub가 '어르신 안전'을 보고했을 때 처리"""
-    print(f"Hub로부터 안전 보고 수신 (sid: {sid}): {data}")
-
-@sio.on(AlarmEvents.REPORT_EMERGENCY)
-async def handle_report_emergency(sid, data):
-    """Hub가 '응급 상황'을 보고했을 때 처리"""
-    print(f"Hub로부터 응급 상황 보고 수신 (sid: {sid}): {data}")
-    sess_info = await sess_man.get_session_by_sid(sid)
+async def notify_senior_status_change(senior_id: int, status: SeniorStatus):
+    """
+    어르신 상태 변경을 클라이언트에게 알립니다.
+    """
     
     async for session in db.get_session():
-        staff_id = (await UserManager(session).get_senior_staff(sess_info.senior_id)).staff_id
-        recv_sid = (await SessionManager(red).get_session_by_staff_id(staff_id)).sid
-
-    if recv_sid:
-        await notify_emergency_situation(recv_sid)
-    else:
-        print(f"경고: sid {recv_sid}에 연결된 FE 클라이언트를 찾을 수 없습니다.")
-
-@sio.on(AlarmEvents.REPORT_CHECK_FAILED)
-async def handle_report_check_failed(sid, data):
-    """Hub가 '안전 점검 자체의 실패'를 보고했을 때 처리"""
-    print(f"Hub로부터 안전 점검 실패 보고 수신 (sid: {sid}): {data}")
-    sess_info = await sess_man.get_session_by_sid(sid)
-    async for session in db.get_session():
-        staff_id = (await UserManager(session).get_senior_staff(sess_info.senior_id)).staff_id
-        recv_sid = (await SessionManager(red).get_session_by_staff_id(staff_id)).sid
-    if recv_sid:
-        await notify_safety_check_failed(recv_sid)
-    else:
-        print(f"경고: sid {recv_sid}에 연결된 FE 클라이언트를 찾을 수 없습니다.")
+        staff_id = (await UserManager(session).get_senior_staff(senior_id)).staff_id
+        recv_sid = (await SessionManager(red).get_session_by_staff_id(staff_id)).sid   
+    
+    # Pydantic 모델을 dict로 변환하여 전송
+    status_dict = status.model_dump(mode='json')
+    
+    await sio.emit(NotifyEvents.SERVER_NOTIFY_SENIOR_STATUS_CHANGE, status_dict, to=recv_sid)
+    print(f"이벤트: {NotifyEvents.SERVER_NOTIFY_SENIOR_STATUS_CHANGE}, 데이터: {status_dict}")

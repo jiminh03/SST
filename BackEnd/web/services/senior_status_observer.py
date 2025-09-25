@@ -3,26 +3,14 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from enum import Enum
 
-from web.services.database import red
-
-class RiskLevel(str, Enum):
-    """어르신 위험도 수준"""
-    NORMAL = "NORMAL"
-    CONCERN = "CONCERN"
-    WARNING = "WARNING"
-    DANGER = "DANGER"
-
-class SeniorStatus(BaseModel):
-    """Redis에 저장될 어르신 상태 정보"""
-    status: RiskLevel = Field(description="위험도 수준")
-    reason: str = Field(description="상태 변경 이유")
-    last_updated: datetime = Field(description="마지막 업데이트 시간 (UTC)")
+from web.schemas.monitoring_schema import RiskLevel, SeniorStatus
+from common.modules.db_manager import RedisSessionManager
 
 class SeniorStatusObserver:
     """어르신 상태를 관찰하고 Redis에 저장하는 클래스"""
 
-    def __init__(self, redis_manager):
-        self.redis = redis_manager
+    def __init__(self, redis_session_manager:RedisSessionManager):
+        self.red_sess = redis_session_manager
 
     async def update_status(self, senior_id: int, status: RiskLevel, reason: str):
         """
@@ -33,6 +21,8 @@ class SeniorStatusObserver:
             status (RiskLevel): 위험도 수준
             reason (str): 상태 변경 이유
         """
+        redis_client = await self.red_sess.get_client()
+
         korea_time = timezone(datetime.now().astimezone().utcoffset())
         update_time = datetime.now(korea_time)
 
@@ -44,11 +34,11 @@ class SeniorStatusObserver:
         
         redis_key = f"senior:{senior_id}:status"
         
-        # Pydantic 모델을 dict로 변환하여 Redis Hash에 저장
+        # Pydantic 모델을 dict로 변환하여 red_sess Hash에 저장
         # datetime 객체는 ISO 8601 문자열로 변환
         status_dict = new_status.model_dump(mode='json')
         
-        await self.redis.hmset(redis_key, status_dict)
+        await redis_client.hmset(redis_key, status_dict)
         print(f"✅ [상태 갱신] 어르신 ID: {senior_id}, 상태: {status.value}, 이유: {reason}")
 
     async def get_status(self, senior_id: int) -> Optional[SeniorStatus]:
@@ -61,8 +51,10 @@ class SeniorStatusObserver:
         Returns:
             Optional[SeniorStatus]: 어르신 상태 정보. 없으면 None을 반환합니다.
         """
+        redis_client = await self.red_sess.get_client()
+        
         redis_key = f"senior:{senior_id}:status"
-        status_data = await self.redis.hgetall(redis_key)
+        status_data = await redis_client.hgetall(redis_key)
 
         if not status_data:
             return None
@@ -71,6 +63,3 @@ class SeniorStatusObserver:
         decoded_data = {k.decode('utf-8'): v.decode('utf-8') for k, v in status_data.items()}
         
         return SeniorStatus(**decoded_data)
-
-# 서비스 인스턴스 생성
-senior_status_service = SeniorStatusObserver(red)

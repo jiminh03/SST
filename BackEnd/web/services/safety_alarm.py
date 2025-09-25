@@ -1,6 +1,6 @@
 import asyncio
 from web.schemas.socket_event import AlarmEvents
-from services.websocket import sio
+from web.services.websocket import sio
 
 async def request_safety_check(sid):
     try:

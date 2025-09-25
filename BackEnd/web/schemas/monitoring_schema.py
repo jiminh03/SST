@@ -1,4 +1,5 @@
-from pydantic import BaseModel, computed_field
+from enum import Enum
+from pydantic import BaseModel, computed_field, Field
 from typing import List, Optional
 from datetime import date, datetime
 
@@ -92,3 +93,15 @@ class FrontendSensorStatusPayload(BaseModel):
             return None
         return max(sensor.last_updated for sensor in self.sensors)
     
+class RiskLevel(str, Enum):
+    """어르신 위험도 수준"""
+    NORMAL = "NORMAL"
+    WARNING = "WARNING"
+    DANGER = "DANGER"
+
+class SeniorStatus(BaseModel):
+    """Redis에 저장될 어르신 상태 정보"""
+    senior_id: int = Field(description="어르신 고유 ID")
+    status: RiskLevel = Field(description="위험도 수준")
+    reason: str = Field(description="상태 변경 이유")
+    last_updated: datetime = Field(description="마지막 업데이트 시간 (UTC)")
