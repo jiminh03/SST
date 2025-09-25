@@ -5,11 +5,34 @@ import { Outlet } from 'react-router-dom'
 import TabBar from '../components/layout/TabBar'
 import { deleteSenior } from '../api/eldersApi'
 import { Eye, EyeOff } from 'lucide-react'
+import { InAppNotification } from '../components/notifications/InAppNotification'
 
 export default function MobileLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   
+  // 알림 상태 관리
+  const [notification, setNotification] = useState<any>(null)
+  
+  // 커스텀 이벤트 리스너 등록
+  useEffect(() => {
+    const handleShowNotification = (event: any) => {
+      const { type, title, message } = event.detail
+      setNotification({
+        id: Date.now().toString(),
+        type,
+        title,
+        message
+      })
+    }
+
+    window.addEventListener('showNotification', handleShowNotification)
+    
+    return () => {
+      window.removeEventListener('showNotification', handleShowNotification)
+    }
+  }, [])
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false)
@@ -214,6 +237,16 @@ export default function MobileLayout() {
 
               {/* 하단 TabBar */}
               <TabBar />
+
+              {/* 알림 - 폰 목업 안에서만 표시 */}
+              <div className="absolute top-8 right-2 left-8 z-40 pointer-events-none">
+                <div className="relative">
+                  <InAppNotification
+                    notification={notification}
+                    onClose={() => setNotification(null)}
+                  />
+                </div>
+              </div>
 
               {/* 삭제 확인 모달 - 웹 앱 레이아웃 안에서만 */}
               {showDeleteConfirm && (

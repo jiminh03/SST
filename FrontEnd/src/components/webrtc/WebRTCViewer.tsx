@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useSocket } from '../../contexts/SocketContext';
 
 // Socket.IO 이벤트 타입 정의
 const ConnectEvents = {
@@ -62,12 +62,13 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
   // onStatusChange
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const socketRef = useRef<Socket | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('연결 대기 중...');
   const [showTestVideo, setShowTestVideo] = useState(false);
+  
+  // Socket Context 사용
+  const { socket, isConnected, connectSocket, addEventListener, emit } = useSocket();
 
   // WebRTC 설정 - 더 간단한 설정으로 변경
   const rtcConfiguration: RTCConfiguration = {
@@ -103,38 +104,41 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
     try {
       setConnectionStatus('WebRTC 초기화 중...');
       
-      // Socket.IO 연결
-      const socket = io(serverUrl, {
-        transports: ['websocket'],
-        autoConnect: true,
-      });
-
-      socketRef.current = socket;
+      // Socket Context를 통해 연결
+      connectSocket(serverUrl, jwt);
 
       // RTCPeerConnection 생성
       const peerConnection = new RTCPeerConnection(rtcConfiguration);
       peerConnectionRef.current = peerConnection;
 
-      // Socket.IO 이벤트 핸들러
-      socket.on('connect', () => {
-        console.log(`서버에 연결되었습니다. (sid: ${socket.id})`);
-        setIsConnected(true);
+      // Socket.IO 이벤트 핸들러 - Context를 통해 등록
+      const handleConnect = () => {
+        console.log(`서버에 연결되었습니다. (sid: ${socket?.id || '연결 중'})`);
         setConnectionStatus('서버 연결됨');
+        
+        // Socket Context 상태 강제 업데이트
+        if (socket && socket.id) {
+          console.log('✅ WebRTC: Socket 연결 성공, Context 상태 업데이트');
+          // Context의 connectSocket을 다시 호출하여 상태 동기화
+          connectSocket(serverUrl, jwt);
+        }
         
         // 인증
         const authData: AuthenticateData = { jwt };
-        socket.emit(ConnectEvents.AUTHENTICATE, authData);
+        emit(ConnectEvents.AUTHENTICATE, authData);
         console.log('인증 정보를 서버로 전송했습니다.');
-      });
+      };
 
-      socket.on('disconnect', () => {
+      const handleDisconnect = () => {
         console.log('서버와의 연결이 끊어졌습니다.');
-        setIsConnected(false);
         setIsStreaming(false);
         setConnectionStatus('연결 끊어짐');
-      });
+      };
 
-      socket.on(WebRTCEvents.NEW_OFFER, async (offerData: string) => {
+      addEventListener('connect', handleConnect);
+      addEventListener('disconnect', handleDisconnect);
+
+      const handleNewOffer = async (offerData: string) => {
         console.log('📨 NEW_OFFER 이벤트 수신:', {
           offerData: offerData ? '데이터 있음' : '데이터 없음',
           offerLength: offerData?.length || 0,
@@ -144,8 +148,7 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
         if (!offerData) {
           console.log(`Senior ID ${seniorId}에 대한 Offer가 아직 없습니다. 10초 후 다시 시도합니다.`);
           setTimeout(() => {
-            // const checkData: CheckOfferData = { seniorId };
-            socket.emit(WebRTCEvents.CHECK_OFFER, seniorId);
+            emit(WebRTCEvents.CHECK_OFFER, seniorId);
           }, 10000);
           return;
         }
@@ -184,7 +187,7 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
             sdpLength: answerData.sdp.length
           });
           // 인자1, 인자2 형식으로 전송 (배열이 아닌 개별 인자)
-          socket.emit(WebRTCEvents.SEND_ANSWER, seniorId, answerData);
+          emit(WebRTCEvents.SEND_ANSWER, seniorId, answerData);
           console.log('✅ Answer 전송 완료');
         } catch (error) {
           console.error('❌ Offer 처리 중 오류 발생:', error);
@@ -195,9 +198,11 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
           });
           onError?.(`Offer 처리 오류: ${error}`);
         }
-      });
+      };
 
-      socket.on(WebRTCEvents.NEW_ICE_CANDIDATE, async (candidateData: any) => {
+      addEventListener(WebRTCEvents.NEW_OFFER, handleNewOffer);
+
+      const handleNewIceCandidate = async (candidateData: any) => {
         try {
           console.log('📨 NEW_ICE_CANDIDATE 이벤트 수신:', {
             candidateData: candidateData,
@@ -216,7 +221,9 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
             candidateData: candidateData
           });
         }
-      });
+      };
+
+      addEventListener(WebRTCEvents.NEW_ICE_CANDIDATE, handleNewIceCandidate);
 
       // WebRTC 이벤트 핸들러
       peerConnection.onicecandidate = (event) => {
@@ -238,7 +245,7 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
             candidateProtocol: event.candidate.protocol,
             candidateData: candidateData
           });
-          socket.emit(WebRTCEvents.SEND_ICE_CANDIDATE, seniorId, candidateData);
+          emit(WebRTCEvents.SEND_ICE_CANDIDATE, seniorId, candidateData);
           console.log('✅ ICE Candidate 전송 완료');
         } else {
           console.log('ICE Candidate 수집 완료');
@@ -422,8 +429,7 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
       // }, 30000);
 
       // Offer 확인 요청
-      // const checkData: CheckOfferData = { seniorId };
-      socket.emit(WebRTCEvents.CHECK_OFFER, seniorId);
+      emit(WebRTCEvents.CHECK_OFFER, seniorId);
       console.log(`Senior ID ${seniorId}의 Offer를 서버에 요청합니다...`);
 
     } catch (error) {
@@ -438,12 +444,6 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
       peerConnectionRef.current = null;
     }
     
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
-    
-    setIsConnected(false);
     setIsStreaming(false);
     setConnectionStatus('연결 해제됨');
   };

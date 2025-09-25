@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getSeniorById, getSeniorSensorData } from '../../api/eldersApi'
 import type { Senior, SensorStatus } from '../../api/eldersApi'
 import { MapPin, Camera, Phone, Activity, Home, Lightbulb, User, Zap, Video } from 'lucide-react'
+import { useSocket } from '../../contexts/SocketContext'
 
 export default function ElderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -19,6 +20,189 @@ export default function ElderDetailPage() {
   
   // 센서 데이터 상태
   const [sensorData, setSensorData] = useState<Record<string, SensorStatus>>({})
+  
+  // Socket Context 사용
+  const { socket, isConnected, connectSocket, addEventListener, removeEventListener } = useSocket()
+
+  // Socket 상태 디버깅
+  useEffect(() => {
+    console.log('🔍 ElderDetailPage Socket 상태:', { 
+      socket: socket ? '있음' : '없음', 
+      socketId: socket?.id || '없음',
+      isConnected,
+      socketConnected: socket?.connected || false,
+      socketConnecting: socket?.connecting || false
+    })
+  }, [socket, isConnected])
+
+  // Socket Context 상태 디버깅
+  useEffect(() => {
+    console.log('🔍 ElderDetailPage Socket Context 상태:', { 
+      socketContext: 'SocketContext 사용 중',
+      connectSocket: typeof connectSocket,
+      addEventListener: typeof addEventListener
+    })
+  }, [])
+
+  // Socket.IO 연결 및 이벤트 핸들러 (WebRTC와 동일한 방식)
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      console.log('❌ ElderDetailPage: JWT 토큰이 없습니다');
+      return;
+    }
+
+    console.log('🔍 ElderDetailPage: Socket 연결 시도 중...');
+    console.log('🔍 ElderDetailPage: connectSocket 함수 호출');
+    
+    // Socket Context를 통해 연결 (WebRTC와 동일한 방식)
+    connectSocket('https://j13a503.p.ssafy.io', token)
+    
+    console.log('🔍 ElderDetailPage: connectSocket 호출 완료');
+
+    // Socket 연결 성공 핸들러 (WebRTC와 동일한 방식)
+    const handleConnect = () => {
+      console.log(`서버에 연결되었습니다. (sid: ${socket?.id || '연결 중'})`);
+      console.log('✅ ElderDetailPage: Socket 연결 성공!');
+    };
+
+    const handleDisconnect = () => {
+      console.log('서버와의 연결이 끊어졌습니다.');
+      console.log('❌ ElderDetailPage: Socket 연결 끊김');
+    };
+
+    addEventListener('connect', handleConnect);
+    addEventListener('disconnect', handleDisconnect);
+
+    // 백엔드 이벤트 수신 핸들러들 - Context를 통해 등록
+    // 1. 센서 데이터 업데이트
+    const handleSensorLog = (data: any) => {
+      console.log('센서 데이터 업데이트:', data)
+      setSensorData(data.sensors || {})
+      
+      // 알림 표시
+      const event = new CustomEvent('showNotification', {
+        detail: {
+          type: 'info',
+          title: '📡 센서 업데이트',
+          message: '센서 데이터가 업데이트되었습니다.'
+        }
+      })
+      window.dispatchEvent(event)
+    }
+
+    // 2. 응급 상황
+    const handleEmergencySituation = (data: any) => {
+      console.log('응급 상황:', data)
+      
+      // 알림 표시
+      const event = new CustomEvent('showNotification', {
+        detail: {
+          type: 'error',
+          title: '🚨 응급 상황',
+          message: `${data.emergency_type} 상황이 발생했습니다!`
+        }
+      })
+      window.dispatchEvent(event)
+    }
+
+    // 3. 어르신 상태 변경
+    const handleStatusChange = (data: any) => {
+      console.log('상태 변경:', data)
+      
+      // 알림 표시
+      const event = new CustomEvent('showNotification', {
+        detail: {
+          type: 'warning',
+          title: '⚠️ 상태 변경',
+          message: `어르신 상태가 ${data.current_status}로 변경되었습니다.`
+        }
+      })
+      window.dispatchEvent(event)
+    }
+
+    // 4. 센서 이벤트
+    const handleSensorEvent = (data: any) => {
+      console.log('센서 이벤트:', data)
+      
+      // 알림 표시
+      const event = new CustomEvent('showNotification', {
+        detail: {
+          type: 'info',
+          title: '📡 센서 이벤트',
+          message: `${data.sensor_id}에서 이벤트가 발생했습니다.`
+        }
+      })
+      window.dispatchEvent(event)
+    }
+
+    // 5. 안전 확인 요청
+    const handleSafetyCheckRequest = (data: any) => {
+      console.log('안전 확인 요청:', data)
+      
+      // 알림 표시
+      const event = new CustomEvent('showNotification', {
+        detail: {
+          type: 'warning',
+          title: '🔍 안전 확인',
+          message: '어르신 안전 확인이 요청되었습니다.'
+        }
+      })
+      window.dispatchEvent(event)
+    }
+
+    // 6. 어르신 안전 상태
+    const handleSeniorSafe = (data: any) => {
+      console.log('어르신 안전:', data)
+      
+      // 알림 표시
+      const event = new CustomEvent('showNotification', {
+        detail: {
+          type: 'success',
+          title: '✅ 안전 확인',
+          message: '어르신이 안전합니다.'
+        }
+      })
+      window.dispatchEvent(event)
+    }
+
+    // 7. 안전 확인 실패
+    const handleSafetyCheckFailed = (data: any) => {
+      console.log('안전 확인 실패:', data)
+      
+      // 알림 표시
+      const event = new CustomEvent('showNotification', {
+        detail: {
+          type: 'error',
+          title: '❌ 안전 확인 실패',
+          message: '안전 확인에 실패했습니다.'
+        }
+      })
+      window.dispatchEvent(event)
+    }
+
+    // 이벤트 리스너 등록
+    addEventListener('server:send_sensor_log', handleSensorLog)
+    addEventListener('server:emergency_situation', handleEmergencySituation)
+    addEventListener('server:notify_senior_status_change', handleStatusChange)
+    addEventListener('server:notify_sensor_event', handleSensorEvent)
+    addEventListener('server:request_safety_check', handleSafetyCheckRequest)
+    addEventListener('server:senior_is_safe', handleSeniorSafe)
+    addEventListener('server:safety_check_failed', handleSafetyCheckFailed)
+
+    return () => {
+      // 이벤트 리스너 제거 (WebRTC와 동일한 방식)
+      removeEventListener('connect', handleConnect)
+      removeEventListener('disconnect', handleDisconnect)
+      removeEventListener('server:send_sensor_log', handleSensorLog)
+      removeEventListener('server:emergency_situation', handleEmergencySituation)
+      removeEventListener('server:notify_senior_status_change', handleStatusChange)
+      removeEventListener('server:notify_sensor_event', handleSensorEvent)
+      removeEventListener('server:request_safety_check', handleSafetyCheckRequest)
+      removeEventListener('server:senior_is_safe', handleSeniorSafe)
+      removeEventListener('server:safety_check_failed', handleSafetyCheckFailed)
+    }
+  }, []) // 의존성 배열에서 함수들 제거
   
 
   // 생년월일로부터 만 나이 계산
@@ -328,6 +512,42 @@ export default function ElderDetailPage() {
                 <Video className="w-4 h-4" />
                 <span className="text-sm font-medium">실시간 영상</span>
               </button>
+              
+              {/* 알림 테스트 버튼 */}
+              <button 
+                onClick={() => {
+                  // MobileLayout의 커스텀 알림 함수 사용
+                  const event = new CustomEvent('showNotification', {
+        detail: {
+          type: 'success',
+          title: '🔔 알림 테스트',
+          message: '폰 목업 안에서 알림이 표시됩니다!'
+        }
+      })
+      window.dispatchEvent(event)
+                }}
+                className="rounded-lg text-white px-3 py-2 bg-purple-600 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md hover:bg-purple-700"
+              >
+                <span className="text-sm font-medium">🔔 알림 테스트</span>
+              </button>
+              
+              {/* Socket.IO 연결 상태 표시 */}
+              <div className="col-span-2 flex items-center justify-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-xs text-gray-600">
+                  {isConnected ? '실시간 연결됨' : '연결 끊김'}
+                </span>
+                {socket && socket.id && (
+                  <span className="text-xs text-gray-400 ml-2">
+                    ID: {socket.id.slice(-4)}
+                  </span>
+                )}
+                {!socket && (
+                  <span className="text-xs text-gray-400 ml-2">
+                    Socket 없음
+                  </span>
+                )}
+              </div>
               <button 
                 onClick={() => navigate(`/camera?from=${id}`)}
                 className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
