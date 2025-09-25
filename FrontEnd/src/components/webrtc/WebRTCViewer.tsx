@@ -123,10 +123,6 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
           connectSocket(serverUrl, jwt);
         }
         
-        // 인증
-        const authData: AuthenticateData = { jwt };
-        emit(ConnectEvents.AUTHENTICATE, authData);
-        console.log('인증 정보를 서버로 전송했습니다.');
       };
 
       const handleDisconnect = () => {
