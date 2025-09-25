@@ -26,13 +26,12 @@ export default function ElderDetailPage() {
 
   // Socket 상태 디버깅
   useEffect(() => {
-    console.log('🔍 ElderDetailPage Socket 상태:', { 
-      socket: socket ? '있음' : '없음', 
-      socketId: socket?.id || '없음',
-      isConnected,
-      socketConnected: socket?.connected || false,
-      socketConnecting: socket?.connecting || false
-    })
+        console.log('🔍 ElderDetailPage Socket 상태:', { 
+          socket: socket ? '있음' : '없음', 
+          socketId: socket?.id || '없음',
+          isConnected,
+          socketConnected: socket?.connected || false
+        })
   }, [socket, isConnected])
 
   // Socket Context 상태 디버깅

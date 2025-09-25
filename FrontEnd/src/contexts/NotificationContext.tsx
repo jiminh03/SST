@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, type ReactNode } from 'react'
 
 interface NotificationData {
   id: string
@@ -35,7 +35,7 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const [notification, setNotification] = useState<NotificationData | null>(null)
+  const [, setNotification] = useState<NotificationData | null>(null)
 
   const showNotification = (data: Omit<NotificationData, 'id'>) => {
     const id = Date.now().toString()
