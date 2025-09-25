@@ -104,8 +104,8 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
     try {
       setConnectionStatus('WebRTC 초기화 중...');
       
-      // Socket Context를 통해 연결
-      connectSocket(serverUrl, jwt);
+        // Socket Context를 통해 연결 (HomePage에서 이미 연결됨)
+        // connectSocket(serverUrl, jwt); // 제거됨
 
       // RTCPeerConnection 생성
       const peerConnection = new RTCPeerConnection(rtcConfiguration);
@@ -123,10 +123,6 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
           connectSocket(serverUrl, jwt);
         }
         
-        // 인증
-        const authData: AuthenticateData = { jwt };
-        emit(ConnectEvents.AUTHENTICATE, authData);
-        console.log('인증 정보를 서버로 전송했습니다.');
       };
 
       const handleDisconnect = () => {

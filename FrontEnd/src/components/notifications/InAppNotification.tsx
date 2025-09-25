@@ -104,7 +104,7 @@ export const InAppNotification: React.FC<InAppNotificationProps> = ({
           </div>
           <button
             onClick={handleClose}
-            className="p-1 hover:bg-gray-200 rounded transition-colors"
+            className="!bg-transparent !border-none !p-0 !m-0 !rounded-none transition-colors"
           >
             <X className="w-4 h-4 text-gray-500" />
           </button>

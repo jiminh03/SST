@@ -43,21 +43,14 @@ export default function ElderDetailPage() {
     })
   }, [])
 
-  // Socket.IO 연결 및 이벤트 핸들러 (WebRTC와 동일한 방식)
+  // Socket.IO 연결 및 이벤트 핸들러 (HomePage에서 이미 연결됨)
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      console.log('❌ ElderDetailPage: JWT 토큰이 없습니다');
-      return;
+    // Socket이 연결되어 있는지 확인
+    if (socket && socket.connected) {
+      console.log('✅ ElderDetailPage: Socket 이미 연결됨:', socket.id);
+    } else {
+      console.log('⚠️ ElderDetailPage: Socket 연결 대기 중...');
     }
-
-    console.log('🔍 ElderDetailPage: Socket 연결 시도 중...');
-    console.log('🔍 ElderDetailPage: connectSocket 함수 호출');
-    
-    // Socket Context를 통해 연결 (WebRTC와 동일한 방식)
-    connectSocket('https://j13a503.p.ssafy.io', token)
-    
-    console.log('🔍 ElderDetailPage: connectSocket 호출 완료');
 
     // Socket 연결 성공 핸들러 (WebRTC와 동일한 방식)
     const handleConnect = () => {
@@ -512,22 +505,16 @@ export default function ElderDetailPage() {
                 <span className="text-sm font-medium">실시간 영상</span>
               </button>
               
-              {/* 알림 테스트 버튼 */}
-              <button 
-                onClick={() => {
-                  // MobileLayout의 커스텀 알림 함수 사용
-                  const event = new CustomEvent('showNotification', {
-        detail: {
-          type: 'success',
-          title: '🔔 알림 테스트',
-          message: '폰 목업 안에서 알림이 표시됩니다!'
-        }
-      })
-      window.dispatchEvent(event)
-                }}
-                className="rounded-lg text-white px-3 py-2 bg-purple-600 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md hover:bg-purple-700"
+              {/* 보호자 연락 버튼 */}
+              <button
+                onClick={() => setShowGuardianContact(true)}
+                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
+                style={{ backgroundColor: '#ffffff' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
               >
-                <span className="text-sm font-medium">🔔 알림 테스트</span>
+                <Phone className="w-4 h-4" />
+                <span className="text-sm font-medium">보호자 연락</span>
               </button>
               
               {/* Socket.IO 연결 상태 표시 */}
@@ -547,25 +534,23 @@ export default function ElderDetailPage() {
                   </span>
                 )}
               </div>
+              
+              {/* 알림 테스트 버튼 */}
               <button 
-                onClick={() => navigate(`/camera?from=${id}`)}
-                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
-                style={{ backgroundColor: '#ffffff' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+                onClick={() => {
+                  // MobileLayout의 커스텀 알림 함수 사용
+                  const event = new CustomEvent('showNotification', {
+        detail: {
+          type: 'success',
+          title: '🔔 알림 테스트',
+          message: '폰 목업 안에서 알림이 표시됩니다!'
+        }
+      })
+      window.dispatchEvent(event)
+                }}
+                className="rounded-lg text-white px-3 py-2 bg-purple-600 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md hover:bg-purple-700"
               >
-                <Camera className="w-4 h-4" />
-                <span className="text-sm font-medium">카메라 확인</span>
-              </button>
-              <button
-                onClick={() => setShowGuardianContact(true)}
-                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
-                style={{ backgroundColor: '#ffffff' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
-              >
-                <Phone className="w-4 h-4" />
-                <span className="text-sm font-medium">보호자 연락</span>
+                <span className="text-sm font-medium">🔔 알림 테스트</span>
               </button>
             </div>
           </div>

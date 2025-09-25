@@ -239,7 +239,7 @@ export default function MobileLayout() {
               <TabBar />
 
               {/* 알림 - 폰 목업 안에서만 표시 */}
-              <div className="absolute top-8 right-2 left-8 z-40 pointer-events-none">
+              <div className="absolute top-8 right-2 left-8 z-40">
                 <div className="relative">
                   <InAppNotification
                     notification={notification}
