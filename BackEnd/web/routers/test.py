@@ -7,11 +7,7 @@ from web.services.database import db, red
 from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
 from web.services.safety_alarm import request_safety_check
 
-
-
-
 router = APIRouter(prefix="/test", tags=["테스트용 라우터"])
-
 
 @router.get(
     "/test_emergency",

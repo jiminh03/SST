@@ -21,9 +21,15 @@ AuthPacket = Union[HubAuthPacket, StaffAuthPacket]
     
 
 @sio.on(ConnectEvents.CONNECT)
-async def connect(sid, environ, auth: AuthPacket):
+async def connect(sid, environ, auth: AuthPacket=None):
     print(f"✅ [연결 시도] 클라이언트 접속. sid: {sid}")
-    if 'token' in auth:
+
+    if not auth:
+        print(f"[인증 실패] 인증 정보가 없습니다. sid: {sid}")
+        await sio.disconnect(sid)
+        return
+    
+    if 'api_key' in auth:
         async for session in db.get_session():
             api_key = auth.get('api_key')
             apikey_repo = ApiKeyRepository(session)
@@ -35,8 +41,8 @@ async def connect(sid, environ, auth: AuthPacket):
             )
             await session_man.create_session(con_info)
             await sio.emit(ConnectEvents.AUTH_SUCCESS, to=sid)
-    elif 'jwt' in auth:
-        jwt = auth.get('jwt')
+    elif 'token' in auth:
+        jwt = auth.get('token')
         async for session in db.get_session():
             user_info = await auth_module.get_current_user(jwt, session)
         con_info = ConnectionInfo(
