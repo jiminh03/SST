@@ -50,6 +50,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     if (!socketRef.current) {
       console.log('🚀 Creating new Socket.IO connection...');
       const newSocket = io(serverUrl, {
+        auth: { token: jwt },
         transports: ['websocket']
       });
 
