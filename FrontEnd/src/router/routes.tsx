@@ -12,6 +12,8 @@ import SplashPage from '../pages/splash/SplashPage'
 import LoginPage from '../pages/auth/LoginPage'
 import AuthRegisterPage from '../pages/auth/RegisterPage'
 import WebRTCViewerPage from '../pages/webrtc/WebRTCViewerPage'
+import { NotificationProvider } from '../contexts/NotificationContext'
+import { SocketProvider } from '../contexts/SocketContext'
 
 const router = createBrowserRouter([
   // 스플래시 화면 (레이아웃 없음)
@@ -25,13 +27,33 @@ const router = createBrowserRouter([
   { path: '/auth/register', element: <AuthRegisterPage /> },
   { path: '/staffs', element: <AuthRegisterPage /> },
   
-  // WebRTC 뷰어 페이지 (레이아웃 없음)
-  { path: '/webrtc/:seniorId', element: <WebRTCViewerPage /> },
-  { path: '/webrtc/*', element: <WebRTCViewerPage /> },
+  // WebRTC 뷰어 페이지 (레이아웃 없음 - SocketProvider 적용)
+  { 
+    path: '/webrtc/:seniorId', 
+    element: (
+      <SocketProvider>
+        <WebRTCViewerPage />
+      </SocketProvider>
+    )
+  },
+  { 
+    path: '/webrtc/*', 
+    element: (
+      <SocketProvider>
+        <WebRTCViewerPage />
+      </SocketProvider>
+    )
+  },
   
-  // 메인 앱 페이지들 (MobileLayout 사용)
+  // 메인 앱 페이지들 (MobileLayout 사용 - SocketProvider + NotificationProvider)
   {
-    element: <MobileLayout />,
+    element: (
+      <SocketProvider>
+        <NotificationProvider>
+          <MobileLayout />
+        </NotificationProvider>
+      </SocketProvider>
+    ),
     children: [
       { path: '/home', element: <HomePage /> },
       { path: '/elders', element: <EldersPage /> },
