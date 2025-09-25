@@ -95,9 +95,9 @@ class FrontendSensorStatusPayload(BaseModel):
     
 class RiskLevel(str, Enum):
     """어르신 위험도 수준"""
-    NORMAL = "NORMAL"
-    WARNING = "WARNING"
-    DANGER = "DANGER"
+    NORMAL = "안전"
+    WARNING = "주의"
+    DANGER = "위험"
 
 class SeniorStatus(BaseModel):
     """Redis에 저장될 어르신 상태 정보"""

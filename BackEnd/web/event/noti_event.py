@@ -1,10 +1,11 @@
 from web.services.websocket import sio
-from web.services.senior_status_observer import SeniorStatus, SeniorStatusObserver
-import asyncio
+from web.services.senior_status_manager import SeniorStatusManager
 from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
 from common.modules.user_manager import UserManager
 from web.services.database import db,red
 from web.schemas.socket_event import NotifyEvents
+from web.schemas.monitoring_schema import SeniorStatus
+
 
 @sio.on(NotifyEvents.CLIENT_REQUEST_INITIAL_STATUS)
 async def notify_initial_status(sid: str):
@@ -13,13 +14,13 @@ async def notify_initial_status(sid: str):
     Pydantic이 데이터 유효성 검사를 자동으로 수행합니다.
     """
 
-    sso = SeniorStatusObserver(red)
+    sso = SeniorStatusManager(red)
     sses_man = SessionManager(red)
     staff_id = (await sses_man.get_session_by_sid(sid)).staff_id
     
     async for session in db.get_session():
         senior_list = await UserManager(session).get_care_seniors(staff_id)
-    status_list = [sso.get_status(s.senior_id) for s in senior_list]
+    status_list = [await sso.get_status(s.senior_id) for s in senior_list]
     
     # 1. Pydantic 모델 리스트를 JSON 직렬화가 가능한 dict 리스트로 변환
     #    - 리스트의 각 status 객체에 대해 model_dump()를 호출합니다.
@@ -35,17 +36,3 @@ async def notify_initial_status(sid: str):
     print(f"✅ 이벤트 전송: {NotifyEvents.SERVER_SEND_INITIAL_STATUS}, 받는 이: {sid}")
 
 
-async def notify_senior_status_change(senior_id: int, status: SeniorStatus):
-    """
-    어르신 상태 변경을 클라이언트에게 알립니다.
-    """
-    
-    async for session in db.get_session():
-        staff_id = (await UserManager(session).get_senior_staff(senior_id)).staff_id
-        recv_sid = (await SessionManager(red).get_session_by_staff_id(staff_id)).sid   
-    
-    # Pydantic 모델을 dict로 변환하여 전송
-    status_dict = status.model_dump(mode='json')
-    
-    await sio.emit(NotifyEvents.SERVER_NOTIFY_SENIOR_STATUS_CHANGE, status_dict, to=recv_sid)
-    print(f"이벤트: {NotifyEvents.SERVER_NOTIFY_SENIOR_STATUS_CHANGE}, 데이터: {status_dict}")

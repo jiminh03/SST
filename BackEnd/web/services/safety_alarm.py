@@ -35,3 +35,5 @@ async def notify_safety_check_failed(sid):
 
 async def notify_sensor_event(sid, sensor_event_log):
     await sio.emit(AlarmEvents.NOTIFY_SENSOR_EVENT,sensor_event_log, to=sid)
+
+    

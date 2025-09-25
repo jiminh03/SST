@@ -5,8 +5,10 @@ from enum import Enum
 
 from web.schemas.monitoring_schema import RiskLevel, SeniorStatus
 from common.modules.db_manager import RedisSessionManager
+from web.services.data_alarm import notify_senior_status_change
 
-class SeniorStatusObserver:
+
+class SeniorStatusManager:
     """어르신 상태를 관찰하고 Redis에 저장하는 클래스"""
 
     def __init__(self, redis_session_manager:RedisSessionManager):
@@ -27,6 +29,7 @@ class SeniorStatusObserver:
         update_time = datetime.now(korea_time)
 
         new_status = SeniorStatus(
+            senior_id=senior_id,
             status=status,
             reason=reason,
             last_updated=update_time
@@ -39,6 +42,9 @@ class SeniorStatusObserver:
         status_dict = new_status.model_dump(mode='json')
         
         await redis_client.hmset(redis_key, status_dict)
+
+        await notify_senior_status_change(senior_id, new_status)
+
         print(f"✅ [상태 갱신] 어르신 ID: {senior_id}, 상태: {status.value}, 이유: {reason}")
 
     async def get_status(self, senior_id: int) -> Optional[SeniorStatus]:
