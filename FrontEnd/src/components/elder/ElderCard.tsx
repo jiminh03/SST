@@ -1,11 +1,32 @@
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { User } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import type { Senior } from '../../api/eldersApi'
+import { useSocket } from '../../contexts/SocketContext'
 
 export default function ElderCard({ elder }: { elder: Senior }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imageLoading, setImageLoading] = useState(false)
+  const navigate = useNavigate()
+  const { socket } = useSocket()
+
+  // 어르신 카드 클릭 핸들러
+  const handleElderClick = () => {
+    console.log(`🔍 ${elder.senior_id}번 어르신 상세조회로 이동`)
+    
+    // 웹소켓으로 전체 센서 상태 요청
+    if (socket && socket.connected) {
+      console.log(`📡 전체 센서 상태 요청 전송: senior_id ${elder.senior_id}`)
+      socket.emit('client:request_all_sensor_status', {
+        senior_id: elder.senior_id
+      })
+    } else {
+      console.log('⚠️ 웹소켓이 연결되지 않아 센서 상태 요청을 보낼 수 없습니다.')
+    }
+    
+    // 상세조회 페이지로 이동
+    navigate(`/elders/${elder.senior_id}`)
+  }
 
   // 인증된 이미지 로드
   useEffect(() => {
@@ -130,7 +151,10 @@ export default function ElderCard({ elder }: { elder: Senior }) {
     : 'shadow-[0_0_5px_0_rgba(34,197,94,0.5)]'
 
   return (
-    <Link to={`/elders/${elder.senior_id}`} className="relative flex items-center gap-3 p-4 bg-white rounded-[20px] shadow-[0px_4px_20px_rgba(0,0,0,0.25)] no-underline text-inherit">
+    <button 
+      onClick={handleElderClick}
+      className="relative flex items-center gap-3 p-4 bg-white rounded-[20px] shadow-[0px_4px_20px_rgba(0,0,0,0.25)] no-underline text-inherit w-full text-left cursor-pointer hover:shadow-[0px_6px_25px_rgba(0,0,0,0.3)] transition-shadow"
+    >
       {/* 상태 배지 (우상단 고정) */}
       <div className={`absolute top-4 right-4 flex items-center gap-1 text-base font-semibold ${statusClass}`}>
         <span className={`w-3 h-3 shrink-0 aspect-square rounded-full ${dotClass} ${glowClass}`} />
@@ -164,6 +188,6 @@ export default function ElderCard({ elder }: { elder: Senior }) {
         <p className="text-sm text-zinc-400 font-semibold">{calculateAge(elder.birth_date)}</p>
         <p className="text-sm text-zinc-400 font-semibold">{elder.address}</p>
       </div>
-    </Link>
+    </button>
   )
 }

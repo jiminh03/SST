@@ -40,8 +40,48 @@ export default function HomePage() {
     }
   }, [connectSocket])
 
+  // 홈 화면 진입 시 전체 어르신 상태 데이터 요청
+  useEffect(() => {
+    if (socket && socket.connected && seniors.length > 0) {
+      console.log('📡 홈 화면 진입 시 전체 어르신 상태 요청')
+      // 모든 어르신의 상태를 요청 (senior_id 포함)
+      seniors.forEach(senior => {
+        socket.emit('client:request_all_senior_status', {
+          senior_id: senior.senior_id
+        })
+      })
+    }
+  }, [socket, seniors])
+
   // WebSocket 이벤트 리스너 등록하여 상태를 실시간으로 업데이트
   useEffect(() => {
+    // 센서 데이터 수신 핸들러
+    const handleSensorData = (data: any) => {
+      console.log('🏠 홈 화면 센서 데이터 수신:', data)
+      
+      if (data.senior_id && data.sensors && Array.isArray(data.sensors)) {
+        console.log(`🏠 ${data.senior_id}번 어르신 센서 데이터 처리`)
+        
+        const sensorMap: Record<string, any> = {}
+        data.sensors.forEach((sensor: any) => {
+          const sensorKey = sensor.sensor_id
+          sensorMap[sensorKey] = {
+            sensor_id: sensor.sensor_id,
+            sensor_type: sensor.sensor_type,
+            location: sensor.location,
+            status: sensor.status,
+            value: sensor.value,
+            last_updated: sensor.last_updated,
+            event_description: sensor.event_description || ''
+          }
+        })
+        
+        // localStorage에 센서 데이터 저장
+        localStorage.setItem(`sensor_data_${data.senior_id}`, JSON.stringify(sensorMap))
+        console.log(`🏠 센서 데이터 localStorage 저장 완료: senior_id ${data.senior_id}`)
+      }
+    }
+
     const handleStatusChange = (data: { senior_id: number; status: '위험' | '주의' | '안전' }) => {
       console.log(`⚡️ 홈 화면 상태 변경 이벤트 수신: 어르신 ID ${data.senior_id} -> ${data.status}`);
       
@@ -154,11 +194,13 @@ export default function HomePage() {
     // 이벤트 리스너 등록
     addEventListener('server:notify_senior_status_change', handleStatusChange)
     addEventListener('server:emergency_situation', handleEmergencySituation)
+    addEventListener('server:send_all_sensor_status', handleSensorData)
 
     // 컴포넌트 언마운트 시 리스너 제거
     return () => {
       removeEventListener('server:notify_senior_status_change', handleStatusChange)
       removeEventListener('server:emergency_situation', handleEmergencySituation)
+      removeEventListener('server:send_all_sensor_status', handleSensorData)
     }
   }, [addEventListener, removeEventListener])
 
