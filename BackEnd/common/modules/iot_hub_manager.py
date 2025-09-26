@@ -82,14 +82,16 @@ class IotHubManager:
         result = await self.session.execute(query, params)
 
         if result.rowcount == 0:
-            raise ValueError(f"edit_hub_info - Hub with hub_id:{hub_id} not found or no changes made.")
+            raise ValueError(
+                f"edit_hub_info - Hub with hub_id:{hub_id} not found or no changes made."
+            )
 
     async def get_hub_status(self, hub_id: int) -> Optional[HubStatus]:
         """허브 ID로 허브의 현재 상태를 조회하여 _HubStatus 객체로 반환합니다."""
         query = text("SELECT status FROM iot_hubs WHERE hub_id = :hub_id")
         result = await self.session.execute(query, {"hub_id": hub_id})
         status_str = result.scalar_one_or_none()
-        
+
         if status_str is None:
             raise ValueError(f"get_hub_status - Hub with hub_id:{hub_id} not found.")
 

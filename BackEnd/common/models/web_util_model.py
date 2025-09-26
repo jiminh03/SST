@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 from deprecated import deprecated
 
 from sqlmodel import Field, Relationship, SQLModel

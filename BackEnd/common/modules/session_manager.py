@@ -1,7 +1,6 @@
 import json
 from typing import Optional, Union
 
-# common/schemas/session.py 에 있다고 가정합니다.
 from common.schemas.session import SessionType, ConnectionInfo
 from common.modules.db_manager import RedisSessionManager
 

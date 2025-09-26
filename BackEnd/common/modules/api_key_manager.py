@@ -40,19 +40,17 @@ class ApiKeyManager:
         """API 키를 SHA256으로 해시합니다."""
         return hashlib.sha256(api_key.encode()).hexdigest()
 
+
 class ApiKeyRepository:
-    def __init__(self, session: AsyncSession): # DB 세션을 주입받음
+    def __init__(self, session: AsyncSession):  # DB 세션을 주입받음
         self.session = session
         self.iot_hub_manager = IotHubManager(session)
 
     async def check_key_duplicated(self, hashed_key: str) -> bool:
         """key 중복을 확인하는 메서드"""
         query = text("SELECT COUNT(*) FROM iot_hubs WHERE api_key_hash = :hashed_key")
-    
         result = await self.session.execute(query, {"hashed_key": hashed_key})
-
         count = result.scalar_one()
-
         return count > 0
 
     async def get_hash_for_hub(self, hub_id: int) -> str | None:
@@ -64,7 +62,9 @@ class ApiKeyRepository:
 
     async def update_hash_for_hub(self, hashed_key: str, hub_id: int) -> None:
         """IoTHubManager를 통해 허브의 api_key_hash를 업데이트합니다."""
-        await self.iot_hub_manager.edit_hub_info(hub_id=hub_id, update_data=HubUpdate(api_key_hash=hashed_key))
+        await self.iot_hub_manager.edit_hub_info(
+            hub_id=hub_id, update_data=HubUpdate(api_key_hash=hashed_key)
+        )
 
     async def get_hub_by_api_key(self, api_key: str) -> HubBasicInfo | None:
         """api 키를 통해 hub정보를 가져옵니다."""
