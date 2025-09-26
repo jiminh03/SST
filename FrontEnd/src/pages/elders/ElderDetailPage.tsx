@@ -67,117 +67,49 @@ export default function ElderDetailPage() {
     addEventListener('disconnect', handleDisconnect);
 
     // 백엔드 이벤트 수신 핸들러들 - Context를 통해 등록
-    // 1. 센서 데이터 업데이트
+    // 1. 센서 데이터 업데이트 (너무 빈번하므로 알림 제거)
     const handleSensorLog = (data: any) => {
       console.log('센서 데이터 업데이트:', data)
       setSensorData(data.sensors || {})
-      
-      // 알림 표시
-      const event = new CustomEvent('showNotification', {
-        detail: {
-          type: 'info',
-          title: '📡 센서 업데이트',
-          message: '센서 데이터가 업데이트되었습니다.'
-        }
-      })
-      window.dispatchEvent(event)
+      // 센서 업데이트는 너무 빈번하므로 알림 제거
     }
 
-    // 2. 응급 상황
+    // 2. 응급 상황 (HomePage에서 처리하므로 알림 제거)
     const handleEmergencySituation = (data: any) => {
       console.log('응급 상황:', data)
-      
-      // 알림 표시
-      const event = new CustomEvent('showNotification', {
-        detail: {
-          type: 'error',
-          title: '🚨 응급 상황',
-          message: `${data.emergency_type} 상황이 발생했습니다!`
-        }
-      })
-      window.dispatchEvent(event)
+      // HomePage에서 이미 알림을 처리하므로 여기서는 로그만 출력
     }
 
-    // 3. 어르신 상태 변경
-    const handleStatusChange = (data: any) => {
-      console.log('상태 변경:', data)
-      
-      // 알림 표시
-      const event = new CustomEvent('showNotification', {
-        detail: {
-          type: 'warning',
-          title: '상태 변경',
-          message: `어르신 상태가 ${data.status}로 변경되었습니다.`
-        }
-      })
-      window.dispatchEvent(event)
-    }
 
-    // 4. 센서 이벤트
+    // 4. 센서 이벤트 (너무 빈번하므로 알림 제거)
     const handleSensorEvent = (data: any) => {
       console.log('센서 이벤트:', data)
-      
-      // 알림 표시
-      const event = new CustomEvent('showNotification', {
-        detail: {
-          type: 'info',
-          title: '📡 센서 이벤트',
-          message: `${data.sensor_id}에서 이벤트가 발생했습니다.`
-        }
-      })
-      window.dispatchEvent(event)
+      // 센서 이벤트는 너무 빈번하므로 알림 제거
     }
 
-    // 5. 안전 확인 요청
+    // 5. 안전 확인 요청 (너무 빈번하므로 알림 제거)
     const handleSafetyCheckRequest = (data: any) => {
       console.log('안전 확인 요청:', data)
-      
-      // 알림 표시
-      const event = new CustomEvent('showNotification', {
-        detail: {
-          type: 'warning',
-          title: '🔍 안전 확인',
-          message: '어르신 안전 확인이 요청되었습니다.'
-        }
-      })
-      window.dispatchEvent(event)
+      // 안전 확인 요청은 너무 빈번하므로 알림 제거
     }
 
-    // 6. 어르신 안전 상태
+    // 6. 어르신 안전 상태 (너무 빈번하므로 알림 제거)
     const handleSeniorSafe = (data: any) => {
       console.log('어르신 안전:', data)
-      
-      // 알림 표시
-      const event = new CustomEvent('showNotification', {
-        detail: {
-          type: 'success',
-          title: '✅ 안전 확인',
-          message: '어르신이 안전합니다.'
-        }
-      })
-      window.dispatchEvent(event)
+      // 안전 확인 성공은 너무 빈번하므로 알림 제거
     }
 
-    // 7. 안전 확인 실패
+    // 7. 안전 확인 실패 (너무 빈번하므로 알림 제거)
     const handleSafetyCheckFailed = (data: any) => {
       console.log('안전 확인 실패:', data)
-      
-      // 알림 표시
-      const event = new CustomEvent('showNotification', {
-        detail: {
-          type: 'error',
-          title: '❌ 안전 확인 실패',
-          message: '안전 확인에 실패했습니다.'
-        }
-      })
-      window.dispatchEvent(event)
+      // 안전 확인 실패는 너무 빈번하므로 알림 제거
     }
 
-    // 이벤트 리스너 등록
+    // 이벤트 리스너 등록 (상태 변경은 HomePage에서 처리하므로 제거)
     console.log('🔔 ElderDetailPage: 이벤트 리스너 등록 시작');
     addEventListener('server:send_sensor_log', handleSensorLog)
     addEventListener('server:emergency_situation', handleEmergencySituation)
-    addEventListener('server:notify_senior_status_change', handleStatusChange)
+    // addEventListener('server:notify_senior_status_change', handleStatusChange) // HomePage에서 처리
     addEventListener('server:notify_sensor_event', handleSensorEvent)
     addEventListener('server:request_safety_check', handleSafetyCheckRequest)
     addEventListener('server:senior_is_safe', handleSeniorSafe)
@@ -190,13 +122,13 @@ export default function ElderDetailPage() {
       removeEventListener('disconnect', handleDisconnect)
       removeEventListener('server:send_sensor_log', handleSensorLog)
       removeEventListener('server:emergency_situation', handleEmergencySituation)
-      removeEventListener('server:notify_senior_status_change', handleStatusChange)
+      // removeEventListener('server:notify_senior_status_change', handleStatusChange) // HomePage에서 처리
       removeEventListener('server:notify_sensor_event', handleSensorEvent)
       removeEventListener('server:request_safety_check', handleSafetyCheckRequest)
       removeEventListener('server:senior_is_safe', handleSeniorSafe)
       removeEventListener('server:safety_check_failed', handleSafetyCheckFailed)
     }
-  }, [addEventListener, removeEventListener]) // 의존성 배열에 함수들 추가
+  }, [addEventListener, removeEventListener, senior]) // senior 데이터가 로드된 후에 이벤트 리스너 등록
   
 
   // 생년월일로부터 만 나이 계산

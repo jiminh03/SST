@@ -7,7 +7,7 @@ import RegisterPage from '../pages/register/RegisterPage'
 import ElderDetailPage from '../pages/elders/ElderDetailPage'
 import ElderEditPage from '../pages/elders/ElderEditPage'
 import CameraPage from '../pages/camera/CameraPage'
-import NotificationsPage from '../pages/notifications/NotificationsPage'
+import NotificationPage from '../pages/notifications/NotificationPage'
 import SplashPage from '../pages/splash/SplashPage'
 import LoginPage from '../pages/auth/LoginPage'
 import AuthRegisterPage from '../pages/auth/RegisterPage'
@@ -60,7 +60,7 @@ const router = createBrowserRouter([
       { path: '/elders/:id', element: <ElderDetailPage /> },
       { path: '/elders/:id/edit', element: <ElderEditPage /> },
       { path: '/camera', element: <CameraPage /> },
-      { path: '/notifications', element: <NotificationsPage /> },
+      { path: '/notifications', element: <NotificationPage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/register', element: <RegisterPage/> },
     ],
