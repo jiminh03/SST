@@ -24,6 +24,7 @@ async def notify_all_senior_status(sid: str):
 async def notify_all_sensor_status(sid: str, senior_id: int):
     print("CLIENT_REQUEST_ALL_SENSOR_STATUS 요청")
     packet= await SensorStatusManager(red).get_all_sensor_statuses(senior_id)
-    await notify_sensor_status_log_change(packet)
+    if packet:
+        await notify_sensor_status_log_change(packet)
 
 

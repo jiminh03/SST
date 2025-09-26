@@ -495,41 +495,6 @@ export default function ElderDetailPage() {
     }
   }, [addEventListener, removeEventListener, senior]) // senior 데이터가 로드된 후에 이벤트 리스너 등록
 
-  // 페이지 진입 시 센서 데이터 요청 (항상 최신 데이터 요청)
-  useEffect(() => {
-    if (senior?.senior_id && socket && socket.connected) {
-      console.log(`📡 페이지 진입 시 센서 데이터 요청: senior_id ${senior.senior_id}`)
-      console.log(`🔍 현재 센서 데이터 상태:`, sensorData)
-      
-      // 항상 최신 센서 데이터 요청
-      console.log(`📡 최신 센서 데이터 요청: senior_id ${senior.senior_id}`)
-      socket.emit('client:request_all_sensor_status', {
-        senior_id: senior.senior_id
-      })
-      
-      // 3초 후에도 응답이 없으면 다시 요청
-      const retryTimer = setTimeout(() => {
-        console.log(`🔄 센서 데이터 재요청: senior_id ${senior.senior_id}`)
-        socket.emit('client:request_all_sensor_status', {
-          senior_id: senior.senior_id
-        })
-      }, 3000)
-      
-      return () => clearTimeout(retryTimer)
-    }
-  }, [senior?.senior_id, socket])
-
-  // 페이지 진입 시 전체 어르신 상태 데이터 요청
-  useEffect(() => {
-    if (senior?.senior_id && socket && socket.connected) {
-      console.log(`📡 페이지 진입 시 전체 어르신 상태 요청: senior_id ${senior.senior_id}`)
-      socket.emit('client:request_all_senior_status', {
-        senior_id: senior.senior_id
-      })
-    }
-  }, [senior?.senior_id, socket])
-  
-
   // 생년월일로부터 만 나이 계산
   const calculateAge = (birthDate: string): string => {
     if (!birthDate) return '정보 없음'
