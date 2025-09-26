@@ -1,12 +1,9 @@
-from datetime import date
-from typing import Any, List, Optional
-import json
-from pydantic import BaseModel
+from typing import List, Optional
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from common.models.user_models import Staff, Senior, StaffSeniorMap
-
 from common.schemas.user import *
 
 
@@ -28,9 +25,6 @@ class UserManager:
 
     async def edit_staff(self, staff_id: int, staff_info: StaffUpdate) -> None:
         """어르신 정보를 수정합니다."""
-        if await self.get_staff_by_id(staff_id) is None:
-            raise ValueError(f"edit_staff - invalid staff_id:{staff_id}")
-
         update_dict = staff_info.model_dump(exclude_unset=True, exclude_none=True)
 
         if not update_dict:
@@ -43,9 +37,12 @@ class UserManager:
         params = update_dict
         params["staff_id"] = staff_id
 
-        await self.session.execute(query, params)
+        result = await self.session.execute(query, params)
 
-    async def get_staff_by_id(self, staff_id: int) -> Optional[Staff]:
+        if result.rowcount == 0:
+            raise ValueError(f"edit_staff - Staff with staff_id:{staff_id} not found.")
+
+    async def get_staff_by_id(self, staff_id: int) -> Optional[StaffInfo]:
         """
         고유 ID(PK)를 사용하여 특정 직원을 조회합니다. (Raw SQL 사용)
         """
@@ -58,7 +55,7 @@ class UserManager:
         else:
             return None
 
-    async def get_staff_by_email(self, email: str) -> Optional[Staff]:
+    async def get_staff_by_email(self, email: str) -> Optional[StaffInfo]:
         """
         로그인 이메일를 사용하여 특정 직원을 조회합니다. (Raw SQL 사용)
         """
@@ -80,8 +77,6 @@ class UserManager:
 
     async def edit_senior(self, senior_id: int, senior_info: SeniorUpdate) -> None:
         """어르신 정보를 수정합니다."""
-        if await self.get_senior_info_by_id(senior_id) is None:
-            raise ValueError(f"edit_senior - invalid senior_id:{senior_id}")
 
         update_dict = senior_info.model_dump(exclude_unset=True, exclude_none=True)
 
@@ -95,7 +90,12 @@ class UserManager:
         params = update_dict
         params["senior_id"] = senior_id
 
-        await self.session.execute(query, params)
+        result = await self.session.execute(query, params)
+
+        if result.rowcount == 0:
+            raise ValueError(
+                f"edit_senior - Senior with senior_id:{senior_id} not found."
+            )
 
     async def get_senior_info_by_id(self, senior_id: int) -> Optional[SeniorInfo]:
         """고유 ID(PK)를 사용하여 특정 어르신 정보를 조회합니다. (Raw SQL 사용)"""
@@ -127,8 +127,8 @@ class UserManager:
         result = await self.session.execute(query, {"staff_id": staff_id})
         senior_rows = result.mappings().all()
         return [SeniorInfo.model_validate(row) for row in senior_rows]
-    
-    async def get_senior_staff(self, senior_id: int) -> StaffInfo:
+
+    async def get_senior_staff(self, senior_id: int) -> Optional[StaffInfo]:
         """데이터베이스에 등록된 어르신 목록 중 담당하고 있는 어르신 목록을 조회합니다. (Raw SQL 사용)"""
         query = text(
             """
@@ -139,9 +139,13 @@ class UserManager:
             """
         )
         result = await self.session.execute(query, {"senior_id": senior_id})
-        staff_rows = result.mappings().all()
-        return StaffInfo.model_validate(staff_rows[0])
-    
+        staff_row = result.mappings().first()
+
+        if staff_row:
+            return StaffInfo.model_validate(staff_row)
+        else:
+            return None
+
     async def link_staff_to_senior(self, staff_id: int, senior_id: int) -> None:
         """직원과 어르신을 연결합니다."""
         if await self.get_staff_by_id(staff_id) is None:
@@ -149,6 +153,11 @@ class UserManager:
         if await self.get_senior_info_by_id(senior_id) is None:
             raise ValueError(f"link_staff_to_senior - invalid senior_id:{senior_id}")
 
-        new_link = StaffSeniorMap(staff_id=staff_id, senior_id=senior_id)
-        self.session.add(new_link)
-        await self.session.flush()
+        try:
+            new_link = StaffSeniorMap(staff_id=staff_id, senior_id=senior_id)
+            self.session.add(new_link)
+            await self.session.flush()
+        except IntegrityError:
+            raise ValueError(
+                f"Link between staff_id:{staff_id} and senior_id:{senior_id} already exists."
+            )
