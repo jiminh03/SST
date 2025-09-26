@@ -19,12 +19,56 @@ export default function ElderDetailPage() {
   const [imageLoading, setImageLoading] = useState(false)
   
   // 센서 데이터 상태
-  const [sensorData, setSensorData] = useState<Record<string, SensorStatus>>({})
+  const [sensorData, setSensorData] = useState<Record<string, SensorStatus>>(() => {
+    // localStorage에서 센서 데이터 복원
+    if (id) {
+      const savedData = localStorage.getItem(`sensor_data_${id}`)
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData)
+          console.log('📱 localStorage에서 센서 데이터 복원:', parsed)
+          return parsed
+        } catch (error) {
+          console.error('❌ 센서 데이터 파싱 실패:', error)
+        }
+      }
+    }
+    return {}
+  })
   
   // Socket Context 사용
   const { socket, isConnected, connectSocket, addEventListener, removeEventListener } = useSocket()
   
-  // 테스트용: 17번 어르신 데이터만 처리
+  // API Key를 Senior ID로 매핑하는 함수
+  const getSeniorIdByApiKey = async (apiKey: string): Promise<number | null> => {
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) {
+        console.error('❌ 인증 토큰이 없습니다.')
+        return null
+      }
+
+      const response = await fetch(`/api/iot/api-key-to-senior-id/${apiKey}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        console.error(`❌ API Key 매핑 실패: ${response.status}`)
+        return null
+      }
+
+      const result = await response.json()
+      console.log(`✅ API Key ${apiKey} -> Senior ID ${result.senior_id} 매핑 성공`)
+      return result.senior_id
+    } catch (error) {
+      console.error('❌ API Key 매핑 중 오류:', error)
+      return null
+    }
+  }
 
   // 센서 데이터 처리 함수 (비동기)
   const handleSensorLog = async (data: any) => {
@@ -33,14 +77,21 @@ export default function ElderDetailPage() {
     console.log('🔍 수신된 데이터 타입:', typeof data)
     console.log('🔍 수신된 데이터 키들:', Object.keys(data || {}))
     
-    // 테스트용: 17번 어르신 데이터 무조건 처리
     const apiKey = data.api_key
-    
     console.log('🔑 API Key:', apiKey)
-    console.log('🧪 테스트용: 17번 어르신 데이터 처리')
     
-    // 현재 어르신의 센서 데이터 처리 (테스트용)
-    if (senior?.senior_id === 17) {
+    // API Key로 Senior ID 조회
+    const seniorIdFromApiKey = await getSeniorIdByApiKey(apiKey)
+    
+    if (!seniorIdFromApiKey) {
+      console.log(`❌ API Key ${apiKey}에 해당하는 Senior ID를 찾을 수 없습니다.`)
+      return
+    }
+    
+    console.log(`🔍 API Key ${apiKey} -> Senior ID ${seniorIdFromApiKey} 매핑 완료`)
+    
+    // 현재 어르신의 센서 데이터 처리
+    if (senior?.senior_id === seniorIdFromApiKey) {
       console.log(`✅ ${senior.senior_id}번 어르신 센서 데이터 처리 시작 (api_key: ${apiKey})`)
       
       // 백엔드 센서 데이터 형식 처리 (FrontendSensorStatusPayload)
@@ -68,6 +119,11 @@ export default function ElderDetailPage() {
         })
         
         setSensorData(sensorMap)
+        // localStorage에 센서 데이터 저장
+        if (id) {
+          localStorage.setItem(`sensor_data_${id}`, JSON.stringify(sensorMap))
+          console.log('💾 센서 데이터 localStorage에 저장 완료')
+        }
         console.log(`✅ senior_id ${senior.senior_id}번 센서 데이터 맵 업데이트 완료:`, sensorMap)
         console.log(`📊 업데이트된 센서 키들:`, Object.keys(sensorMap))
       } else if (data.sensor_data && Array.isArray(data.sensor_data)) {
@@ -95,13 +151,18 @@ export default function ElderDetailPage() {
         })
         
         setSensorData(sensorMap)
+        // localStorage에 센서 데이터 저장
+        if (id) {
+          localStorage.setItem(`sensor_data_${id}`, JSON.stringify(sensorMap))
+          console.log('💾 센서 데이터 localStorage에 저장 완료')
+        }
         console.log(`✅ senior_id ${senior.senior_id}번 센서 데이터 맵 업데이트 완료:`, sensorMap)
         console.log(`📊 업데이트된 센서 키들:`, Object.keys(sensorMap))
       } else {
         console.log('⚠️ 알 수 없는 센서 데이터 형식:', data)
       }
     } else {
-      console.log(`❌ 다른 어르신의 센서 데이터는 무시 (현재: ${senior?.senior_id}, 테스트용: 17번만 처리)`)
+      console.log(`❌ 다른 어르신의 센서 데이터는 무시 (현재: ${senior?.senior_id}, 수신된: ${seniorIdFromApiKey})`)
     }
   }
 
@@ -215,32 +276,42 @@ export default function ElderDetailPage() {
     const handleSensorStatusChange = (data: any) => {
       console.log('🔔 센서 상태 변경 이벤트 수신:', data)
       
-      // 테스트용: 17번 어르신 데이터만 처리
-      if (senior?.senior_id === 17) {
-        console.log(`✅ ${senior.senior_id}번 어르신 센서 상태 변경 처리 시작`)
+      // 수신된 데이터의 senior_id와 현재 어르신 ID 비교
+      if (senior?.senior_id === data.senior_id) {
+        console.log(`✅ ${senior?.senior_id}번 어르신 센서 상태 변경 처리 시작`)
         
         // 단일 센서 데이터 처리
         if (data && data.sensor_id) {
           const sensorKey = data.sensor_id  // "door_fridge"
           
           // 기존 센서 데이터를 보존하면서 새로운 센서만 업데이트
-          setSensorData(prevSensorData => ({
-            ...prevSensorData,
-            [sensorKey]: {
-              sensor_id: data.sensor_id,
-              sensor_type: data.sensor_type,
-              location: data.location,
-              status: data.status,  // "active" | "inactive"
-              value: data.value,
-              last_updated: data.last_updated,
-              event_description: data.event_description || ''
+          setSensorData(prevSensorData => {
+            const updatedData = {
+              ...prevSensorData,
+              [sensorKey]: {
+                sensor_id: data.sensor_id,
+                sensor_type: data.sensor_type,
+                location: data.location,
+                status: data.status,  // "active" | "inactive"
+                value: data.value,
+                last_updated: data.last_updated,
+                event_description: data.event_description || ''
+              }
             }
-          }))
+            
+            // localStorage에 센서 데이터 저장
+            if (id) {
+              localStorage.setItem(`sensor_data_${id}`, JSON.stringify(updatedData))
+              console.log('💾 센서 상태 변경 localStorage에 저장 완료')
+            }
+            
+            return updatedData
+          })
           
           console.log(`✅ 센서 상태 업데이트 완료: ${sensorKey} -> ${data.status}`)
         }
       } else {
-        console.log(`❌ 다른 어르신의 센서 상태 변경은 무시 (현재: ${senior?.senior_id}, 테스트용: 17번만 처리)`)
+        console.log(`❌ 다른 어르신의 센서 상태 변경은 무시 (현재: ${senior?.senior_id}, 수신된: ${data.senior_id})`)
       }
     }
 
@@ -291,7 +362,7 @@ export default function ElderDetailPage() {
       // 이벤트 리스너 제거 (WebRTC와 동일한 방식)
       removeEventListener('connect', handleConnect)
       removeEventListener('disconnect', handleDisconnect)
-      removeEventListener('server:notify_sensor_status_change', handleSensorLog)
+      removeEventListener('server:send_sensor_log', handleSensorLog)
       removeEventListener('server:emergency_situation', handleEmergencySituation)
       // removeEventListener('server:notify_senior_status_change', handleStatusChange) // HomePage에서 처리
       removeEventListener('server:notify_sensor_event', handleSensorEvent)

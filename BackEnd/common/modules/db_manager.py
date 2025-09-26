@@ -16,8 +16,6 @@ import redis.asyncio as redis
 
 
 class PostgressqlSessionManager:
-    """데이터베이스 세션 생성 및 제공 클래스"""
-
     def __init__(self, db_user, db_password, db_host, db_port, db_name):
         self.db_user = db_user
         self.db_password = db_password
@@ -27,18 +25,13 @@ class PostgressqlSessionManager:
 
         self.db_url = f"postgresql+asyncpg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         self.engine = create_async_engine(self.db_url, echo=False)
-        # SessionMaker를 모듈 레벨에서 한 번만 생성합니다.
         self.AsyncSessionMaker = async_sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
         )
 
     async def create_db_and_tables(self):
-        """
-        SQLModel로 정의된 모든 테이블을 생성
-        """
         print("데이터베이스 테이블 생성을 시도합니다...")
         try:
-            """SQLModel 메타데이터를 기반으로 모든 테이블을 비동기적으로 생성합니다."""
             async with self.engine.begin() as conn:
                 await conn.run_sync(SQLModel.metadata.create_all)
                 await conn.commit()
@@ -52,12 +45,10 @@ class PostgressqlSessionManager:
     async def convert_to_hypertable(self, table_name: str, time_column_name: str):
         print(f"'{table_name}' 테이블을 하이퍼테이블로 전환합니다...")
         try:
-            # 'async with'를 사용하여 비동기 커넥션을 얻습니다.
             async with self.engine.connect() as connection:
                 command = text(
                     f"SELECT create_hypertable('{table_name}', '{time_column_name}');"
                 )
-                # execute와 commit도 모두 await로 호출해야 합니다.
                 await connection.execute(command)
                 await connection.commit()
                 print(
@@ -70,21 +61,12 @@ class PostgressqlSessionManager:
                 print(f"하이퍼테이블 전환 중 오류 발생: {e}")
 
     async def clear_all_tables(self, force: bool = False):
-        """
-        데이터베이스의 모든 테이블을 삭제(DROP)합니다.
-        데이터뿐만 아니라 테이블 구조 자체가 사라지는 매우 위험한 작업입니다.
-        `force=True` 플래그가 있어야만 실행됩니다.
-
-        Args:
-            force (bool): True로 설정해야만 실제 삭제 작업을 수행합니다.
-        """
         if not force:
             return
 
-        print("\n🔥 데이터베이스의 모든 테이블 삭제를 시작합니다...")
+        print("\n데이터베이스의 모든 테이블 삭제를 시작합니다...")
         try:
             async with self.engine.connect() as connection:
-                # 'async with'를 사용하여 비동기 커넥션을 얻습니다.
                 async with self.engine.connect() as connection:
                     drop_all_tables_query = """
                     DO $$
@@ -97,7 +79,6 @@ class PostgressqlSessionManager:
                     END $$;
                     """
                     command = text(drop_all_tables_query)
-                    # execute와 commit도 모두 await로 호출해야 합니다.
                     await connection.execute(command)
                     await connection.commit()
 
@@ -105,32 +86,26 @@ class PostgressqlSessionManager:
             print(f"데이터베이스 작업 중 오류가 발생했습니다: {e}")
 
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
-        """FastAPI 의존성 주입을 위한 비동기 데이터베이스 세션 생성기"""
         async with self.AsyncSessionMaker() as session:
             yield session
 
     async def get_session_maker(self) -> AsyncGenerator[AsyncSession, None]:
-        """세션 생성기 접근"""
         return self.AsyncSessionMaker()
 
 
 class RedisSessionManager:
-    """Redis 클라이언트 관리 클래스"""
-
     def __init__(self, host, port, password):
         self.redis_client = redis.Redis(
             host=host, port=port, password=password, decode_responses=True
         )
 
     async def get_client(self):
-        """Redis 클라이언트 인스턴스를 반환합니다."""
         return self.redis_client
 
     async def ping(self):
-        """Redis 서버 연결 상태를 확인합니다."""
         try:
             await self.redis_client.ping()
-            print("✅ Redis에 성공적으로 연결되었습니다.")
+            print("Redis에 성공적으로 연결되었습니다.")
             return True
         except redis.exceptions.ConnectionError as e:
             print(f"Redis 연결 실패: {e}")
