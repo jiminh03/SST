@@ -19,7 +19,17 @@ export default function HomePage() {
   }, [seniors])
 
   // Socket Context에서 이벤트 리스너 함수들 가져오기
-  const { connectSocket, addEventListener, removeEventListener } = useSocket()
+  const { socket, isConnected, connectSocket, addEventListener, removeEventListener } = useSocket()
+  
+  // 웹소켓 연결 상태 디버깅
+  useEffect(() => {
+    console.log('🔍 HomePage 웹소켓 상태:', {
+      socket: socket ? '있음' : '없음',
+      socketId: socket?.id || '없음',
+      isConnected,
+      socketConnected: socket?.connected || false
+    })
+  }, [socket, isConnected])
 
   // Socket 연결 (앱 시작 시점)
   useEffect(() => {
