@@ -47,6 +47,7 @@ class NotifyEvents(str, Enum):
     """프론트엔드-백엔드 간 소켓 통신 이벤트 목록"""
 
     # --- 센서 로그 이벤트 (Sensor Log Events) ---
+    SERVER_NOTIFY_SENSOR_STATUS_CHANGE = "server:notify_sensor_status_change"
     # 1. 서버 -> FE: 센서 변경에 따른 실시간 로그 전송 또는 FE 요청에 대한 응답
     SERVER_SEND_SENSOR_LOG = "server:send_sensor_log"
     

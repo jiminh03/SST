@@ -10,7 +10,6 @@ from common.modules.session_manager import SessionManager
 from web.services.database import db,red
 from web.services.safety_alarm import notify_emergency_situation, notify_safety_check_failed
 
-
 sess_man = SessionManager(red)
 
 #TODO:hub iot 오작동, 로봇 고장 같은 확인 실패도 핸들링해야함

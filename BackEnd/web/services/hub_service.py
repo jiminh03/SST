@@ -19,18 +19,6 @@ from web.schemas.monitoring_schema import (
 from common.modules.api_key_manager import ApiKeyRepository  # DB 조회를 위한 리포지토리
 
 
-class HubService:
-    def __init__(self, api_key_repo: ApiKeyRepository):
-        self.api_key_repo = api_key_repo
-
-    async def get_hub_from_api_key(self, api_key):
-        hub = await self.api_key_repo.get_hub_by_api_key(api_key)
-
-        if not hub:
-            return None
-        return hub
-
-
 class SensorDataService:
     def __init__(self, session):
         self.session = session

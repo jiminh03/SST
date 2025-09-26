@@ -9,7 +9,10 @@ from web.schemas.iot_schema import SeniorIdRequest, SeniorIdResponse, SensorLogP
 from common.modules.sensor_log_manager import SensorLogManager
 from common.modules.iot_hub_manager import IotHubManager, HubCreate, HubUpdate, HubBasicInfo
 from common.modules.api_key_manager import ApiKeyRepository, ApiKeyManager
-from web.services.database import db
+from web.services.data_alarm import notify_sensor_status_log_change
+from web.services.database import db,red
+from web.services.hub_service import SensorDataService
+from web.services.senior_status_manager import SensorStatusManager
 
 router = APIRouter(prefix="/iot", tags=["IoT"])
 
@@ -41,6 +44,13 @@ async def receive_sensor_logs(
     # SensorLogManager를 사용하여 로그를 데이터베이스에 추가합니다.
     log_manager = SensorLogManager(db_session)
     await log_manager.add_logs(senior_id, payload.sensor_data)
+
+    packet = await SensorDataService(db_session).transform_sensor_data(payload)
+    print("센서 데이터 변환 완료:{packet}")
+    await SensorStatusManager(red).update_all_sensor_statuses(packet)
+    print("캐싱 완료")
+    await notify_sensor_status_log_change(packet)
+    print("센서 이벤트 트리거 완료")
 
     await db_session.commit()
     

@@ -174,7 +174,7 @@ export default function ElderDetailPage() {
     }
 
     // 이벤트 리스너 등록
-    addEventListener('server:send_sensor_log', handleSensorLog)
+    addEventListener('server:notify_sensor_status_change', handleSensorLog)
     addEventListener('server:emergency_situation', handleEmergencySituation)
     addEventListener('server:notify_senior_status_change', handleStatusChange)
     addEventListener('server:notify_sensor_event', handleSensorEvent)
@@ -186,7 +186,7 @@ export default function ElderDetailPage() {
       // 이벤트 리스너 제거 (WebRTC와 동일한 방식)
       removeEventListener('connect', handleConnect)
       removeEventListener('disconnect', handleDisconnect)
-      removeEventListener('server:send_sensor_log', handleSensorLog)
+      removeEventListener('server:notify_sensor_status_change', handleSensorLog)
       removeEventListener('server:emergency_situation', handleEmergencySituation)
       removeEventListener('server:notify_senior_status_change', handleStatusChange)
       removeEventListener('server:notify_sensor_event', handleSensorEvent)

@@ -61,6 +61,7 @@ class SensorLogList(BaseModel):
 
 class FrontendSensorItem(BaseModel):
     """프론트엔드로 보낼 개별 센서의 상태 정보"""
+    senior_id: Optional[int] = None
     sensor_id: str      # 예: "door_bedroom"
     sensor_type: str    # 예: "door"
     location: str       # 예: "bedroom"
