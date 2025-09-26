@@ -106,8 +106,8 @@ export default function ElderDetailPage() {
       const event = new CustomEvent('showNotification', {
         detail: {
           type: 'warning',
-          title: '⚠️ 상태 변경',
-          message: `어르신 상태가 ${data.current_status}로 변경되었습니다.`
+          title: '상태 변경',
+          message: `어르신 상태가 ${data.status}로 변경되었습니다.`
         }
       })
       window.dispatchEvent(event)
@@ -174,6 +174,7 @@ export default function ElderDetailPage() {
     }
 
     // 이벤트 리스너 등록
+    console.log('🔔 ElderDetailPage: 이벤트 리스너 등록 시작');
     addEventListener('server:send_sensor_log', handleSensorLog)
     addEventListener('server:emergency_situation', handleEmergencySituation)
     addEventListener('server:notify_senior_status_change', handleStatusChange)
@@ -181,6 +182,7 @@ export default function ElderDetailPage() {
     addEventListener('server:request_safety_check', handleSafetyCheckRequest)
     addEventListener('server:senior_is_safe', handleSeniorSafe)
     addEventListener('server:safety_check_failed', handleSafetyCheckFailed)
+    console.log('🔔 ElderDetailPage: 이벤트 리스너 등록 완료');
 
     return () => {
       // 이벤트 리스너 제거 (WebRTC와 동일한 방식)
@@ -194,7 +196,7 @@ export default function ElderDetailPage() {
       removeEventListener('server:senior_is_safe', handleSeniorSafe)
       removeEventListener('server:safety_check_failed', handleSafetyCheckFailed)
     }
-  }, []) // 의존성 배열에서 함수들 제거
+  }, [addEventListener, removeEventListener]) // 의존성 배열에 함수들 추가
   
 
   // 생년월일로부터 만 나이 계산

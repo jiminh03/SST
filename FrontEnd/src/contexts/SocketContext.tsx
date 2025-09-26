@@ -62,6 +62,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       // 연결 완료를 기다림
       newSocket.on('connect', () => {
         console.log('✅ Socket.IO 연결 성공:', newSocket.id);
+        console.log('🔍 Socket 연결 정보:', {
+          id: newSocket.id,
+          connected: newSocket.connected,
+          transport: newSocket.io.engine.transport.name
+        });
         setIsConnected(true);
         setSocket(newSocket);
       });
@@ -83,6 +88,23 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       newSocket.on('connecting', () => {
         console.log('🔄 Socket.IO 연결 시도 중...');
       });
+
+      // 모든 이벤트 로깅 (디버깅용)
+      const originalEmit = newSocket.emit;
+      newSocket.emit = function(event: string, ...args: any[]) {
+        console.log(`📤 Socket 이벤트 전송: ${event}`, args);
+        return originalEmit.apply(this, [event, ...args]);
+      };
+
+      // 모든 수신 이벤트 로깅
+      const originalOn = newSocket.on;
+      newSocket.on = function(event: string, callback: (...args: any[]) => void) {
+        console.log(`📥 Socket 이벤트 리스너 등록: ${event}`);
+        return originalOn.call(this, event, (...args: any[]) => {
+          console.log(`📨 Socket 이벤트 수신: ${event}`, args);
+          return callback(...args);
+        });
+      };
     }
   };
 
@@ -97,7 +119,17 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
   const addEventListener = (event: string, callback: (...args: any[]) => void) => {
     if (socketRef.current) {
+      console.log(`🎧 이벤트 리스너 등록: ${event}`, {
+        socketId: socketRef.current.id,
+        connected: socketRef.current.connected
+      });
       socketRef.current.on(event, callback);
+      
+      // 등록된 이벤트 리스너 수 확인
+      const listeners = socketRef.current.listeners(event);
+      console.log(`📊 ${event} 이벤트 리스너 수: ${listeners.length}`);
+    } else {
+      console.log(`⚠️ Socket이 없어서 이벤트 리스너 등록 실패: ${event}`);
     }
   };
 

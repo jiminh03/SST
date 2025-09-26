@@ -9,6 +9,7 @@ export interface Senior {
   guardian_contact?: string
   device_id?: string
   created_at?: string
+  status?: '위험' | '주의' | '안전';
 }
 
 // 센서 상태 관련 타입 정의
