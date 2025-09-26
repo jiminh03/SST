@@ -73,7 +73,11 @@ class ApiKeyRepository:
 
     async def is_correct_key(self, api_key: str, hub_id: int) -> bool:
         """제공된 API 키가 저장된 해시와 일치하는지 확인합니다."""
-        stored_hash = await self.get_hash_for_hub(hub_id)
-        if not stored_hash:
-            raise ValueError(f"is_correct_key - invalid hub_id:{hub_id}")
-        return ApiKeyManager.verify_api_key(api_key, stored_hash)
+        # api_key로 허브 정보를 조회 (DB 조회 1회)
+        hub_info = await self.get_hub_by_api_key(api_key)
+
+        # 허브 정보가 존재하고, 그 허브의 ID가 매개변수로 받은 hub_id와 일치하는지 확인
+        if hub_info and hub_info.hub_id == hub_id:
+            return True
+
+        return False
