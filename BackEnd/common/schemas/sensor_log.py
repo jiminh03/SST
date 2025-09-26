@@ -1,12 +1,13 @@
 from datetime import datetime
-from dotenv import load_dotenv
-from typing import List, Optional, Dict, Any
-
+from typing import Optional, Any
 from pydantic import BaseModel, ConfigDict, field_validator
+
 from common.models.enums import SensorTypeEnum
+
 
 class SensorLogInfo(BaseModel):
     """테이블에서 로그를 입출력하는 형식"""
+
     timestamp: datetime
     sensor_type: SensorTypeEnum
     sensor_value: bool
@@ -14,7 +15,7 @@ class SensorLogInfo(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    @field_validator('sensor_type', mode='before')
+    @field_validator("sensor_type", mode="before")
     @classmethod
     def to_enum_member(cls, v: Any) -> SensorTypeEnum:
         """
@@ -30,9 +31,11 @@ class SensorLogInfo(BaseModel):
                 # 2. '이름'으로 찾지 못하면, Pydantic 기본 검증이 '값'으로 찾도록 값을 그대로 반환합니다.
                 pass
         return v
-    
+
+
 class SensorLogList(BaseModel):
     """외부로 반환할 로그 데이터 형태"""
+
     # SQLModel 객체로부터 값을 읽어올 수 있도록 설정
     senior_id: int
     log_list: list[SensorLogInfo]

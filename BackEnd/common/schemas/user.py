@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import date
 from typing import Optional
 
+
 class StaffCreate(BaseModel):
     email: str
     password_hash: str
@@ -23,8 +24,10 @@ class StaffInfo(BaseModel):
     class Config:
         from_attributes = True
 
+
 class SeniorCreate(BaseModel):
     """어르신 생성을 위한 모델"""
+
     profile_img: Optional[bytes] = None
     full_name: str
     address: str
@@ -32,8 +35,10 @@ class SeniorCreate(BaseModel):
     guardian_contact: Optional[str] = None
     health_info: Optional[str] = None
 
+
 class SeniorUpdate(BaseModel):
     """어르신 수정을 위한 모델"""
+
     profile_img: Optional[bytes] = None
     full_name: Optional[str] = None
     address: Optional[str] = None
@@ -44,6 +49,7 @@ class SeniorUpdate(BaseModel):
 
 class SeniorInfo(BaseModel):
     """어르신 정보 응답을 위한 모델"""
+
     senior_id: int
     profile_img: Optional[bytes] = None
     full_name: str

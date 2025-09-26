@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 class HubCreate(BaseModel):
     """'add_hub'에 사용할 입력 모델"""
 
