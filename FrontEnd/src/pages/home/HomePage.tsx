@@ -44,12 +44,8 @@ export default function HomePage() {
   useEffect(() => {
     if (socket && socket.connected && seniors.length > 0) {
       console.log('📡 홈 화면 진입 시 전체 어르신 상태 요청')
-      // 모든 어르신의 상태를 요청 (senior_id 포함)
-      seniors.forEach(senior => {
-        socket.emit('client:request_all_senior_status', {
-          senior_id: senior.senior_id
-        })
-      })
+      // 모든 어르신의 상태를 요청
+      socket.emit('client:request_all_senior_status')
     }
   }, [socket, seniors])
 
@@ -194,13 +190,13 @@ export default function HomePage() {
     // 이벤트 리스너 등록
     addEventListener('server:notify_senior_status_change', handleStatusChange)
     addEventListener('server:emergency_situation', handleEmergencySituation)
-    addEventListener('server:send_all_sensor_status', handleSensorData)
+    addEventListener('server:notify_sensor_status_change', handleSensorData)
 
     // 컴포넌트 언마운트 시 리스너 제거
     return () => {
       removeEventListener('server:notify_senior_status_change', handleStatusChange)
       removeEventListener('server:emergency_situation', handleEmergencySituation)
-      removeEventListener('server:send_all_sensor_status', handleSensorData)
+      removeEventListener('server:notify_sensor_status_change', handleSensorData)
     }
   }, [addEventListener, removeEventListener])
 

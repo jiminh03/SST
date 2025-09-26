@@ -80,6 +80,7 @@ export default function ElderDetailPage() {
     console.log('🔍 현재 어르신 ID:', senior?.senior_id)
     console.log('🔍 수신된 데이터 타입:', typeof data)
     console.log('🔍 수신된 데이터 키들:', Object.keys(data || {}))
+    console.log('🔍 수신된 데이터 전체:', JSON.stringify(data, null, 2))
     
     // senior_id가 직접 포함된 경우 (server:notify_sensor_status_change 응답)
     if (data.senior_id) {
@@ -120,11 +121,14 @@ export default function ElderDetailPage() {
         } else if (data.sensors && Array.isArray(data.sensors)) {
           // server:send_all_sensor_status 응답 처리
           console.log('📊 sensors 배열 발견 (server:send_all_sensor_status):', data.sensors)
+          console.log('📊 sensors 배열 길이:', data.sensors.length)
+          
           const sensorMap: Record<string, any> = {}
-          data.sensors.forEach((sensor: any) => {
-            const uiKey = sensor.sensor_id
+          data.sensors.forEach((sensor: any, index: number) => {
+            console.log(`📊 센서 ${index + 1}:`, sensor)
+            const uiKey = sensor.sensor_id || sensor.sensor_type
             sensorMap[uiKey] = {
-              sensor_id: sensor.sensor_id,
+              sensor_id: sensor.sensor_id || sensor.sensor_type,
               sensor_type: sensor.sensor_type,
               location: sensor.location,
               status: sensor.status,
@@ -132,10 +136,15 @@ export default function ElderDetailPage() {
               last_updated: sensor.last_updated,
               event_description: sensor.event_description || ''
             }
+            console.log(`📊 센서 매핑: ${uiKey} -> ${sensor.status}`)
           })
+          
+          console.log('📊 최종 센서 맵:', sensorMap)
           
           setSensorData(prevSensorData => {
             const updatedData = { ...prevSensorData, ...sensorMap }
+            console.log('📊 업데이트된 센서 데이터:', updatedData)
+            
             // localStorage에 센서 데이터 저장
             if (id) {
               localStorage.setItem(`sensor_data_${id}`, JSON.stringify(updatedData))
@@ -492,11 +501,21 @@ export default function ElderDetailPage() {
       console.log(`📡 페이지 진입 시 센서 데이터 요청: senior_id ${senior.senior_id}`)
       console.log(`🔍 현재 센서 데이터 상태:`, sensorData)
       
-      // 항상 최신 센서 데이터 요청 (localStorage 무시)
+      // 항상 최신 센서 데이터 요청
       console.log(`📡 최신 센서 데이터 요청: senior_id ${senior.senior_id}`)
       socket.emit('client:request_all_sensor_status', {
         senior_id: senior.senior_id
       })
+      
+      // 3초 후에도 응답이 없으면 다시 요청
+      const retryTimer = setTimeout(() => {
+        console.log(`🔄 센서 데이터 재요청: senior_id ${senior.senior_id}`)
+        socket.emit('client:request_all_sensor_status', {
+          senior_id: senior.senior_id
+        })
+      }, 3000)
+      
+      return () => clearTimeout(retryTimer)
     }
   }, [senior?.senior_id, socket])
 
