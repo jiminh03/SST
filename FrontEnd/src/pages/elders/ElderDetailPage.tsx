@@ -607,42 +607,6 @@ export default function ElderDetailPage() {
                 <span className="text-sm font-medium">보호자 연락</span>
               </button>
               
-              {/* Socket.IO 연결 상태 표시 */}
-              <div className="col-span-2 flex items-center justify-center gap-2 p-2 bg-gray-50 rounded-lg">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-xs text-gray-600">
-                  {isConnected ? '실시간 연결됨' : '연결 끊김'}
-                </span>
-                {socket && socket.id && (
-                  <span className="text-xs text-gray-400 ml-2">
-                    ID: {socket.id.slice(-4)}
-                  </span>
-                )}
-                {!socket && (
-                  <span className="text-xs text-gray-400 ml-2">
-                    Socket 없음
-                  </span>
-                )}
-              </div>
-              
-              
-              {/* 알림 테스트 버튼 */}
-              <button 
-                onClick={() => {
-                  // MobileLayout의 커스텀 알림 함수 사용
-                  const event = new CustomEvent('showNotification', {
-        detail: {
-          type: 'success',
-          title: '🔔 알림 테스트',
-          message: '폰 목업 안에서 알림이 표시됩니다!'
-        }
-      })
-      window.dispatchEvent(event)
-                }}
-                className="rounded-lg text-white px-3 py-2 bg-purple-600 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md hover:bg-purple-700"
-              >
-                <span className="text-sm font-medium">🔔 알림 테스트</span>
-              </button>
             </div>
           </div>
           {/* 구분선 */}
