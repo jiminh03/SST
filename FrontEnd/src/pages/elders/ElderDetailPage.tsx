@@ -23,14 +23,18 @@ export default function ElderDetailPage() {
     // localStorage에서 센서 데이터 복원
     if (id) {
       const savedData = localStorage.getItem(`sensor_data_${id}`)
+      console.log(`📱 localStorage 센서 데이터 조회 (senior_id: ${id}):`, savedData)
       if (savedData) {
         try {
           const parsed = JSON.parse(savedData)
           console.log('📱 localStorage에서 센서 데이터 복원:', parsed)
+          console.log('📱 복원된 센서 키들:', Object.keys(parsed))
           return parsed
         } catch (error) {
           console.error('❌ 센서 데이터 파싱 실패:', error)
         }
+      } else {
+        console.log('📱 localStorage에 센서 데이터 없음')
       }
     }
     return {}
@@ -76,9 +80,96 @@ export default function ElderDetailPage() {
     console.log('🔍 현재 어르신 ID:', senior?.senior_id)
     console.log('🔍 수신된 데이터 타입:', typeof data)
     console.log('🔍 수신된 데이터 키들:', Object.keys(data || {}))
+    console.log('🔍 수신된 데이터 전체:', JSON.stringify(data, null, 2))
     
+    // senior_id가 직접 포함된 경우 (server:notify_sensor_status_change 응답)
+    if (data.senior_id) {
+      console.log(`🔍 직접 포함된 Senior ID: ${data.senior_id}`)
+      
+      // 현재 어르신의 센서 데이터 처리
+      if (senior?.senior_id === data.senior_id) {
+        console.log(`✅ ${senior?.senior_id}번 어르신 센서 데이터 처리 시작 (직접 포함된 senior_id)`)
+        
+        // 단일 센서 데이터 처리
+        if (data.sensor_id) {
+          const sensorKey = data.sensor_id
+          
+          setSensorData(prevSensorData => {
+            const updatedData = {
+              ...prevSensorData,
+              [sensorKey]: {
+                sensor_id: data.sensor_id,
+                sensor_type: data.sensor_type,
+                location: data.location,
+                status: data.status,
+                value: data.value,
+                last_updated: data.last_updated,
+                event_description: data.event_description || ''
+              }
+            }
+            
+            // localStorage에 센서 데이터 저장
+            if (id) {
+              localStorage.setItem(`sensor_data_${id}`, JSON.stringify(updatedData))
+              console.log('💾 센서 데이터 localStorage에 저장 완료')
+            }
+            
+            return updatedData
+          })
+          
+          console.log(`✅ 센서 상태 업데이트 완료: ${sensorKey} -> ${data.status}`)
+        } else if (data.sensors && Array.isArray(data.sensors)) {
+          // server:send_all_sensor_status 응답 처리
+          console.log('📊 sensors 배열 발견 (server:send_all_sensor_status):', data.sensors)
+          console.log('📊 sensors 배열 길이:', data.sensors.length)
+          
+          const sensorMap: Record<string, any> = {}
+          data.sensors.forEach((sensor: any, index: number) => {
+            console.log(`📊 센서 ${index + 1}:`, sensor)
+            const uiKey = sensor.sensor_id || sensor.sensor_type
+            sensorMap[uiKey] = {
+              sensor_id: sensor.sensor_id || sensor.sensor_type,
+              sensor_type: sensor.sensor_type,
+              location: sensor.location,
+              status: sensor.status,
+              value: sensor.value,
+              last_updated: sensor.last_updated,
+              event_description: sensor.event_description || ''
+            }
+            console.log(`📊 센서 매핑: ${uiKey} -> ${sensor.status}`)
+          })
+          
+          console.log('📊 최종 센서 맵:', sensorMap)
+          
+          setSensorData(prevSensorData => {
+            const updatedData = { ...prevSensorData, ...sensorMap }
+            console.log('📊 업데이트된 센서 데이터:', updatedData)
+            
+            // localStorage에 센서 데이터 저장
+            if (id) {
+              localStorage.setItem(`sensor_data_${id}`, JSON.stringify(updatedData))
+              console.log('💾 센서 데이터 localStorage에 저장 완료 (server:send_all_sensor_status)')
+            }
+            return updatedData
+          })
+          
+          console.log(`✅ senior_id ${senior?.senior_id}번 센서 데이터 맵 업데이트 완료:`, sensorMap)
+        }
+        return
+      } else {
+        console.log(`❌ 다른 어르신의 센서 데이터는 무시 (현재: ${senior?.senior_id}, 수신된: ${data.senior_id})`)
+        return
+      }
+    }
+    
+    // api_key를 통한 매핑 (기존 로직)
     const apiKey = data.api_key
     console.log('🔑 API Key:', apiKey)
+    
+    if (!apiKey) {
+      console.log('❌ API Key가 없습니다.')
+      return
+    }
     
     // API Key로 Senior ID 조회
     const seniorIdFromApiKey = await getSeniorIdByApiKey(apiKey)
@@ -102,7 +193,7 @@ export default function ElderDetailPage() {
         data.sensors.forEach((sensor: any, index: number) => {
           console.log(`📡 센서 ${index + 1}:`, sensor)
           
-          // 백엔드에서 이미 올바른 형식으로 제공
+          // 센서 ID를 그대로 UI 키로 사용
           const uiKey = sensor.sensor_id  // "door_bedroom" 형태
           
           sensorMap[uiKey] = {
@@ -118,12 +209,15 @@ export default function ElderDetailPage() {
           console.log(`📊 센서 매핑: ${sensor.sensor_id} -> ${uiKey} (${sensor.status})`)
         })
         
-        setSensorData(sensorMap)
-        // localStorage에 센서 데이터 저장
-        if (id) {
-          localStorage.setItem(`sensor_data_${id}`, JSON.stringify(sensorMap))
-          console.log('💾 센서 데이터 localStorage에 저장 완료')
-        }
+        setSensorData(prevSensorData => {
+          const updatedData = { ...prevSensorData, ...sensorMap }
+          // localStorage에 센서 데이터 저장
+          if (id) {
+            localStorage.setItem(`sensor_data_${id}`, JSON.stringify(updatedData))
+            console.log('💾 센서 데이터 localStorage에 저장 완료')
+          }
+          return updatedData
+        })
         console.log(`✅ senior_id ${senior.senior_id}번 센서 데이터 맵 업데이트 완료:`, sensorMap)
         console.log(`📊 업데이트된 센서 키들:`, Object.keys(sensorMap))
       } else if (data.sensor_data && Array.isArray(data.sensor_data)) {
@@ -134,7 +228,7 @@ export default function ElderDetailPage() {
         data.sensor_data.forEach((sensor: any, index: number) => {
           console.log(`📡 센서 ${index + 1}:`, sensor)
           
-          // 백엔드에서 이미 올바른 형식으로 보내주므로 그대로 사용
+          // 센서 타입을 그대로 UI 키로 사용
           const uiKey = sensor.sensor_type  // "door_entrance", "pir_livingroom" 등
           
           sensorMap[uiKey] = {
@@ -148,16 +242,26 @@ export default function ElderDetailPage() {
           }
           
           console.log(`📊 센서 매핑: ${sensor.sensor_type} -> ${uiKey} (${sensor.sensor_value ? 'active' : 'inactive'})`)
+          console.log(`🔍 센서 데이터 상세:`, {
+            sensor_type: sensor.sensor_type,
+            sensor_value: sensor.sensor_value,
+            timestamp: sensor.timestamp,
+            event_description: sensor.event_description
+          })
         })
         
-        setSensorData(sensorMap)
-        // localStorage에 센서 데이터 저장
-        if (id) {
-          localStorage.setItem(`sensor_data_${id}`, JSON.stringify(sensorMap))
-          console.log('💾 센서 데이터 localStorage에 저장 완료')
-        }
+        setSensorData(prevSensorData => {
+          const updatedData = { ...prevSensorData, ...sensorMap }
+          // localStorage에 센서 데이터 저장
+          if (id) {
+            localStorage.setItem(`sensor_data_${id}`, JSON.stringify(updatedData))
+            console.log('💾 센서 데이터 localStorage에 저장 완료')
+          }
+          return updatedData
+        })
         console.log(`✅ senior_id ${senior.senior_id}번 센서 데이터 맵 업데이트 완료:`, sensorMap)
         console.log(`📊 업데이트된 센서 키들:`, Object.keys(sensorMap))
+        console.log(`🔍 최종 센서 데이터 상태:`, sensorData)
       } else {
         console.log('⚠️ 알 수 없는 센서 데이터 형식:', data)
       }
@@ -218,6 +322,12 @@ export default function ElderDetailPage() {
 
   // Socket.IO 연결 및 이벤트 핸들러 (HomePage에서 이미 연결됨)
   useEffect(() => {
+    // senior 데이터가 로드되지 않았으면 이벤트 리스너 등록하지 않음
+    if (!senior?.senior_id) {
+      console.log('⚠️ ElderDetailPage: senior 데이터 로딩 중, 이벤트 리스너 등록 대기')
+      return
+    }
+
     // Socket이 연결되어 있는지 확인
     if (socket && socket.connected) {
       console.log('✅ ElderDetailPage: Socket 이미 연결됨:', socket.id);
@@ -286,6 +396,8 @@ export default function ElderDetailPage() {
           
           // 기존 센서 데이터를 보존하면서 새로운 센서만 업데이트
           setSensorData(prevSensorData => {
+            console.log('🔍 센서 상태 변경 시점 이전 센서 데이터:', prevSensorData)
+            
             const updatedData = {
               ...prevSensorData,
               [sensorKey]: {
@@ -298,6 +410,8 @@ export default function ElderDetailPage() {
                 event_description: data.event_description || ''
               }
             }
+            
+            console.log('🔍 센서 상태 변경 후 업데이트된 데이터:', updatedData)
             
             // localStorage에 센서 데이터 저장
             if (id) {
@@ -328,6 +442,9 @@ export default function ElderDetailPage() {
              // 모든 웹소켓 이벤트 수신 (디버깅용)
              socket.onAny((eventName, ...args) => {
                console.log('🔍 수신된 웹소켓 이벤트:', eventName, args)
+               if (eventName.includes('sensor')) {
+                 console.log('📡 센서 관련 이벤트 수신:', eventName, args)
+               }
              })
              
              addEventListener('server:send_sensor_log', handleSensorLog)
@@ -338,6 +455,9 @@ export default function ElderDetailPage() {
              addEventListener('server:request_safety_check', handleSafetyCheckRequest)
              addEventListener('server:senior_is_safe', handleSeniorSafe)
              addEventListener('server:safety_check_failed', handleSafetyCheckFailed)
+             
+             // client:request_all_sensor_status 응답 이벤트 리스너 추가
+             addEventListener('server:send_all_sensor_status', handleSensorLog)
              console.log('🔔 ElderDetailPage: 이벤트 리스너 등록 완료');
            } else {
       console.log('⚠️ ElderDetailPage: 웹소켓이 연결되지 않아 이벤트 리스너 등록 안함');
@@ -352,6 +472,7 @@ export default function ElderDetailPage() {
           addEventListener('server:request_safety_check', handleSafetyCheckRequest)
           addEventListener('server:senior_is_safe', handleSeniorSafe)
           addEventListener('server:safety_check_failed', handleSafetyCheckFailed)
+          addEventListener('server:send_all_sensor_status', handleSensorLog)
         }
       }, 1000)
       
@@ -370,8 +491,43 @@ export default function ElderDetailPage() {
       removeEventListener('server:request_safety_check', handleSafetyCheckRequest)
       removeEventListener('server:senior_is_safe', handleSeniorSafe)
       removeEventListener('server:safety_check_failed', handleSafetyCheckFailed)
+      removeEventListener('server:send_all_sensor_status', handleSensorLog)
     }
-  }, [addEventListener, removeEventListener, senior, handleSensorLog]) // senior 데이터가 로드된 후에 이벤트 리스너 등록
+  }, [addEventListener, removeEventListener, senior]) // senior 데이터가 로드된 후에 이벤트 리스너 등록
+
+  // 페이지 진입 시 센서 데이터 요청 (항상 최신 데이터 요청)
+  useEffect(() => {
+    if (senior?.senior_id && socket && socket.connected) {
+      console.log(`📡 페이지 진입 시 센서 데이터 요청: senior_id ${senior.senior_id}`)
+      console.log(`🔍 현재 센서 데이터 상태:`, sensorData)
+      
+      // 항상 최신 센서 데이터 요청
+      console.log(`📡 최신 센서 데이터 요청: senior_id ${senior.senior_id}`)
+      socket.emit('client:request_all_sensor_status', {
+        senior_id: senior.senior_id
+      })
+      
+      // 3초 후에도 응답이 없으면 다시 요청
+      const retryTimer = setTimeout(() => {
+        console.log(`🔄 센서 데이터 재요청: senior_id ${senior.senior_id}`)
+        socket.emit('client:request_all_sensor_status', {
+          senior_id: senior.senior_id
+        })
+      }, 3000)
+      
+      return () => clearTimeout(retryTimer)
+    }
+  }, [senior?.senior_id, socket])
+
+  // 페이지 진입 시 전체 어르신 상태 데이터 요청
+  useEffect(() => {
+    if (senior?.senior_id && socket && socket.connected) {
+      console.log(`📡 페이지 진입 시 전체 어르신 상태 요청: senior_id ${senior.senior_id}`)
+      socket.emit('client:request_all_senior_status', {
+        senior_id: senior.senior_id
+      })
+    }
+  }, [senior?.senior_id, socket])
   
 
   // 생년월일로부터 만 나이 계산
@@ -470,12 +626,76 @@ export default function ElderDetailPage() {
     }
   }, [senior?.senior_id])
 
-  // 센서 데이터는 웹소켓을 통해서만 수신 (API 조회 제거)
-  useEffect(() => {
-    console.log('📡 센서 데이터는 웹소켓 이벤트를 통해서만 수신됩니다')
-    setSensorData({})
-  }, [senior?.senior_id])
+  // 센서 데이터는 웹소켓 이벤트를 통해서만 수신됩니다
+  // localStorage에서 이미 복원되므로 추가 초기화 불필요
 
+
+  // 가장 최근 센서 활동 정보 가져오기 함수
+  const getLatestSensorActivity = (): { hasActivity: boolean; lastActivityTime: string; status: 'red' | 'yellow' | 'green' } => {
+    const sensorEntries = Object.entries(sensorData)
+    
+    if (sensorEntries.length === 0) {
+      return {
+        hasActivity: false,
+        lastActivityTime: '활동 없음',
+        status: 'red'
+      }
+    }
+    
+    // 모든 센서 중에서 가장 최근 활동 찾기
+    let latestSensor = null
+    let latestTime = new Date(0) // 1970년 1월 1일
+    
+    sensorEntries.forEach(([, sensor]) => {
+      if (sensor && sensor.last_updated) {
+        const sensorTime = new Date(sensor.last_updated)
+        if (sensorTime > latestTime) {
+          latestTime = sensorTime
+          latestSensor = sensor
+        }
+      }
+    })
+    
+    if (!latestSensor) {
+      return {
+        hasActivity: false,
+        lastActivityTime: '활동 없음',
+        status: 'red'
+      }
+    }
+    
+    // 현재 시간과의 차이 계산
+    const now = new Date()
+    const diffMs = now.getTime() - latestTime.getTime()
+    const diffMinutes = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMinutes / 60)
+    
+    let timeText = ''
+    if (diffMinutes < 1) {
+      timeText = '방금 전'
+    } else if (diffMinutes < 60) {
+      timeText = `${diffMinutes}분 전`
+    } else if (diffHours < 24) {
+      timeText = `${diffHours}시간 전`
+    } else {
+      const diffDays = Math.floor(diffHours / 24)
+      timeText = `${diffDays}일 전`
+    }
+    
+    // 상태 결정 (최근 활동 기준)
+    let status: 'red' | 'yellow' | 'green' = 'green'
+    if (diffMinutes > 60) {
+      status = 'red'
+    } else if (diffMinutes > 30) {
+      status = 'yellow'
+    }
+    
+    return {
+      hasActivity: true,
+      lastActivityTime: timeText,
+      status
+    }
+  }
 
   // 센서 상태 가져오기 함수
   const getSensorStatus = (sensorType: string, location: string): { status: 'red' | 'yellow' | 'green'; time: string; description?: string } => {
@@ -643,15 +863,37 @@ export default function ElderDetailPage() {
           {/* 상단 액션/배너 영역 */}
           <div className="px-6 pb-6 space-y-4">
             {/* 상태 알림 배너 */}
-            <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-center gap-3">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                <Activity className="w-4 h-4 text-red-600" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-red-800">활동 감지 없음</div>
-                <div className="text-red-600 text-xs">마지막 활동: 1시간 전</div>
-              </div>
-            </div>
+            {(() => {
+              const latestActivity = getLatestSensorActivity()
+              const bgColor = latestActivity.status === 'red' ? 'bg-red-50 border-red-200' : 
+                             latestActivity.status === 'yellow' ? 'bg-yellow-50 border-yellow-200' : 
+                             'bg-green-50 border-green-200'
+              const iconBgColor = latestActivity.status === 'red' ? 'bg-red-100' : 
+                                 latestActivity.status === 'yellow' ? 'bg-yellow-100' : 
+                                 'bg-green-100'
+              const iconColor = latestActivity.status === 'red' ? 'text-red-600' : 
+                               latestActivity.status === 'yellow' ? 'text-yellow-600' : 
+                               'text-green-600'
+              const titleColor = latestActivity.status === 'red' ? 'text-red-800' : 
+                                latestActivity.status === 'yellow' ? 'text-yellow-800' : 
+                                'text-green-800'
+              const timeColor = latestActivity.status === 'red' ? 'text-red-600' : 
+                               latestActivity.status === 'yellow' ? 'text-yellow-600' : 
+                               'text-green-600'
+              const titleText = latestActivity.hasActivity ? '활동 감지됨' : '활동 감지 없음'
+              
+              return (
+                <div className={`rounded-xl ${bgColor} px-4 py-3 flex items-center gap-3`}>
+                  <div className={`w-8 h-8 ${iconBgColor} rounded-full flex items-center justify-center`}>
+                    <Activity className={`w-4 h-4 ${iconColor}`} />
+                  </div>
+                  <div>
+                    <div className={`text-sm font-semibold ${titleColor}`}>{titleText}</div>
+                    <div className={`${timeColor} text-xs`}>마지막 활동: {latestActivity.lastActivityTime}</div>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* 액션 카드 2열 */}
             <div className="grid grid-cols-2 gap-3">
