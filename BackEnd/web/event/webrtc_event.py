@@ -24,7 +24,7 @@ async def on_register_offer(sid, senior_id, data):
 @sio.on(WebRTCEvents.CHECK_OFFER)
 async def on_check_offer(sid, senior_id):
     """(서버 -> FE) 이미 등록된 offer 확인하는 이벤트"""
-    offer = await rtc_man.get_offer(senior_id)
+    offer = await rtc_man.consume_offer(senior_id)
     if offer:
         await sio.emit(WebRTCEvents.NEW_OFFER, offer, to=sid)
 
@@ -41,7 +41,7 @@ async def on_send_answer(sid, senior_id, data):
 @sio.on(WebRTCEvents.CHECK_ANSWER)
 async def on_check_answer(sid, senior_id):
     """(서버 -> FE) 이미 등록된 offer 확인하는 이벤트"""
-    answer = await rtc_man.get_answer(senior_id)
+    answer = await rtc_man.consume_answer(senior_id)
     if answer:
         await sio.emit(WebRTCEvents.NEW_ANSWER, answer, to=sid)
 

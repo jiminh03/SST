@@ -1,8 +1,9 @@
 import redis.asyncio as redis
 import json
-from typing import Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 from common.modules.db_manager import RedisSessionManager
 
+SDP_EXPIRATION_SECONDS = 300
 
 class WebRTCManager:
     """Redis에 WebRTC 패킷을 등록하고 조회하는 작업을 관리합니다."""
@@ -23,66 +24,47 @@ class WebRTCManager:
         """Answer에 대한 Redis 키를 생성합니다."""
         return f"webrtc:answer:senior:{senior_id}"
 
-    async def register_offer(self, senior_id: int, offer_packet):
+    async def _register_sdp(self, key: str, packet: Dict[str, Any], sdp_type: str):
         """
-        Offer 패킷을 senior_id를 키로 사용하여 Redis에 등록합니다.
+        SDP(Offer/Answer) 패킷을 만료 시간과 함께 Redis에 등록합니다.
         """
-        # 1. 비동기적으로 Redis 클라이언트를 가져옵니다.
         redis_client = await self.red_sess.get_client()
-        
+        # ❗ 변경점: ex=SDP_EXPIRATION_SECONDS를 추가하여 300초 후 자동 만료되도록 설정
+        await redis_client.set(
+            key, 
+            json.dumps(packet), 
+            ex=SDP_EXPIRATION_SECONDS
+        )
+        print(f"Registered {sdp_type} with key '{key}' (expires in {SDP_EXPIRATION_SECONDS}s)")
+
+    async def register_offer(self, senior_id: int, offer_packet: Dict[str, Any]):
         key = self._get_offer_key(senior_id)
-        
-        # 2. 가져온 클라이언트를 사용하여 Redis 명령을 실행합니다.
-        await redis_client.set(key, json.dumps(offer_packet))
-        print(f"Registered offer for senior {senior_id} with key '{key}'")
+        await self._register_sdp(key, offer_packet, "Offer")
 
-    async def register_answer(self, senior_id: int, answer_packet):
-        """
-        Answer 패킷을 senior_id를 키로 사용하여 Redis에 등록합니다.
-        """
-        # 1. 비동기적으로 Redis 클라이언트를 가져옵니다.
-        redis_client = await self.red_sess.get_client()
-
+    async def register_answer(self, senior_id: int, answer_packet: Dict[str, Any]):
         key = self._get_answer_key(senior_id)
-        
-        # 2. 가져온 클라이언트를 사용하여 Redis 명령을 실행합니다.
-        await redis_client.set(key, json.dumps(answer_packet))
-        print(f"Registered answer for senior {senior_id} with key '{key}'")
+        await self._register_sdp(key, answer_packet, "Answer")
 
-    async def get_offer(self, senior_id: int):
+    async def consume_sdp(self, key: str, sdp_type: str) -> Optional[Dict[str, Any]]:
         """
-        Redis에서 Offer 패킷을 조회합니다.
+
+        SDP(Offer/Answer) 패킷을 조회하고 즉시 삭제합니다. (GETDEL 사용)
         """
-        # 1. 비동기적으로 Redis 클라이언트를 가져옵니다.
         redis_client = await self.red_sess.get_client()
-
-        key = self._get_offer_key(senior_id)
+        # ❗ 변경점: .get() 대신 .getdel()을 사용하여 값을 읽음과 동시에 키를 삭제
+        data_bytes = await redis_client.getdel(key)
         
-        # 2. 가져온 클라이언트를 사용하여 Redis 명령을 실행합니다.
-        data = await redis_client.get(key)
+        if data_bytes:
+            print(f"Consumed {sdp_type} from key '{key}'")
+            return json.loads(data_bytes)
         
-        if data:
-            print(f"Found offer for senior {senior_id} with key '{key}'")
-            return data
-            
-        print(f"No offer found for senior {senior_id} with key '{key}'")
+        print(f"No {sdp_type} found for key '{key}'")
         return None
 
-    async def get_answer(self, senior_id: int):
-        """
-        Redis에서 Answer 패킷을 조회합니다.
-        """
-        # 1. 비동기적으로 Redis 클라이언트를 가져옵니다.
-        redis_client = await self.red_sess.get_client()
+    async def consume_offer(self, senior_id: int) -> Optional[Dict[str, Any]]:
+        key = self._get_offer_key(senior_id)
+        return await self.consume_sdp(key, "Offer")
 
+    async def consume_answer(self, senior_id: int) -> Optional[Dict[str, Any]]:
         key = self._get_answer_key(senior_id)
-        
-        # 2. 가져온 클라이언트를 사용하여 Redis 명령을 실행합니다.
-        data = await redis_client.get(key)
-        
-        if data:
-            print(f"Found answer for senior {senior_id} with key '{key}'")
-            return data
-            
-        print(f"No answer found for senior {senior_id} with key '{key}'")
-        return None
+        return await self.consume_sdp(key, "Answer")
