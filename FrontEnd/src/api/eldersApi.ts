@@ -15,11 +15,12 @@ export interface Senior {
 // 센서 상태 관련 타입 정의
 export interface SensorStatus {
   sensor_id: string
-  sensor_type: 'door' | 'pir' | 'light' | 'tv'
+  sensor_type: 'door_entrance' | 'door_fridge' | 'pir_livingroom' | 'pir_bedroom' | 'pir_bathroom' | 'light_livingroom' | 'light_bedroom' | 'light_bathroom' | 'tv_livingroom'
   location: string
   status: 'active' | 'inactive' | 'error'
   value: any
   last_updated: string
+  event_description?: string
 }
 
 export interface SeniorSensorData {

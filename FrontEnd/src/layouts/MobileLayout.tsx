@@ -6,6 +6,7 @@ import TabBar from '../components/layout/TabBar'
 import { deleteSenior } from '../api/eldersApi'
 import { Eye, EyeOff } from 'lucide-react'
 import { InAppNotification } from '../components/notifications/InAppNotification'
+import { useNotification } from '../contexts/NotificationContext'
 
 export default function MobileLayout() {
   const location = useLocation()
@@ -13,11 +14,22 @@ export default function MobileLayout() {
   
   // 알림 상태 관리
   const [notification, setNotification] = useState<any>(null)
+  const { addNotification } = useNotification()
   
   // 커스텀 이벤트 리스너 등록
   useEffect(() => {
     const handleShowNotification = (event: any) => {
-      const { type, title, message } = event.detail
+      const { type, title, message, seniorId } = event.detail
+      
+      // 알림 저장
+      addNotification({
+        type,
+        title,
+        message,
+        seniorId
+      })
+      
+      // 즉시 표시용 상태 업데이트
       setNotification({
         id: Date.now().toString(),
         type,
@@ -31,7 +43,7 @@ export default function MobileLayout() {
     return () => {
       window.removeEventListener('showNotification', handleShowNotification)
     }
-  }, [])
+  }, [addNotification])
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)

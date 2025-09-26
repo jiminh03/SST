@@ -48,9 +48,9 @@ export default function ElderCard({ elder }: { elder: Senior }) {
     }
   }, [elder.senior_id])
 
-  // health_info를 상태로 변환 (위험/주의/안전)
-  const getHealthStatus = (healthInfo: any): string => {
-    let status = '안전' // 기본값
+  // 상태 결정: elder.status가 있으면 사용, 없으면 health_info에서 계산
+  const getHealthStatus = (healthInfo: any): '위험' | '주의' | '안전' => {
+    let status: '위험' | '주의' | '안전' = '안전' // 기본값
     
     // 배열인 경우 처리
     if (Array.isArray(healthInfo)) {
@@ -85,7 +85,8 @@ export default function ElderCard({ elder }: { elder: Senior }) {
     return status
   }
   
-  const status = getHealthStatus(elder.health_info)
+  // elder.status가 있으면 사용, 없으면 health_info에서 계산
+  const status = elder.status || getHealthStatus(elder.health_info)
   
   // 생년월일로부터 만 나이 계산
   const calculateAge = (birthDate: string): string => {

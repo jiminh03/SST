@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import ElderCard from '../../components/elder/ElderCard'
 import FilterBar, { type FilterValue } from '../../components/layout/FilterBar'
-import { getSeniors, type Senior } from '../../api/eldersApi'
+import { getSeniors, getSeniorById, type Senior } from '../../api/eldersApi'
 import { useSocket } from '../../contexts/SocketContext'
 
 // Senior 타입에 status 속성을 추가해야 합니다. (eldersApi.ts 파일 등에서 수정)
@@ -15,9 +15,27 @@ export default function HomePage() {
   const [seniors, setSeniors] = useState<Senior[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // seniors 배열을 ref로 관리하여 이벤트 핸들러에서 최신 상태 참조
+  const seniorsRef = useRef<Senior[]>([])
+  
+  // seniors 상태가 변경될 때마다 ref 업데이트
+  useEffect(() => {
+    seniorsRef.current = seniors
+  }, [seniors])
 
-  // 1. 소켓 컨텍스트에서 이벤트 리스너 함수들도 가져옵니다.
-  const { connectSocket, addEventListener, removeEventListener } = useSocket()
+  // Socket Context에서 이벤트 리스너 함수들 가져오기
+  const { socket, isConnected, connectSocket, addEventListener, removeEventListener } = useSocket()
+  
+  // 웹소켓 연결 상태 디버깅
+  useEffect(() => {
+    console.log('🔍 HomePage 웹소켓 상태:', {
+      socket: socket ? '있음' : '없음',
+      socketId: socket?.id || '없음',
+      isConnected,
+      socketConnected: socket?.connected || false
+    })
+  }, [socket, isConnected])
 
   // Socket 연결 (앱 시작 시점) - 기존과 동일
   useEffect(() => {
@@ -28,31 +46,129 @@ export default function HomePage() {
     }
   }, [connectSocket])
 
-  // 2. 소켓 이벤트 리스너를 등록하여 상태를 실시간으로 업데이트합니다.
+  // WebSocket 이벤트 리스너 등록하여 상태를 실시간으로 업데이트
   useEffect(() => {
     const handleStatusChange = (data: { senior_id: number; status: '위험' | '주의' | '안전' }) => {
       console.log(`⚡️ 홈 화면 상태 변경 이벤트 수신: 어르신 ID ${data.senior_id} -> ${data.status}`);
       
-      setSeniors(prevSeniors =>
-        prevSeniors.map(senior =>
+      // 로컬 스토리지에 실시간 상태 저장
+      const statusKey = `senior_status_${data.senior_id}`;
+      localStorage.setItem(statusKey, data.status);
+      
+      setSeniors(prevSeniors => {
+        const updatedSeniors = prevSeniors.map(senior =>
           senior.senior_id === data.senior_id
             ? { ...senior, status: data.status } // 해당 어르신의 status만 변경
             : senior
         )
-      )
+        
+        // 상태 변경 알림 (seniorId로 어르신 정보 가져오기)
+        console.log('상태 변경 이벤트:', data)
+        console.log('현재 seniors 배열:', seniorsRef.current)
+        const changedSenior = seniorsRef.current.find(senior => senior.senior_id === data.senior_id);
+        console.log('찾은 어르신:', changedSenior)
+        
+        // seniors 배열에서 찾지 못했으면 API로 가져오기
+        if (!changedSenior) {
+          console.log('API로 어르신 정보 가져오기 시도:', data.senior_id)
+          getSeniorById(data.senior_id)
+            .then(seniorData => {
+              console.log('API 응답:', seniorData)
+              if (seniorData?.full_name) {
+                // 상태에 따른 텍스트 조정
+                const statusText = data.status === '주의' ? '주의로' : `${data.status}으로`;
+                
+                const event = new CustomEvent('showNotification', {
+                  detail: {
+                    type: 'warning',
+                    title: '상태 변경',
+                    message: `${seniorData.full_name}님의 상태가 ${statusText} 변경되었습니다.`,
+                    seniorId: data.senior_id
+                  }
+                })
+                window.dispatchEvent(event)
+              }
+            })
+            .catch(error => {
+              console.error('어르신 정보 가져오기 실패:', error)
+            })
+        } else if (changedSenior.full_name) {
+          // seniors 배열에서 찾았으면 바로 알림
+          console.log('seniors 배열에서 찾은 어르신 이름:', changedSenior.full_name)
+          const statusText = data.status === '주의' ? '주의로' : `${data.status}으로`;
+          
+          const event = new CustomEvent('showNotification', {
+            detail: {
+              type: 'warning',
+              title: '상태 변경',
+              message: `${changedSenior.full_name}님의 상태가 ${statusText} 변경되었습니다.`,
+              seniorId: data.senior_id
+            }
+          })
+          window.dispatchEvent(event)
+        }
+        
+        return updatedSeniors;
+      })
+    }
+
+    // 응급 상황 핸들러
+    const handleEmergencySituation = (data: any) => {
+      console.log('응급 상황:', data)
+      console.log('현재 seniors 배열:', seniorsRef.current)
+      
+      // 어르신 이름 찾기
+      const targetSenior = seniorsRef.current.find(senior => senior.senior_id === data.senior_id);
+      console.log('찾은 어르신:', targetSenior)
+      
+      // seniors 배열에서 찾지 못했으면 API로 가져오기
+      if (!targetSenior) {
+        console.log('API로 어르신 정보 가져오기 시도:', data.senior_id)
+        getSeniorById(data.senior_id)
+          .then(seniorData => {
+            console.log('API 응답:', seniorData)
+            if (seniorData?.full_name) {
+              const event = new CustomEvent('showNotification', {
+                detail: {
+                  type: 'error',
+                  title: '🚨 응급 상황',
+                  message: `${seniorData.full_name}에게 ${data.emergency_type} 상황이 발생했습니다!`,
+                  seniorId: data.senior_id
+                }
+              })
+              window.dispatchEvent(event)
+            }
+          })
+          .catch(error => {
+            console.error('어르신 정보 가져오기 실패:', error)
+          })
+      } else if (targetSenior.full_name) {
+        // seniors 배열에서 찾았으면 바로 알림
+        console.log('seniors 배열에서 찾은 어르신 이름:', targetSenior.full_name)
+        const event = new CustomEvent('showNotification', {
+          detail: {
+            type: 'error',
+            title: '🚨 응급 상황',
+            message: `${targetSenior.full_name}에게 ${data.emergency_type} 상황이 발생했습니다!`,
+            seniorId: data.senior_id
+          }
+        })
+        window.dispatchEvent(event)
+      }
     }
 
     // 이벤트 리스너 등록
     addEventListener('server:notify_senior_status_change', handleStatusChange)
+    addEventListener('server:emergency_situation', handleEmergencySituation)
 
     // 컴포넌트 언마운트 시 리스너 제거
     return () => {
       removeEventListener('server:notify_senior_status_change', handleStatusChange)
+      removeEventListener('server:emergency_situation', handleEmergencySituation)
     }
   }, [addEventListener, removeEventListener])
 
-
-  // 3. API에서 어르신 데이터를 가져올 때 초기 'status' 값을 설정합니다.
+  // API에서 어르신 데이터를 가져올 때 초기 'status' 값을 설정
   useEffect(() => {
     // health_info를 기반으로 초기 상태를 결정하는 내부 함수
     const getInitialStatus = (healthInfo: any): '위험' | '주의' | '안전' => {
@@ -83,11 +199,28 @@ export default function HomePage() {
         setLoading(true)
         setError(null)
         const data = await getSeniors()
-        // API 응답 데이터에 'status' 속성을 추가하여 상태를 초기화합니다.
-        const seniorsWithStatus = data.map(senior => ({
-          ...senior,
-          status: getInitialStatus(senior.health_info)
-        }))
+        
+        // API 응답 데이터에 'status' 속성을 추가하여 상태를 초기화
+        const seniorsWithStatus = data.map(senior => {
+          // 1. 로컬 스토리지에서 저장된 실시간 상태 확인
+          const statusKey = `senior_status_${senior.senior_id}`;
+          const savedStatus = localStorage.getItem(statusKey) as '위험' | '주의' | '안전' | null;
+          
+          if (savedStatus) {
+            console.log(`🔄 로컬 스토리지에서 상태 복원: ${senior.full_name} (${senior.senior_id}) -> ${savedStatus}`);
+            return {
+              ...senior,
+              status: savedStatus
+            };
+          }
+          
+          // 2. 로컬 스토리지에 없으면 health_info 기반으로 계산
+          return {
+            ...senior,
+            status: getInitialStatus(senior.health_info)
+          };
+        })
+        
         setSeniors(seniorsWithStatus)
       } catch (err) {
         setError('어르신 목록을 불러오는데 실패했습니다.')
@@ -100,7 +233,7 @@ export default function HomePage() {
     fetchSeniors()
   }, [])
 
-  // 4. 필터링된 어르신 목록 (이제 매우 간단해집니다)
+  // 필터링된 어르신 목록 (이제 매우 간단해집니다)
   const filtered = useMemo(() => {
     if (filter === '전체') return seniors
     
