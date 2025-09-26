@@ -33,7 +33,17 @@ export default function NotificationPage() {
   }
 
   // 알림 타입별 아이콘과 색상
-  const getNotificationStyle = (type: string) => {
+  const getNotificationStyle = (type: string, message: string) => {
+    // 위험 상태인 경우 빨간색으로 표시
+    if (message.includes('위험')) {
+      return { icon: '🚨', bgColor: 'bg-red-50', borderColor: 'border-red-200', textColor: 'text-red-800' }
+    }
+    
+    // 안전 상태인 경우 초록색으로 표시
+    if (message.includes('안전')) {
+      return { icon: '✅', bgColor: 'bg-green-50', borderColor: 'border-green-200', textColor: 'text-green-800' }
+    }
+    
     switch (type) {
       case 'success':
         return { icon: '✅', bgColor: 'bg-green-50', borderColor: 'border-green-200', textColor: 'text-green-800' }
@@ -88,7 +98,7 @@ export default function NotificationPage() {
             {/* 알림 목록 */}
             <div className="space-y-3">
               {notifications.map((notification) => {
-                const style = getNotificationStyle(notification.type)
+                const style = getNotificationStyle(notification.type, notification.message)
                 
                 return (
                   <div

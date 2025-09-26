@@ -45,6 +45,16 @@ export const InAppNotification: React.FC<InAppNotificationProps> = ({
   if (!notification) return null
 
   const getIcon = () => {
+    // 위험 상태인 경우 빨간색으로 표시
+    if (notification.message.includes('위험')) {
+      return <AlertTriangle className="w-6 h-6 text-red-600" />
+    }
+    
+    // 안전 상태인 경우 초록색으로 표시
+    if (notification.message.includes('안전')) {
+      return <CheckCircle className="w-6 h-6 text-green-600" />
+    }
+    
     switch (notification.type) {
       case 'success':
         return <CheckCircle className="w-6 h-6 text-green-600" />
@@ -60,6 +70,16 @@ export const InAppNotification: React.FC<InAppNotificationProps> = ({
   }
 
   const getBgColor = () => {
+    // 위험 상태인 경우 빨간색으로 표시
+    if (notification.message.includes('위험')) {
+      return 'bg-red-50 border-red-200'
+    }
+    
+    // 안전 상태인 경우 초록색으로 표시
+    if (notification.message.includes('안전')) {
+      return 'bg-green-50 border-green-200'
+    }
+    
     switch (notification.type) {
       case 'success':
         return 'bg-green-50 border-green-200'
