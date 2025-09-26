@@ -67,7 +67,14 @@ class SeniorStatusManager:
         
         # Redis에서 읽은 데이터는 모두 바이트 문자열이므로 디코딩 필요
         decoded_data = {k.decode('utf-8'): v.decode('utf-8') for k, v in status_data.items()}
-        
+        for k, v in status_data.items():
+            # 키(k)가 bytes 타입이면 디코딩, 아니면 그대로 사용
+            key = k.decode('utf-8') if isinstance(k, bytes) else k
+            
+            # 값(v)이 bytes 타입이면 디코딩, 아니면 그대로 사용
+            value = v.decode('utf-8') if isinstance(v, bytes) else v
+            
+            decoded_data[key] = value
         return SeniorStatus(**decoded_data)
     
 

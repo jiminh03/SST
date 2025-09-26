@@ -1,10 +1,12 @@
 #socket.io에서 핸들링할 이벤트 목록
 from web.services.websocket import sio
 from web.services.database import db,red
-from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
+from common.modules.session_manager import SessionManager
 from common.modules.webrtc_manager import WebRTCManager
 from common.modules.user_manager import UserManager
 from common.modules.iot_hub_manager import IotHubManager
+from common.schemas.session import  SessionType
+
 from web.schemas.socket_event import WebRTCEvents
 
 
@@ -17,14 +19,6 @@ sess_man = SessionManager(red)
 async def on_register_offer(sid, senior_id, data):
     """(로봇 -> 서버) 로봇이 Offer를 등록하는 이벤트"""
     await rtc_man.register_offer(senior_id, data)
-    # async for session in db.get_session():
-    #     staff_info = await UserManager(session).get_senior_staff(senior_id)
-    #     if staff_info:
-    #         staff_id = staff_info.staff_id
-    #         fe_sess=await SessionManager(red).get_session_by_staff_id(staff_id)
-    #         if fe_sess:
-    #             recv_sid = fe_sess.sid
-    #             await sio.emit(WebRTCEvents.NEW_OFFER, data, to=recv_sid)
         
 
 @sio.on(WebRTCEvents.CHECK_OFFER)

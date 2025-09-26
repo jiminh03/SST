@@ -3,10 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import random  # random 모듈 추가
 
-from common.modules.api_key_manager import ApiKeyManager, ApiKeyRepository
+from common.modules.api_key_manager import ApiKeyRepository
 from web.schemas.iot_schema import SeniorIdRequest
 from web.services.database import db, red
-from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
+from common.modules.session_manager import SessionManager
 from web.event.alarm_event import handle_report_emergency
 from web.services.safety_alarm import request_safety_check
 from web.services.senior_status_manager import SeniorStatusManager

@@ -5,7 +5,9 @@ from common.modules.api_key_manager import ApiKeyRepository
 from web.services.database import db,red
 
 from web.schemas.socket_event import ConnectEvents
-from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
+from common.modules.session_manager import SessionManager
+from common.schemas.session import ConnectionInfo, SessionType
+
 
 session_man = SessionManager(red)
 

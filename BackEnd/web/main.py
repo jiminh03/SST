@@ -20,7 +20,7 @@ from web.services.websocket import sio
 
 import web.event.connection_event
 import web.event.webrtc_event
-#import web.event.noti_event
+import web.event.noti_event
 
 
 # Lifespan 컨텍스트 매니저 정의
