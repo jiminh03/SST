@@ -20,7 +20,7 @@ class SensorLogManager:
         """
         is_id_exit =  await self.user_man.get_senior_info_by_id(senior_id)
         if not logs_data or not is_id_exit:
-            return
+            raise ValueError(f"add_logs - Invalid senior_id: {senior_id}")
 
         values_to_insert = [
             {
@@ -41,9 +41,10 @@ class SensorLogManager:
         """
         특정 어르신의 모든 센서 로그를 시간 역순으로 조회하여 SensorLogList 형태로 반환합니다.
         """
-        is_id_exit =  await self.user_man.get_senior_info_by_id(senior_id)
+        is_id_exit = await self.user_man.get_senior_info_by_id(senior_id)
         if not is_id_exit:
-            return
+            # None을 반환하는 대신, 비어있는 SensorLogList를 반환
+            return SensorLogList(senior_id=senior_id, log_list=[])
         
         query = text(
             """
