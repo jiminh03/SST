@@ -1,38 +1,27 @@
 from web.services.websocket import sio
-from web.services.senior_status_manager import SeniorStatusManager
+from web.services.senior_status_manager import SeniorStatusManager, SensorStatusManager
 from common.modules.session_manager import SessionManager, SessionType, ConnectionInfo
 from common.modules.user_manager import UserManager
 from web.services.database import db,red
 from web.schemas.socket_event import NotifyEvents
-from web.schemas.monitoring_schema import SeniorStatus
+from web.services.data_alarm import notify_senior_status_change, notify_sensor_status_log_change
 
 
-@sio.on(NotifyEvents.CLIENT_REQUEST_INITIAL_STATUS)
-async def notify_initial_status(sid: str):
-    """
-    클라이언트로부터 받은 어르신 상태 목록을 검증하고 다시 전송합니다.
-    Pydantic이 데이터 유효성 검사를 자동으로 수행합니다.
-    """
-
-    sso = SeniorStatusManager(red)
-    sses_man = SessionManager(red)
-    staff_id = (await sses_man.get_session_by_sid(sid)).staff_id
-    
+@sio.on(NotifyEvents.CLIENT_REQUEST_ALL_SENIOR_STATUS)
+async def notify_all_senior_status(sid: str):
     async for session in db.get_session():
-        senior_list = await UserManager(session).get_care_seniors(staff_id)
-    status_list = [await sso.get_status(s.senior_id) for s in senior_list]
+        sess_info = await SessionManager(red).get_session_by_sid(sid)
+        senior_list = await UserManager(session).get_care_seniors(sess_info.staff_id)
+        managed_senior_ids = [senior.senior_id for senior in senior_list]
     
-    # 1. Pydantic 모델 리스트를 JSON 직렬화가 가능한 dict 리스트로 변환
-    #    - 리스트의 각 status 객체에 대해 model_dump()를 호출합니다.
-    statuses_to_send = [s.model_dump(mode='json') for s in status_list]
-    
-    # 2. 변환된 데이터를 클라이언트로 전송
-    await sio.emit(
-        NotifyEvents.SERVER_SEND_INITIAL_STATUS, 
-        statuses_to_send, 
-        to=sid
-    )
-    
-    print(f"✅ 이벤트 전송: {NotifyEvents.SERVER_SEND_INITIAL_STATUS}, 받는 이: {sid}")
+        for senior_id in managed_senior_ids:
+            senior_status= await SeniorStatusManager(red).get_status(senior_id)
+            if senior_status:
+                await notify_senior_status_change(senior_id, senior_status)
+
+@sio.on(NotifyEvents.CLIENT_REQUEST_ALL_SENSOR_STATUS)
+async def notify_all_sensor_status(sid: str, senior_id: int):
+    packet= await SensorStatusManager(red).get_all_sensor_statuses(senior_id)
+    await notify_sensor_status_log_change(packet)
 
 
