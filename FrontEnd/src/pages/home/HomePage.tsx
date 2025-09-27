@@ -63,8 +63,44 @@ export default function HomePage() {
     // 센서 데이터 수신 핸들러
     const handleSensorData = (data: any) => {
       console.log('🏠 홈 화면 센서 데이터 수신:', data)
+      console.log('🏠 수신된 데이터 타입:', typeof data)
+      console.log('🏠 수신된 데이터 키들:', Object.keys(data || {}))
       
-      if (data.senior_id && data.sensors && Array.isArray(data.sensors)) {
+      // 포스트맨 요청으로 받은 센서 데이터 처리 (api_key 포함)
+      if (data.api_key && data.sensor_data && Array.isArray(data.sensor_data)) {
+        console.log('🏠 포스트맨 요청 센서 데이터 처리:', data.sensor_data)
+        console.log('🏠 API Key:', data.api_key)
+        console.log('🏠 센서 데이터 개수:', data.sensor_data.length)
+        
+        // API Key로 Senior ID 매핑 (임시로 17번 고정 - 실제로는 API 호출 필요)
+        const seniorId = 17 // 포스트맨 테스트용
+        console.log('🏠 매핑된 Senior ID:', seniorId)
+        
+        const sensorMap: Record<string, any> = {}
+        data.sensor_data.forEach((sensor: any) => {
+          const sensorKey = sensor.sensor_type // "door_entrance", "pir_livingroom" 등
+          sensorMap[sensorKey] = {
+            sensor_id: sensor.sensor_type,
+            sensor_type: sensor.sensor_type.split('_')[0], // "door", "pir" 등
+            location: sensor.sensor_type.split('_')[1], // "entrance", "livingroom" 등
+            status: sensor.sensor_value ? 'active' : 'inactive',
+            value: sensor.sensor_value,
+            last_updated: sensor.timestamp,
+            event_description: sensor.event_description || ''
+          }
+        })
+        
+        // localStorage에 센서 데이터 저장
+        localStorage.setItem(`sensor_data_${seniorId}`, JSON.stringify(sensorMap))
+        console.log(`🏠 포스트맨 센서 데이터 localStorage 저장 완료: senior_id ${seniorId}`)
+        console.log('🏠 저장된 센서 맵:', sensorMap)
+        
+        // localStorage에서 저장된 데이터 확인
+        const savedData = localStorage.getItem(`sensor_data_${seniorId}`)
+        console.log('🏠 localStorage에서 확인한 데이터:', savedData)
+      }
+      // 웹소켓으로 받은 센서 데이터 처리 (senior_id 포함)
+      else if (data.senior_id && data.sensors && Array.isArray(data.sensors)) {
         console.log(`🏠 ${data.senior_id}번 어르신 센서 데이터 처리`)
         
         const sensorMap: Record<string, any> = {}
@@ -83,7 +119,33 @@ export default function HomePage() {
         
         // localStorage에 센서 데이터 저장
         localStorage.setItem(`sensor_data_${data.senior_id}`, JSON.stringify(sensorMap))
-        console.log(`🏠 센서 데이터 localStorage 저장 완료: senior_id ${data.senior_id}`)
+        console.log(`🏠 웹소켓 센서 데이터 localStorage 저장 완료: senior_id ${data.senior_id}`)
+      }
+      // 단일 센서 상태 변경 처리
+      else if (data.senior_id && data.sensor_id) {
+        console.log(`🏠 ${data.senior_id}번 어르신 단일 센서 상태 변경: ${data.sensor_id}`)
+        
+        // 기존 센서 데이터 로드
+        const existingData = localStorage.getItem(`sensor_data_${data.senior_id}`)
+        const sensorMap = existingData ? JSON.parse(existingData) : {}
+        
+        // 새로운 센서 데이터 업데이트
+        sensorMap[data.sensor_id] = {
+          sensor_id: data.sensor_id,
+          sensor_type: data.sensor_type,
+          location: data.location,
+          status: data.status,
+          value: data.value,
+          last_updated: data.last_updated,
+          event_description: data.event_description || ''
+        }
+        
+        // localStorage에 업데이트된 센서 데이터 저장
+        localStorage.setItem(`sensor_data_${data.senior_id}`, JSON.stringify(sensorMap))
+        console.log(`🏠 단일 센서 상태 변경 localStorage 저장 완료: senior_id ${data.senior_id}`)
+      }
+      else {
+        console.log('🏠 알 수 없는 센서 데이터 형식:', data)
       }
     }
 
@@ -200,12 +262,16 @@ export default function HomePage() {
     addEventListener('server:notify_senior_status_change', handleStatusChange)
     addEventListener('server:emergency_situation', handleEmergencySituation)
     addEventListener('server:notify_sensor_status_change', handleSensorData)
+    addEventListener('server:send_sensor_log', handleSensorData) // 포스트맨 요청 처리용
+    addEventListener('server:send_all_sensor_status', handleSensorData) // 센서 상태 응답 처리용
 
     // 컴포넌트 언마운트 시 리스너 제거
     return () => {
       removeEventListener('server:notify_senior_status_change', handleStatusChange)
       removeEventListener('server:emergency_situation', handleEmergencySituation)
       removeEventListener('server:notify_sensor_status_change', handleSensorData)
+      removeEventListener('server:send_sensor_log', handleSensorData)
+      removeEventListener('server:send_all_sensor_status', handleSensorData)
     }
   }, [addEventListener, removeEventListener])
 

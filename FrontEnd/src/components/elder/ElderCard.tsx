@@ -11,15 +11,43 @@ export default function ElderCard({ elder }: { elder: Senior }) {
   const { socket } = useSocket()
 
   // 어르신 카드 클릭 핸들러
-  const handleElderClick = () => {
+  const handleElderClick = async () => {
     console.log(`🔍 ${elder.senior_id}번 어르신 상세조회로 이동`)
     
     // 웹소켓으로 전체 센서 상태 요청
     if (socket && socket.connected) {
       console.log(`📡 전체 센서 상태 요청 전송: senior_id ${elder.senior_id}`)
+      
+      // 센서 데이터 요청
       socket.emit('client:request_all_sensor_status', {
         senior_id: elder.senior_id
       })
+      
+      // 센서 데이터 응답을 기다리는 Promise 생성
+      const waitForSensorData = new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          console.log(`⏰ 센서 데이터 응답 대기 시간 초과: senior_id ${elder.senior_id}`)
+          resolve()
+        }, 2000) // 2초 대기
+        
+        // 센서 데이터 수신 이벤트 리스너
+        const handleSensorResponse = (data: any) => {
+          if (data.senior_id === elder.senior_id) {
+            console.log(`✅ 센서 데이터 응답 수신: senior_id ${elder.senior_id}`)
+            clearTimeout(timeout)
+            socket.off('server:notify_sensor_status_change', handleSensorResponse)
+            socket.off('server:send_all_sensor_status', handleSensorResponse)
+            resolve()
+          }
+        }
+        
+        // 센서 데이터 응답 이벤트 리스너 등록
+        socket.on('server:notify_sensor_status_change', handleSensorResponse)
+        socket.on('server:send_all_sensor_status', handleSensorResponse)
+      })
+      
+      // 센서 데이터 응답을 기다린 후 페이지 이동
+      await waitForSensorData
     } else {
       console.log('⚠️ 웹소켓이 연결되지 않아 센서 상태 요청을 보낼 수 없습니다.')
     }
