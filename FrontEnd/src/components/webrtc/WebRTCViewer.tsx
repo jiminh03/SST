@@ -498,31 +498,6 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
           }}>
             스트리밍 대기 중
           </div>
-          <div style={{
-            fontSize: '12px',
-            opacity: 0.7,
-            marginBottom: '16px'
-          }}>
-            Senior ID: {seniorId}
-          </div>
-          <button
-            onClick={() => setShowTestVideo(true)}
-            style={{
-              backgroundColor: 'rgba(59, 130, 246, 0.8)',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.9)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.8)'}
-          >
-            테스트 비디오 보기
-          </button>
         </div>
       )}
 
@@ -586,38 +561,7 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
         </div>
       )}
 
-      {/* 연결 상태 표시 */}
-      <div style={{
-        position: 'absolute',
-        top: '12px',
-        right: '12px',
-        backgroundColor: isConnected ? 'rgba(34, 197, 94, 0.9)' : 'rgba(239, 68, 68, 0.9)',
-        color: 'white',
-        padding: '6px 10px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        fontWeight: '500',
-        zIndex: 10
-      }}>
-        {isConnected ? '연결됨' : '연결 끊어짐'}
-      </div>
 
-      {/* 하단 상태 표시 */}
-      <div style={{
-        position: 'absolute',
-        bottom: '12px',
-        left: '12px',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        color: 'white',
-        padding: '6px 10px',
-        borderRadius: '6px',
-        fontSize: '11px',
-        fontWeight: '500',
-        zIndex: 10,
-        maxWidth: 'calc(100% - 24px)'
-      }}>
-        {connectionStatus}
-      </div>
     </div>
   );
 };
