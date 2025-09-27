@@ -40,14 +40,23 @@ export default function HomePage() {
     }
   }, [connectSocket])
 
-  // 홈 화면 진입 시 전체 어르신 상태 데이터 요청
+  // 홈 화면 진입 시 전체 어르신 센서 상태 조회
   useEffect(() => {
+    // socket이 연결되고, seniors 데이터가 있을 때만 아래 로직을 실행합니다.
     if (socket && socket.connected && seniors.length > 0) {
-      console.log('📡 홈 화면 진입 시 전체 어르신 상태 요청')
-      // 모든 어르신의 상태를 요청
-      socket.emit('client:request_all_senior_status')
+
+      // 1. 전체 어르신의 상태를 한 번에 요청
+      console.log('📡 홈 화면 진입 시 전체 어르신 상태 요청');
+      socket.emit('client:request_all_senior_status');
+
+      // 2. 각 어르신의 센서 상태를 개별적으로 요청
+      console.log('📡 홈 화면 진입 시 어르신별 센서 상태 요청');
+      seniors.forEach(senior => { // 변수명을 element보다 senior로 하면 더 명확합니다.
+        socket.emit('client:request_all_sensor_status', senior.senior_id);
+      });
+      
     }
-  }, [socket, seniors])
+  }, [socket, socket?.connected]); // 의존성 배열은 그대로 유지
 
   // WebSocket 이벤트 리스너 등록하여 상태를 실시간으로 업데이트
   useEffect(() => {
@@ -306,7 +315,9 @@ export default function HomePage() {
       <div className="pt-0 px-4 pb-4 space-y-3">
         {filtered.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500">등록된 어르신이 없습니다.</p>
+            <p className="text-gray-500">
+              {filter === '전체' ? '등록된 어르신이 없습니다.' : `'${filter}' 상태의 어르신이 없습니다.`}
+            </p>
           </div>
         ) : (
           filtered.map((senior) => (
