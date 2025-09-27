@@ -54,11 +54,10 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('연결 대기 중...');
   const [showTestVideo, setShowTestVideo] = useState(false);
   
   // Socket Context 사용
-  const { socket, isConnected, connectSocket, addEventListener, emit } = useSocket();
+  const { socket, connectSocket, addEventListener, emit } = useSocket();
 
   // WebRTC 설정 - 더 간단한 설정으로 변경
   const rtcConfiguration: RTCConfiguration = {
@@ -92,7 +91,6 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
 
   const initializeWebRTC = async () => {
     try {
-      setConnectionStatus('WebRTC 초기화 중...');
       
         // Socket Context를 통해 연결 (HomePage에서 이미 연결됨)
         // connectSocket(serverUrl, jwt); // 제거됨
@@ -104,7 +102,6 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
       // Socket.IO 이벤트 핸들러 - Context를 통해 등록
       const handleConnect = () => {
         console.log(`서버에 연결되었습니다. (sid: ${socket?.id || '연결 중'})`);
-        setConnectionStatus('서버 연결됨');
         
         // Socket Context 상태 강제 업데이트
         if (socket && socket.id) {
@@ -118,7 +115,6 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
       const handleDisconnect = () => {
         console.log('서버와의 연결이 끊어졌습니다.');
         setIsStreaming(false);
-        setConnectionStatus('연결 끊어짐');
       };
 
       addEventListener('connect', handleConnect);
@@ -264,7 +260,6 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
           
           videoRef.current.srcObject = event.streams[0];
           setIsStreaming(true);
-          setConnectionStatus('스트리밍 중');
           
           // 즉시 재생 시도
           console.log('🎬 즉시 재생 시도...');
@@ -373,11 +368,9 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
           signalingState: peerConnection.signalingState
         });
         
-        setConnectionStatus(`연결 상태: ${peerConnection.connectionState}`);
         
         if (peerConnection.connectionState === 'failed') {
           console.log('❌ PeerConnection 연결 실패. 재시도합니다...');
-          setConnectionStatus('연결 실패 - 재시도 중...');
           
           // 5초 후 재연결 시도
           setTimeout(() => {
@@ -389,16 +382,12 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
           }, 5000);
         } else if (peerConnection.connectionState === 'connected') {
           console.log('✅ WebRTC 연결 성공!');
-          setConnectionStatus('연결됨 - 스트리밍 중');
         } else if (peerConnection.connectionState === 'connecting') {
           console.log('🔄 WebRTC 연결 시도 중...');
-          setConnectionStatus('연결 시도 중...');
         } else if (peerConnection.connectionState === 'disconnected') {
           console.log('⚠️ WebRTC 연결 끊어짐');
-          setConnectionStatus('연결 끊어짐');
         } else if (peerConnection.connectionState === 'closed') {
           console.log('🔒 WebRTC 연결 종료됨');
-          setConnectionStatus('연결 종료됨');
         }
       };
 
@@ -431,7 +420,6 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
     }
     
     setIsStreaming(false);
-    setConnectionStatus('연결 해제됨');
   };
 
   // const handleReconnect = () => {

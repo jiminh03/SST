@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Settings, RefreshCw } from 'lucide-react';
 import WebRTCViewer from '../../components/webrtc/WebRTCViewer';
 
 const WebRTCViewerPage: React.FC = () => {
@@ -9,7 +8,6 @@ const WebRTCViewerPage: React.FC = () => {
   const [jwt, setJwt] = useState<string>('');
   const [serverUrl] = useState<string>('https://j13a503.p.ssafy.io');
   const [error, setError] = useState<string>('');
-  const [status, setStatus] = useState<string>('초기화 중...');
 
   useEffect(() => {
     // 로컬 스토리지에서 JWT 토큰 가져오기
@@ -28,16 +26,6 @@ const WebRTCViewerPage: React.FC = () => {
     navigate(-1);
   };
 
-  const handleSettings = () => {
-    // 설정 모달 또는 페이지로 이동
-    console.log('설정 열기');
-  };
-
-  const handleRefresh = () => {
-    setError('');
-    setStatus('새로고침 중...');
-    // 컴포넌트가 자동으로 재연결됨
-  };
 
   const handleError = (errorMessage: string) => {
     setError(errorMessage);
