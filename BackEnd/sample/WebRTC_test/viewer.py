@@ -50,8 +50,8 @@ async def run_viewer():
                 # Standard TURN over UDP is the fallback
                 "turn:j13a503.p.ssafy.io:3478?transport=udp"
             ],
-            username="SST_ROOT",
-            credential="0olB5NVMTkCpWUnw" # Your actual password
+            username="SST_TURN",
+            credential="usGqSEnD6Spu8TxC51bUx9j13SCjPSTk" # Your actual password
         )
     ]
 )

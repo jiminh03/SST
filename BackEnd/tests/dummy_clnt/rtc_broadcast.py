@@ -9,9 +9,8 @@ import asyncio
 import logging
 
 import socketio
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, VideoStreamTrack
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCBundlePolicy, VideoStreamTrack, RTCConfiguration, RTCIceServer 
 from aiortc.contrib.media import MediaPlayer
-
 from web.schemas.socket_event import ConnectEvents
 from web.schemas.socket_event import WebRTCEvents
 import cv2
@@ -21,10 +20,10 @@ from av import VideoFrame
 # 연결할 시그널링 서버의 주소입니다.
 SERVER_ADDRESS = "https://j13a503.p.ssafy.io"
 # 서버 인증을 위한 API 키입니다.
-API_KEY = "20gxF6G1MgMwcZ0h6eGTuivXRwwu1KsqwsJh9N9JBS0"
+API_KEY = "s85t-gaMxTcNPpznJCqa0eXsMT_yjfFuA-slOtIHAnU"
 # 이 방송 스트림을 고유하게 식별하기 위한 ID입니다.
 # 프론트엔드(Viewer)에서는 이 ID를 사용하여 특정 스트림을 요청하게 됩니다.
-SENIOR_ID = 17
+SENIOR_ID = 13
 
 # --- 로깅 설정 ---
 logging.basicConfig(level=logging.INFO)
@@ -90,19 +89,7 @@ async def connect():
     Socket.IO 서버와 연결이 성공적으로 수립되면 호출됩니다.
     연결 후 즉시 인증 절차를 시작합니다.
     """
-    logger.info(f"서버에 연결되었습니다. SID: {sio.sid}. 이제 인증을 시도합니다.")
-    try:
-        # 1. 서버에 API 키를 전송하여 이 클라이언트를 인증합니다.
-        await sio.emit(ConnectEvents.AUTHENTICATE, {'api_key': API_KEY})
-        logger.info("인증 정보를 서버로 전송했습니다.")
-    except Exception as e:
-        logger.error(f"인증 정보 전송 중 오류 발생: {e}")
-
-@sio.on(ConnectEvents.AUTH_SUCCESS)
-async def on_auth_success():
-    """서버로부터 인증 성공 이벤트를 수신하면 호출됩니다."""
-    # 2. 인증이 성공했으므로, WebRTC 방송 절차를 시작합니다.
-    logger.info("인증에 성공했습니다. WebRTC 방송을 시작합니다.")
+    logger.info(f"서버에 연결되었습니다. SID: {sio.sid}.")
     await start_webrtc_broadcast()
 
 @sio.event
@@ -157,7 +144,48 @@ async def start_webrtc_broadcast():
     global pc
     if pc.connectionState != "closed":
         await pc.close()
-    pc = RTCPeerConnection()
+
+    config = RTCConfiguration(
+        iceServers=[
+            RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
+            RTCIceServer(
+                urls=[
+                    "turns:j13a503.p.ssafy.io:5349?transport=tcp",
+                    "turn:j13a503.p.ssafy.io:3478?transport=udp",
+                ],
+                username="SST_TURN",
+                credential="usGqSEnD6Spu8TxC51bUx9j13SCjPSTk",
+            ),
+        ], 
+    )
+    pc = RTCPeerConnection(configuration=config)
+
+    # --- 👇 이 부분이 추가되었습니다 ---
+
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        """RTCPeerConnection의 연결 상태가 변경될 때마다 호출됩니다."""
+        logger.info(f"Connection state is -> {pc.connectionState}")
+        
+        # 연결이 성공적으로 수립되었을 때
+        if pc.connectionState == "connected":
+            # SCTP(데이터 채널) 트랜스포트에서 선택된 ICE 후보 쌍을 가져옵니다.
+            # 미디어 트랜스포트도 동일한 ICE 트랜스포트를 사용합니다.
+            selected_pair = pc.sctp.transport.transport.getSelectedCandidatePair()
+            if selected_pair:
+                local_type = selected_pair[0].type
+                remote_type = selected_pair[1].type
+                logger.info(
+                    f"Connection established via: Local({local_type}) <-> Remote({remote_type})"
+                )
+                
+                # 후보 중 하나라도 'relay' 타입이면 TURN 서버를 경유한 것입니다.
+                if local_type == 'relay' or remote_type == 'relay':
+                    logger.info("✅ This connection is relayed via TURN server.")
+                else:
+                    logger.info("✅ This is a direct P2P connection (host/srflx).")
+    
+    # --- ------------------------ ---
 
     @pc.on("icecandidate")
     async def on_icecandidate(candidate):
@@ -211,7 +239,8 @@ async def main():
     try:
         await sio.connect(
             SERVER_ADDRESS,
-            socketio_path='/socket.io' # 서버의 socket.io 경로에 맞게 설정
+            socketio_path='/socket.io',
+            auth={'api_key': API_KEY}
         )
         await sio.wait()
     except Exception as e:

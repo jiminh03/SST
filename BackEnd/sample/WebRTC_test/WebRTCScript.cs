@@ -77,8 +77,8 @@ public class WebRTCStreamer : MonoBehaviour
                         "turns:j13a503.p.ssafy.io:5349?transport=tcp",
                         "turn:j13a503.p.ssafy.io:3478?transport=udp"
                     },
-                    username = "SST_ROOT",
-                    credential = "0olB5NVMTkCpWUnw"
+                    username = "SST_TURN",
+                    credential = "usGqSEnD6Spu8TxC51bUx9j13SCjPSTk"
                 }
             }
         };
