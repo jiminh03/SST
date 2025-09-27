@@ -147,7 +147,7 @@ const WebRTCViewerPage: React.FC = () => {
             <div style={{
               width: '100%',
               height: '100%',
-              backgroundColor: '#000000',
+              backgroundColor: '#ffffff',
               display: 'flex',
               flexDirection: 'column',
               position: 'relative',
@@ -182,77 +182,30 @@ const WebRTCViewerPage: React.FC = () => {
                       width: '16px',
                       height: '16px',
                       transform: 'rotate(45deg)',
-                      borderLeft: '2px solid #ffffff',
-                      borderBottom: '2px solid #ffffff'
+                      borderLeft: '2px solid #000000',
+                      borderBottom: '2px solid #000000'
                     }}></span>
                   </span>
                   
                   <div>
                     <h1 style={{
-                      fontSize: '18px',
+                      fontSize: '20px',
                       fontWeight: '600',
-                      color: '#ffffff',
+                      color: '#000000',
                       margin: 0
                     }}>
                       실시간 영상
                     </h1>
-                    <p style={{
+                    {/* <p style={{
                       fontSize: '12px',
                       color: '#9ca3af',
                       margin: 0
                     }}>
                       Senior ID: {seniorId}
-                    </p>
+                    </p> */}
                   </div>
                 </div>
 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <button
-                    onClick={handleRefresh}
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      border: 'none',
-                      color: '#ffffff',
-                      cursor: 'pointer',
-                      borderRadius: '6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-                  >
-                    <RefreshCw size={16} />
-                  </button>
-                  
-                  <button
-                    onClick={handleSettings}
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      border: 'none',
-                      color: '#ffffff',
-                      cursor: 'pointer',
-                      borderRadius: '6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-                  >
-                    <Settings size={16} />
-                  </button>
-                </div>
               </div>
 
               {/* 메인 컨텐츠 - 비디오 영역 */}
@@ -322,23 +275,6 @@ const WebRTCViewerPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 상태 메시지 */}
-              {status && !error && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: '32px',
-                  left: '24px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                  color: '#ffffff',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  zIndex: 20
-                }}>
-                  {status}
-                </div>
-              )}
             </div>
           </div>
         </div>
