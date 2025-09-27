@@ -88,7 +88,7 @@ export default function Header({ onDeleteClick }: HeaderProps) {
             <span className="w-4 h-4 rotate-45 border-l-3 border-b-3 border-zinc-700 inline-block" />
           </span>
         )}
-        <h1 className="text-2xl font-semibold leading-none">{getTitle()}</h1>
+        <h1 className="text-2xl font-bold leading-none">{getTitle()}</h1>
       </div>
       {isDetail ? (
         <div className="relative" ref={menuRef}>

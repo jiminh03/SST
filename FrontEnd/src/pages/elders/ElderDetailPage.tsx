@@ -23,18 +23,19 @@ export default function ElderDetailPage() {
     // localStorage에서 센서 데이터 복원
     if (id) {
       const savedData = localStorage.getItem(`sensor_data_${id}`)
-      console.log(`📱 localStorage 센서 데이터 조회 (senior_id: ${id}):`, savedData)
+      console.log(`📱 ElderDetailPage localStorage 센서 데이터 조회 (senior_id: ${id}):`, savedData)
       if (savedData) {
         try {
           const parsed = JSON.parse(savedData)
-          console.log('📱 localStorage에서 센서 데이터 복원:', parsed)
-          console.log('📱 복원된 센서 키들:', Object.keys(parsed))
+          console.log('📱 ElderDetailPage localStorage에서 센서 데이터 복원:', parsed)
+          console.log('📱 ElderDetailPage 복원된 센서 키들:', Object.keys(parsed))
+          console.log('📱 ElderDetailPage 센서 데이터 개수:', Object.keys(parsed).length)
           return parsed
         } catch (error) {
-          console.error('❌ 센서 데이터 파싱 실패:', error)
+          console.error('❌ ElderDetailPage 센서 데이터 파싱 실패:', error)
         }
       } else {
-        console.log('📱 localStorage에 센서 데이터 없음')
+        console.log('📱 ElderDetailPage localStorage에 센서 데이터 없음')
       }
     }
     return {}
@@ -495,6 +496,30 @@ export default function ElderDetailPage() {
     }
   }, [addEventListener, removeEventListener, senior]) // senior 데이터가 로드된 후에 이벤트 리스너 등록
 
+  // 페이지 진입 시 센서 데이터 요청 (항상 최신 데이터 요청)
+  useEffect(() => {
+    if (senior?.senior_id && socket && socket.connected) {
+      console.log(`📡 페이지 진입 시 센서 데이터 요청: senior_id ${senior.senior_id}`)
+      console.log(`🔍 현재 센서 데이터 상태:`, sensorData)
+      
+      // 항상 최신 센서 데이터 요청
+      console.log(`📡 최신 센서 데이터 요청: senior_id ${senior.senior_id}`)
+      socket.emit('client:request_all_sensor_status', {
+        senior_id: senior.senior_id
+      })
+      
+      // 3초 후에도 응답이 없으면 다시 요청
+      const retryTimer = setTimeout(() => {
+        console.log(`🔄 센서 데이터 재요청: senior_id ${senior.senior_id}`)
+        socket.emit('client:request_all_sensor_status', {
+          senior_id: senior.senior_id
+        })
+      }, 3000)
+      
+      return () => clearTimeout(retryTimer)
+    }
+  }, [senior?.senior_id, socket])
+
   // 생년월일로부터 만 나이 계산
   const calculateAge = (birthDate: string): string => {
     if (!birthDate) return '정보 없음'
@@ -731,13 +756,13 @@ export default function ElderDetailPage() {
   }
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto bg-gray-200">
+    <div ref={scrollRef} className="h-full overflow-y-auto bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* 히어로 영역 */}
       <section className="relative px-6 pt-6 pb-4">
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6">
         <div className="flex items-start gap-6">
             <div className="relative">
-              <div className="w-28 h-28 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="w-28 h-28 rounded-full flex items-center justify-center overflow-hidden ring-4 ring-white/50 shadow-2xl">
                 {imageLoading ? (
                   <div className="w-16 h-16 flex items-center justify-center">
                     <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
@@ -758,26 +783,18 @@ export default function ElderDetailPage() {
               </div>
             </div>
             <div className="flex-1 pt-2">
-              <div className="text-lg font-bold text-gray-800 mb-2">{senior.full_name}</div>
-              <div className="flex items-center gap-2 text-gray-500 mb-2">
+              <div className="text-xl font-bold text-gray-800 mb-3">{senior.full_name}</div>
+              <div className="flex items-center gap-2 text-gray-600 mb-2">
                 <User className="w-4 h-4" />
-                <span className="text-sm">{calculateAge(senior.birth_date)}</span>
+                <span className="text-sm font-medium">{calculateAge(senior.birth_date)}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-500 mb-2">
+              <div className="flex items-center gap-2 text-gray-600 mb-3">
                 <MapPin className="w-4 h-4" />
-                <span className="text-sm">{senior.address}</span>
+                <span className="text-sm font-medium">{senior.address}</span>
           </div>
               <button 
                 onClick={() => setShowDetails(!showDetails)}
-                className="px-5 py-1.5 rounded-full transition-colors whitespace-nowrap"
-                style={{ 
-                  backgroundColor: '#4B5563', 
-                  color: '#FFFFFF',
-                  fontSize: '12px',
-                  fontWeight: '600'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#374151'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4B5563'}
+                className="px-6 py-2 rounded-full transition-all duration-200 whitespace-nowrap bg-gradient-to-r from-slate-600 to-slate-700 text-white text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 hover:from-slate-700 hover:to-slate-800"
               >
                 {showDetails ? '닫기' : '자세히 보기'}
               </button>
@@ -786,9 +803,9 @@ export default function ElderDetailPage() {
           
           {/* 특이사항 표시 */}
           {showDetails && (
-            <div className="mt-3 px-4 py-3 bg-gray-200 rounded-xl">
-              <h3 className="text-sm font-semibold text-gray-800 mb-2">특이사항</h3>
-              <p className="text-sm text-gray-700">
+            <div className="mt-4 px-5 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+              <h3 className="text-sm font-bold text-gray-800 mb-3">특이사항</h3>
+              <p className="text-sm text-gray-700 leading-relaxed">
                 {(() => {
                   let healthInfo = senior.health_info
                   
@@ -824,18 +841,18 @@ export default function ElderDetailPage() {
 
       {/* 콘텐츠 카드 컨테이너 - 스크롤 시 확장 연출 */}
       <div className={`relative transition-all duration-300 ease-out ${scrolled ? 'mt-0 rounded-[40px]' : 'mt-2'} `}>
-        <div className={`bg-white border border-gray-100 ${scrolled ? 'rounded-2xl pt-4' : 'rounded-2xl pt-4'} `}>
+        <div className={`bg-white/90 backdrop-blur-sm shadow-xl border border-white/20 ${scrolled ? 'rounded-3xl pt-6' : 'rounded-3xl pt-6'} `}>
           {/* 상단 액션/배너 영역 */}
           <div className="px-6 pb-6 space-y-4">
             {/* 상태 알림 배너 */}
             {(() => {
               const latestActivity = getLatestSensorActivity()
-              const bgColor = latestActivity.status === 'red' ? 'bg-red-50 border-red-200' : 
-                             latestActivity.status === 'yellow' ? 'bg-yellow-50 border-yellow-200' : 
-                             'bg-green-50 border-green-200'
-              const iconBgColor = latestActivity.status === 'red' ? 'bg-red-100' : 
-                                 latestActivity.status === 'yellow' ? 'bg-yellow-100' : 
-                                 'bg-green-100'
+              const bgColor = latestActivity.status === 'red' ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200' : 
+                             latestActivity.status === 'yellow' ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200' : 
+                             'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
+              const iconBgColor = latestActivity.status === 'red' ? 'bg-gradient-to-br from-red-100 to-pink-100' : 
+                                 latestActivity.status === 'yellow' ? 'bg-gradient-to-br from-yellow-100 to-orange-100' : 
+                                 'bg-gradient-to-br from-green-100 to-emerald-100'
               const iconColor = latestActivity.status === 'red' ? 'text-red-600' : 
                                latestActivity.status === 'yellow' ? 'text-yellow-600' : 
                                'text-green-600'
@@ -848,53 +865,49 @@ export default function ElderDetailPage() {
               const titleText = latestActivity.hasActivity ? '활동 감지됨' : '활동 감지 없음'
               
               return (
-                <div className={`rounded-xl ${bgColor} px-4 py-3 flex items-center gap-3`}>
-                  <div className={`w-8 h-8 ${iconBgColor} rounded-full flex items-center justify-center`}>
-                    <Activity className={`w-4 h-4 ${iconColor}`} />
+                <div className={`rounded-2xl ${bgColor} px-5 py-4 flex items-center gap-4 shadow-lg border`}>
+                  <div className={`w-10 h-10 ${iconBgColor} rounded-full flex items-center justify-center shadow-md`}>
+                    <Activity className={`w-5 h-5 ${iconColor}`} />
                   </div>
                   <div>
-                    <div className={`text-sm font-semibold ${titleColor}`}>{titleText}</div>
-                    <div className={`${timeColor} text-xs`}>마지막 활동: {latestActivity.lastActivityTime}</div>
+                    <div className={`text-base font-bold ${titleColor}`}>{titleText}</div>
+                    <div className={`${timeColor} text-sm font-medium`}>마지막 활동: {latestActivity.lastActivityTime}</div>
                   </div>
-                </div>
+            </div>
               )
             })()}
 
             {/* 액션 카드 2열 */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <button 
                 onClick={() => navigate(`/webrtc/${id}`)}
-                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
-                style={{ backgroundColor: '#ffffff' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+                className="rounded-2xl text-gray-700 px-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-white"
               >
-                <Video className="w-4 h-4" />
-                <span className="text-sm font-medium">실시간 영상</span>
+                <Video className="w-5 h-5 text-blue-600" />
+                <span className="text-sm font-semibold">실시간 영상</span>
               </button>
               
               {/* 보호자 연락 버튼 */}
               <button
                 onClick={() => setShowGuardianContact(true)}
-                className="rounded-lg text-gray-600 px-3 py-2 border border-gray-200 flex items-center justify-center gap-2 transition-colors shadow-sm hover:shadow-md"
-                style={{ backgroundColor: '#ffffff' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+                className="rounded-2xl text-gray-700 px-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-white"
               >
-                <Phone className="w-4 h-4" />
-                <span className="text-sm font-medium">보호자 연락</span>
+                <Phone className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-semibold">보호자 연락</span>
               </button>
               
             </div>
           </div>
           {/* 구분선 */}
-          <div className="mx-6 border-t border-gray-200" />
+          <div className="mx-6 border-t border-gray-200/50" />
 
           {/* 섹션 타이틀 - 문 */}
-          <div className="px-6 pt-4 pb-3">
-            <div className="flex items-center gap-2">
-              <Home className="w-4 h-4 text-gray-600" />
-              <h2 className="text-base font-semibold text-gray-800">문</h2>
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
+                <Home className="w-4 h-4 text-blue-600" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-800">문</h2>
             </div>
           </div>
 
@@ -923,13 +936,15 @@ export default function ElderDetailPage() {
           </div>
 
           {/* 구분선 */}
-          <div className="mx-6 border-t border-gray-200" />
+          <div className="mx-6 border-t border-gray-200/50" />
 
           {/* 섹션 타이틀 - 움직임 */}
-          <div className="px-6 pt-4 pb-3">
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-gray-600" />
-              <h2 className="text-base font-semibold text-gray-800">움직임</h2>
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+                <Activity className="w-4 h-4 text-green-600" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-800">움직임</h2>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-6">
@@ -951,13 +966,15 @@ export default function ElderDetailPage() {
           </div>
 
           {/* 구분선 */}
-          <div className="mx-6 border-t border-gray-200" />
+          <div className="mx-6 border-t border-gray-200/50" />
 
           {/* 섹션 타이틀 - 조명 */}
-          <div className="px-6 pt-4 pb-3">
-            <div className="flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-gray-600" />
-              <h2 className="text-base font-semibold text-gray-800">조명</h2>
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-full flex items-center justify-center">
+                <Lightbulb className="w-4 h-4 text-yellow-600" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-800">조명</h2>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-6">
@@ -979,13 +996,15 @@ export default function ElderDetailPage() {
           </div>
 
           {/* 구분선 */}
-          <div className="mx-6 border-t border-gray-200" />
+          <div className="mx-6 border-t border-gray-200/50" />
 
           {/* 섹션 타이틀 - 기타 센서 */}
-          <div className="px-6 pt-4 pb-3">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-gray-600" />
-              <h2 className="text-base font-semibold text-gray-800">기타</h2>
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
+                <Zap className="w-4 h-4 text-purple-600" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-800">기타</h2>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 px-6 pb-8">
@@ -1001,28 +1020,28 @@ export default function ElderDetailPage() {
 
       {/* 보호자 연락처 팝업 */}
       {showGuardianContact && senior && (
-        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 mx-4 max-w-sm w-full shadow-2xl">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white/95 backdrop-blur-md rounded-3xl p-8 mx-4 max-w-sm w-full shadow-2xl border border-white/20">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Phone className="w-8 h-8 text-blue-600" />
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <Phone className="w-10 h-10 text-blue-600" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">보호자 연락처</h2>
-              <p className="text-gray-600 mb-6">{senior.full_name}님의 보호자</p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">보호자 연락처</h2>
+              <p className="text-gray-600 mb-8 font-medium">{senior.full_name}님의 보호자</p>
               
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <div className="flex items-center justify-center gap-2">
-                  <Phone className="w-5 h-5 text-gray-600" />
-                  <span className="text-lg font-semibold text-gray-800">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 border border-blue-100">
+                <div className="flex items-center justify-center gap-3">
+                  <Phone className="w-6 h-6 text-blue-600" />
+                  <span className="text-xl font-bold text-gray-800">
                     {senior.guardian_contact || '연락처 없음'}
                   </span>
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-4">
                 <button
                   onClick={() => setShowGuardianContact(false)}
-                  className="flex-1 py-3 px-4 rounded-lg border border-gray-300 text-gray-700 font-semibold transition-colors hover:bg-gray-50"
+                  className="flex-1 py-4 px-6 rounded-2xl border-2 border-gray-300 text-gray-700 font-bold transition-all duration-200 hover:bg-gray-50 hover:scale-105"
                 >
                   닫기
                 </button>
@@ -1043,15 +1062,14 @@ export default function ElderDetailPage() {
                       }
                       setShowGuardianContact(false)
                     }}
-                    className="flex-1 py-3 px-4 rounded-lg text-white font-semibold transition-colors"
-                    style={{ backgroundColor: '#0088FF' }}
+                    className="flex-1 py-4 px-6 rounded-2xl text-white font-bold transition-all duration-200 bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg hover:shadow-xl hover:scale-105"
                   >
                     복사하기
                   </button>
                 ) : (
                   <button
                     disabled
-                    className="flex-1 py-3 px-4 rounded-lg text-gray-400 font-semibold bg-gray-200 cursor-not-allowed"
+                    className="flex-1 py-4 px-6 rounded-2xl text-gray-400 font-bold bg-gray-200 cursor-not-allowed"
                   >
                     복사하기
                   </button>
@@ -1067,36 +1085,36 @@ export default function ElderDetailPage() {
 
 function StatusDot({ color }: { color: 'red' | 'yellow' | 'green' }) {
   const colorClass =
-    color === 'red' ? 'bg-red-500 shadow-[0_0_5px_0_rgba(239,68,68,0.5)]' : color === 'yellow'
-    ? 'bg-yellow-500 shadow-[0_0_5px_0_rgba(234,179,8,0.5)]'
-    : 'bg-green-500 shadow-[0_0_5px_0_rgba(34,197,94,0.5)]'
+    color === 'red' ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-[0_0_8px_0_rgba(239,68,68,0.4)]' : color === 'yellow'
+    ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-[0_0_8px_0_rgba(234,179,8,0.4)]'
+    : 'bg-gradient-to-br from-green-400 to-green-600 shadow-[0_0_8px_0_rgba(34,197,94,0.4)]'
   return <span className={`w-3 h-3 shrink-0 aspect-square rounded-full ${colorClass}`} />
 }
 
 function RoomCard({ name, time, status }: { name: string; time: string; status: 'red' | 'yellow' | 'green' }) {
   return (
-    <div className="relative rounded-lg bg-white border border-gray-200 px-3 py-3 transition-all duration-200">
-      <div className="flex items-center justify-center mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-base font-medium text-gray-800 whitespace-nowrap">{name}</span>
+    <div className="relative rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 px-4 py-4 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-white">
+      <div className="flex items-center justify-center mb-3">
+        <div className="flex items-center gap-3">
+          <span className="text-base font-bold text-gray-800 whitespace-nowrap">{name}</span>
         <StatusDot color={status} />
       </div>
       </div>
-      <div className="text-xs text-gray-500 text-center">{time}</div>
+      <div className="text-xs text-gray-600 text-center font-medium">{time}</div>
     </div>
   )
 }
 
 function SmallRoomCard({ name, time, status }: { name: string; time: string; status: 'red' | 'yellow' | 'green' }) {
   return (
-    <div className="relative rounded-lg bg-white border border-gray-200 px-3 py-3 transition-all duration-200">
-      <div className="flex items-center justify-center mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-base font-medium text-gray-800 whitespace-nowrap">{name}</span>
+    <div className="relative rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 px-4 py-4 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-white">
+      <div className="flex items-center justify-center mb-3">
+        <div className="flex items-center gap-3">
+          <span className="text-base font-bold text-gray-800 whitespace-nowrap">{name}</span>
         <StatusDot color={status} />
       </div>
       </div>
-      <div className="text-xs text-gray-500 text-center">{time}</div>
+      <div className="text-xs text-gray-600 text-center font-medium">{time}</div>
     </div>
   )
 }
