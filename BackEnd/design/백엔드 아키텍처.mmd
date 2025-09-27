@@ -1,50 +1,65 @@
-graph TD
-    subgraph "사용자 환경"
-        A["FE<br/> (관리자/보호자 웹)"]
-        B["어르신 자택<br/> (IoT 홈 허브 & 로봇)"]
-    end
+---
+config:
+  layout: dagre
+---
+flowchart TD
+ subgraph subGraph0["사용자 환경"]
+        A["FE<br>(관리자/보호자 웹)"]
+        B["어르신 자택<br>(IoT 홈 허브 & 로봇)"]
+  end
+ subgraph subGraph1["클라우드 인프라"]
+        C["API Gateway / Nginx"]
+        D["백엔드 서버 (FastAPI)"]
+        E["AI 실행 서버"]
+        F["AI 학습 서버"]
+        G["관계형 DB (PostgreSQL)"]
+        H["시계열 DB (TimescaleDB)<br>센서 로그 데이터"]
+        I["오브젝트 스토리지 (S3)<br>AI 모델 가중치 원본"]
+        J["[Cache & MQ] Redis<br>- AI 가중치 캐시<br>- 실시간 이벤트 전달"]
+  end
 
-    subgraph "클라우드 인프라"
-        C[API Gateway / Nginx]
-
-        D["<b>백엔드 서버 (FastAPI)</b>"]
-        E["<b>AI 실행 서버</b>"]
-        F["<b>AI 학습 서버</b>"]
-        G["<b>관계형 DB (PostgreSQL)</b>"]
-        H["<b>시계열 DB (TimescaleDB)</b><br/>센서 로그 데이터"]
-        I["<b>오브젝트 스토리지 (S3)</b><br/>AI 모델 가중치 원본"]
-        J["<b>[Cache & MQ] Redis</b><br/>- AI 가중치 캐시<br/>- 실시간 이벤트 전달"]
-    end
-
-    %% --- Data Flows ---
-     A <-- "HTTPS (API, WebSocket, WebRTC Signaling)" --> C
+    A <-- HTTPS (API, WebSocket, WebRTC Signaling) --> C
     C --- D
-    B -- "Sensor Logs 등록<br>API 키 요청" --> C
-    C <-- "WSS: 어르신 안전 확인" --> B
-    
-    D <-- "DB CRUD" --> G
-    D -- "Sensor Log 저장" --> H
-    D <-- "DB 캐싱" --> J
+    B -- Sensor Logs 등록<br>API 키 요청 --> C
+    C <-- WSS: 어르신 안전 확인 --> B
+    D <-- DB CRUD --> G
+    D -- Sensor Log 저장 --> H
+    D <-- 데이터 캐싱 --> J
+    H -- 최신 센서 데이터 조회 --> E
+    E -- 위험도 상태 갱신 --> D
+    I -- 최신 가중치 로드 --> E
+    I -- 기존 가중치 로드 --> F
+    F -- 가중치 등록 신청<br>기존 가중치 경로 조회 --> D
+    J <-- 가중치 캐싱 및 로드 --> E
+    E -- MQ: 이상 패턴 발생 <br>(Publish) --> J
+    J -- MQ: 메시지 수신 <br>(Subscribe) --> D
+    H -- 학습 데이터 제공 --> F
+    F -- 학습 후 가중치 저장 --> I
+    B -- "WebRTC (미디어 스트림 · P2P)" --> A
 
-    %% AI 실행 서버의 데이터 흐름
-    H -- "최신 센서 데이터 조회" --> E
-    E -- "위험도 상태 갱신" --> D
-    I -- "최신 가중치 로드" --> E
-    E -- "개인 가중치 경로 조회" --> D
+%% ============================
+%% 스타일 정의
+%% ============================
 
-    %% AI 학습 서버의 데이터 흐름
-    I -- "기존 가중치 로드" --> F
-    F -- "가중치 등록 신청<br/>기존 가중치 경로 조회" --> D
-    J <-- "가중치 캐싱 및 로드" --> E
+%% 사용자 환경
+style A fill:#e6f7ff,stroke:#3399ff,stroke-width:2px
+style B fill:#fff2e6,stroke:#ff6600,stroke-width:2px
 
+%% 인프라 공통
+style C fill:#f2f2f2,stroke:#666,stroke-width:2px
+style D fill:#ddeeff,stroke:#3366cc,stroke-width:2px
+style E fill:#e8f8f0,stroke:#33aa77,stroke-width:2px
+style F fill:#fef7e6,stroke:#cc9900,stroke-width:2px
 
-    %% 긴급 상황 발생 시 Redis Pub/Sub 흐름
-    E -- "MQ: 이상 패턴 발생 <br/>(Publish)" --> J
-    J -- "MQ: 메시지 수신 <br/>(Subscribe)" --> D
+%% 데이터 계층
+style G fill:#f9f0ff,stroke:#9933cc,stroke-width:2px
+style H fill:#f3e6ff,stroke:#6600cc,stroke-width:2px
+style I fill:#e6f0ff,stroke:#003399,stroke-width:2px
+style J fill:#fff0f0,stroke:#cc3333,stroke-width:2px
 
-    %% AI 학습 서버는 동일
-    H -- "학습 데이터 제공" --> F
-    F -- "학습 후 가중치 저장" --> I
-
-    %% WebRTC Flow는 동일
-    B -- "WebRTC(미디어 스트림-P2P)" --> A
+%% 링크 스타일
+linkStyle default stroke:#555,stroke-width:1.5px
+%% WebSocket 강조 (파란색)
+linkStyle 3,4 stroke:#0066cc,stroke-width:2px
+%% WebRTC 강조 (빨간 점선)
+linkStyle 17 stroke:#cc0000,stroke-width:2.5px,stroke-dasharray:5 5
