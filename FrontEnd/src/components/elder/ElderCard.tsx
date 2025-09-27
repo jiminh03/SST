@@ -181,11 +181,15 @@ export default function ElderCard({ elder }: { elder: Senior }) {
   return (
     <button 
       onClick={handleElderClick}
-      className="relative flex items-center gap-3 p-4 bg-white rounded-[20px] shadow-[0px_4px_20px_rgba(0,0,0,0.25)] no-underline text-inherit w-full text-left cursor-pointer hover:shadow-[0px_6px_25px_rgba(0,0,0,0.3)] transition-shadow"
+      className="relative flex items-center gap-3 p-4 bg-white rounded-[20px] shadow-[0px_4px_20px_rgba(0,0,0,0.25)] no-underline text-inherit w-full text-left cursor-pointer hover:shadow-[0px_6px_25px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all duration-200"
     >
       {/* 상태 배지 (우상단 고정) */}
-      <div className={`absolute top-4 right-4 flex items-center gap-1 text-base font-semibold ${statusClass}`}>
-        <span className={`w-3 h-3 shrink-0 aspect-square rounded-full ${dotClass} ${glowClass}`} />
+      <div className={`absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-sm font-semibold tracking-wide backdrop-blur-sm ${statusClass} ${
+        status === '위험' ? 'bg-red-50/90 border border-red-200/50' : 
+        status === '주의' ? 'bg-yellow-50/90 border border-yellow-200/50' : 
+        'bg-green-50/90 border border-green-200/50'
+      }`}>
+        <span className={`w-2.5 h-2.5 shrink-0 aspect-square rounded-full ${dotClass} ${glowClass}`} />
         {status}
       </div>
 
