@@ -1,7 +1,6 @@
-# 포팅 메뉴얼
+# 백엔드 포팅 메뉴얼
 
-## 백엔드
- 1. **실행 환경**
+1. **실행 환경**
     
     ```
     │  .env                      # docker compose 실행에 필요한 환경변수
@@ -23,7 +22,7 @@
             nginx.conf    
     ```
     
- 2. **docker compose 세팅**
+2. **docker compose 세팅**
     
     ```
     volumes:
@@ -124,12 +123,12 @@
           
     ```
     
- 3. **백엔드 컨테이너 빌드**
+3. **백엔드 컨테이너 빌드**
     
     dockerfile.web을 통해 빌드
     
     ⇒ 빌드 시 프론트 폴더도 필요
     
- 4. **api 명세서**
+4. **api 명세서**
     
     BackEnd의 sst_api.yml 참고
