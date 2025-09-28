@@ -65,9 +65,9 @@
 
 **협업**  
 [![GitLab](https://img.shields.io/badge/GitLab-Repo-FC6D26?logo=gitlab&logoColor=white)](https://lab.ssafy.com/s13-mobility-smarthome-sub1/S13P21A503)
-[![Figma](https://img.shields.io/badge/Figma-Design-F24E1E?logo=figma&logoColor=white)](#)
-[![Notion](https://img.shields.io/badge/Notion-Docs-000000?logo=notion&logoColor=white)](#)
-
+[![Figma](https://img.shields.io/badge/Figma-Design-F24E1E?logo=figma&logoColor=white)](https://www.figma.com/design/Q96zQS7MvwOBUK3yOVAOo4/SST-%EB%AA%A9%EC%97%85?node-id=0-1&p=f&t=nH5OQ2s9bWxoFT7I-0)
+[![Notion](https://img.shields.io/badge/Notion-Docs-000000?logo=notion&logoColor=white)](https://www.notion.so/503-2543cc1e521e8077b0d7fc54fcee756a?source=copy_link)
+[![Jira](https://img.shields.io/badge/Jira-Project-0052CC?logo=jira&logoColor=white)](https://ssafy.atlassian.net/jira/software/c/projects/S13P21A503/boards/10114?useStoredSettings=true)
 
 
 ## 💡 서비스 기획 배경
