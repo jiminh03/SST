@@ -91,9 +91,32 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
 
   const initializeWebRTC = async () => {
     try {
+      console.log('🚀 WebRTC 초기화 시작...');
       
-        // Socket Context를 통해 연결 (HomePage에서 이미 연결됨)
-        // connectSocket(serverUrl, jwt); // 제거됨
+      // Socket 연결 확인 및 초기화
+      if (!socket || !socket.connected) {
+        console.log('🔌 Socket 연결이 없습니다. 연결을 시도합니다...');
+        connectSocket(serverUrl, jwt);
+        
+        // Socket 연결을 기다림
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Socket 연결 타임아웃'));
+          }, 10000);
+          
+          const checkConnection = () => {
+            if (socket && socket.connected) {
+              clearTimeout(timeout);
+              resolve(true);
+            } else {
+              setTimeout(checkConnection, 100);
+            }
+          };
+          checkConnection();
+        });
+      }
+      
+      console.log('✅ Socket 연결 확인 완료:', socket?.id);
 
       // RTCPeerConnection 생성
       const peerConnection = new RTCPeerConnection(rtcConfiguration);
@@ -457,7 +480,8 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
           position: 'absolute',
           top: '0',
           left: '0',
-          zIndex: '1'
+          zIndex: '1',
+          borderRadius: '12px'
         }}
       />
 
