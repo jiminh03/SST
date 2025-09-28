@@ -222,7 +222,7 @@
 ## 📚 문서 목록
 | 문서명 | 설명 | 링크 |
 |--------|------|------|
-| 포팅 매뉴얼 | 포지션 별 포팅 메뉴얼 | [📖 보기](포팅메뉴얼) |
+| 포팅 매뉴얼 | 포지션 별 포팅 메뉴얼 | [📖 보기](exec) |
 | Notion | 싸파트 503호 노션 | [📖 보기](https://www.notion.so/503-2543cc1e521e8077b0d7fc54fcee756a?source=copy_link)|
 | 장표 | SST 발표 | [📖 보기](https://www.canva.com/design/DAGz9BrCPRw/nY5FjYlFGx-blBR6XWXRaA/edit)|
 ---
