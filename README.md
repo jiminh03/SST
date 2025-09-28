@@ -28,18 +28,16 @@
     - 어르신 관리와 상태별 필터링
     - JWT 기반 인증 플로우
 
-
 ### Simulation (3명)
 - **강무엽, 백민재, 이승원**
-    - 센서 이벤트 재현과 시나리오 재생
-    - 통합 E2E 흐름 검증
-    - 준비 중
+    - 센서 이벤트(문, 움직임, 조명, 가전 등) 가상 발생
+    - 낙상, 무활동, 심야 외출 등 다양한 위험 상황 시나리오 반복 재현
+    - 개발 단계에서 실제 하드웨어 없이도 안정적으로 테스트 가능
 
 ## 🛠 기술 스택
 **AI**  
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.112+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4+-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
-
 
 **Backend**  
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F?logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -55,6 +53,16 @@
 [![Socket.IO](https://img.shields.io/badge/Socket.IO-4.x-010101?logo=socketdotio&logoColor=white)](https://socket.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.x-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
+**Simulation**  
+[![Unity](https://img.shields.io/badge/Unity-2022+-000000?logo=unity&logoColor=white)](https://unity.com/)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com/)
+[![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-3-BB2649?logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/)
+[![C#](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/csharp/)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![ROS2](https://img.shields.io/badge/ROS2-Jazzy-22314E?logo=ros&logoColor=white)](https://docs.ros.org/en/jazzy/)
+[![MQTT](https://img.shields.io/badge/MQTT-Mosquitto-660066?logo=eclipse-mosquitto&logoColor=white)](https://mqtt.org/)
+
+
 **협업**  
 [![GitLab](https://img.shields.io/badge/GitLab-Repo-FC6D26?logo=gitlab&logoColor=white)](https://lab.ssafy.com/s13-mobility-smarthome-sub1/S13P21A503)
 [![Figma](https://img.shields.io/badge/Figma-Design-F24E1E?logo=figma&logoColor=white)](#)
@@ -68,7 +76,7 @@
 혼자 사는 어르신의 **일상 데이터를 비침습적으로 학습**하고, **이상 패턴을 조기 감지**해 가족과 보호자가 신속히 대응할 수 있도록 돕습니다.
 
 ### Pain Point
-- 이상 징후를 늦게 발견
+- 기존에 존재하는 시스템은 독거노인의 이상 징후를 늦게 발견
 - 센서 데이터가 분산되어 현황 파악이 어려움
 - 실시간 확인과 커뮤니케이션 채널 부재
 
@@ -162,6 +170,9 @@
   <img src="BackEnd/img/ERD.png" alt="ERD" width="700">
 </p>
 
+## 📺 시뮬레이션 GIF
+
+
 ## 🔌 인터페이스 요약
 
 ### REST API
@@ -185,7 +196,12 @@
 - PUT  /seniors/{id}/risk-level : 추론 결과 반영  
 - POST /ai/risk-clear : 래치 해제  
 
-
+## 🌐 데이터 흐름
+1. Unity 시뮬레이션에서 센서 이벤트 발생 (예: 현관문 열림)  
+2. C# 스크립트가 이벤트를 캡처 후 MQTT 토픽 발행  
+3. Raspberry Pi 허브가 메시지를 Mosquitto 브로커에 전달  
+4. Backend → AI 서버에서 이벤트 처리 및 위험도 추론  
+5. 결과 알림이 Frontend 대시보드에 반영  
 
 ## 🎨 디자인
 **Figma**: [SST 목업](https://www.figma.com/design/Q96zQS7MvwOBUK3yOVAOo4/SST-%EB%AA%A9%EC%97%85?node-id=0-1&p=f&t=nH5OQ2s9bWxoFT7I-0)
@@ -198,4 +214,5 @@
 |--------|------|------|
 | 포팅 매뉴얼 | 포지션 별 포팅 메뉴얼 | [📖 보기](포팅메뉴얼) |
 | Notion | 싸파트 503호 노션 | [📖 보기](https://www.notion.so/503-2543cc1e521e8077b0d7fc54fcee756a?source=copy_link)|
+| 장표 | SST 발표 | [📖 보기](https://www.canva.com/design/DAGz9BrCPRw/nY5FjYlFGx-blBR6XWXRaA/edit)|
 ---
