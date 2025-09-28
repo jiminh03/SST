@@ -46,7 +46,6 @@ async def receive_sensor_logs(
     await log_manager.add_logs(senior_id, payload.sensor_data)
 
     packet = await SensorDataService(db_session).transform_sensor_data(payload)
-    print("센서 데이터 변환 완료:{packet}")
     await SensorStatusManager(red).update_all_sensor_statuses(packet)
     print("캐싱 완료")
     await notify_sensor_status_log_change(packet)

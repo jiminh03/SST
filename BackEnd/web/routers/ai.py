@@ -3,7 +3,8 @@
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from web.services.database import db
+from web.services.senior_status_manager import SeniorStatusManager
+from web.services.database import db, red
 from web.schemas.ai_schmas import RiskAssessmentPacket
 
 
@@ -52,9 +53,14 @@ router = APIRouter(prefix="/ai", tags=["AI"])
 )
 async def update_risk_level(senior_id: int, payload: RiskAssessmentPacket, db: AsyncSession = Depends(db.get_session)):
     """AI 실행 서버가 분석한 어르신의 최신 위험도 상태를 백엔드 서버에 업데이트합니다."""
-    # TODO: ai_service.update_senior_risk_level(db, senior_id, payload) 호출
-    return {"message": "업데이트 성공"}
-
+    # sess_man = SessionManager(red) # 이 변수는 사용되지 않으므로 주석 처리하거나 제거할 수 있습니다.
+    ssm = SeniorStatusManager(red)
+    
+    # 3. 선택된 랜덤 상태로 업데이트합니다. (await 추가)
+    await ssm.update_status(senior_id, payload.risk_level, payload.reason)
+    
+    # 어떤 상태로 변경되었는지 응답 메시지에 포함하면 더 좋습니다.
+    return {"msg": f"상태 변경 테스트:{senior_id}어르신의 상태가 '{payload.risk_level.value}'(으)로 업데이트 되었습니다."}
 
 # @router.post(
 #     "/logs/errors",
