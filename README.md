@@ -86,7 +86,6 @@
 - **룰 + ML 앙상블 + 래치 정책**으로 **정확도와 안정성** 동시 확보
 
 
-
 ## ⭐ 주요 기능
 
 ### 실시간 모니터링
@@ -110,6 +109,13 @@
 - HTTPS 통신 필수
 
 
+## 🌐 시스템 흐름
+1. Unity 시뮬레이션에서 센서 이벤트 발생 (예: 현관문 열림)  
+2. C# 스크립트가 이벤트를 캡처 후 MQTT 토픽 발행  
+3. Raspberry Pi 허브가 메시지를 Mosquitto 브로커에 전달  
+4. Backend → AI 서버에서 이벤트 처리 및 위험도 추론  
+5. 결과 알림이 Frontend 대시보드에 반영  
+6. Frontend에서 WebRTC로 실시간 시뮬레이션 화면 송출  
 
 ## 🏗️ 시스템 구조
 ### 전체 아키텍처
@@ -208,14 +214,6 @@
 - POST /ai/infer : 배치 검증 및 백필  
 - PUT  /seniors/{id}/risk-level : 추론 결과 반영  
 - POST /ai/risk-clear : 래치 해제  
-
-## 🌐 데이터 흐름
-1. Unity 시뮬레이션에서 센서 이벤트 발생 (예: 현관문 열림)  
-2. C# 스크립트가 이벤트를 캡처 후 MQTT 토픽 발행  
-3. Raspberry Pi 허브가 메시지를 Mosquitto 브로커에 전달  
-4. Backend → AI 서버에서 이벤트 처리 및 위험도 추론  
-5. 결과 알림이 Frontend 대시보드에 반영  
-6. Frontend에서 WebRTC로 실시간 시뮬레이션 화면 송출
 
 ## 🎨 디자인
 **Figma**: [SST 목업](https://www.figma.com/design/Q96zQS7MvwOBUK3yOVAOo4/SST-%EB%AA%A9%EC%97%85?node-id=0-1&p=f&t=nH5OQ2s9bWxoFT7I-0)
