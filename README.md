@@ -1,163 +1,162 @@
-## 저장소 사용 전 주의사항
-GitSetting.bat을 실행해야 커밋 템플릿이 적용됩니다.
+# 🏠 Senior Safe Things (SST)
 
-# 깃 관리 전략
-## 깃 관련 공지 사항
+> 스마트 홈 IoT와 실시간 통신으로 어르신의 일상을 안전하게 연결하는 통합 플랫폼
 
-1. 원격 브랜치 가져오기 및 연결하기
-    1. 원격 브랜치 가져오기
-        
-        `git pull`
-        
-    2. 원격 브랜치와 연결된 로컬 브랜치 생성하면서 체크아웃 하기
-        
-        `git checkout -b <로컬-브랜치-이름> <원격-저장소-이름>/<원격-브랜치-이름>`
-        
-        ⇒ ex: git checkout -b BE_dev origin/BE_dev
-        
 
-## 커밋 컨벤션
+## 🏟️ 프로젝트 소개
+**SST**는 독거 어르신의 안전한 생활을 돕기 위해 **IoT 센서**, **AI 기반 이상 징후 감지**, **실시간 영상 통신**을 통합한 스마트 홈 솔루션입니다.  
+단순히 데이터를 수집하는 것을 넘어, **실시간 모니터링**, **위험 상황 알림**, **보호기관 담당자와 보호자의 연결**까지 아우르는 **종합 케어 플랫폼**을 목표로 합니다.  
+웹 프론트엔드, 백엔드, AI 추론 서버, 시뮬레이션 모듈로 구성됩니다.
 
-### 커밋 가이드
+## 👥 팀 구성
 
-1. **📝 기본 양식**
-    
-    ```
-    타입: 제목 또는 간단한 작업 내용 요약
-    
-    (선택) 본문: 한 줄 띄고 작성하며, 변경 사항이나 이유를 자세히 설명합니다.
-    - 이런 식으로 불렛 포인트를 사용하면 가독성이 좋아집니다.
-    ```
-    
-2. **📌 핵심 타입 (이것만 기억해도 충분해요!)**
-    - **feat**: 새로운 기능 추가 (가장 많이 사용)
-    - **fix**: 버그 수정
-    - **refactor**: 기능 변경 없이 코드 구조를 개선 (리팩토링)
-    - **style**: 코드 포맷팅, 세미콜론 추가 등 (기능에 영향을 주지 않는 스타일 변경)
-    - **docs**: README, 주석 등 문서 수정
-    - **chore**: 빌드, 패키지 매니저 설정 등 기타 잡일
-    
-    > 💡 Tip: rename, remove 등은 refactor나 chore로 충분히 표현 가능하므로 초기에는 제외하여 혼동을 줄이는 것이 좋습니다.
-    > 
-3. **본문은 언제 필요한가?**
-    
-    **"커밋 제목(첫 줄)만으로는 변경 내용을 충분히 설명할 수 없을 때"** 본문을 작성
-    
-5. **✨ 실제 적용 예시**
-    1. 예시 1: 간단한 기능 추가 (제목만 사용)
-        
-        ```
-        feat: 소셜 로그인 버튼 UI 추가
-        ```
-        
-    2. 예시 2: 버그 수정 (본문과 꼬릿말 포함)
-        
-        ```
-        fix: 회원가입 시 이메일 중복 체크 오류 수정
-        
-        - 기존에는 API 요청 후 응답 값을 제대로 처리하지 못해, 중복된 이메일로도 가입이 가능했음.
-        - 비동기 처리 로직을 수정하여 서버 응답을 정확히 확인하도록 변경.
-        
-        Resolves: S13P11A106-45
-        ```
-        
-    3. 예시 3: 문서 수정
-        
-        ```
-        docs: README.md 파일에 프로젝트 실행 방법 추가
-        ```
-        
+### AI (1명)
+- **김재희**
+    - 룰 기반 + ML 앙상블 추론 파이프라인
+    - 위험 래치 정책으로 중복 알림 억제
+    - BE 콜백으로 위험도 업데이트
 
-### 커밋 양식
+### Backend (1명)
+- **정민우**
+    - 인증과 권한 관리
+    - 어르신 및 센서 리소스 API
+    - WebSocket 게이트웨이와 알림 분배
+  
+### Frontend (1명)
+- **황지민**
+    - 실시간 대시보드, WebRTC 뷰어, 알림 UX
+    - 어르신 관리와 상태별 필터링
+    - JWT 기반 인증 플로우
 
-```
-타입: 제목
 
-# (선택) 본문: 한 줄 띄고 작성하며, 변경 사항이나 이유를 자세히 설명합니다.
-- 이런 식으로 불렛 포인트를 사용하면 가독성이 좋아집니다.
+### Simulation (3명)
+- **강무엽, 백민재, 이승원**
+    - 센서 이벤트 재현과 시나리오 재생
+    - 통합 E2E 흐름 검증
+    - 준비 중
 
-# (선택) 꼬릿말: 이슈 트래커 번호를 포함합니다.
-Resolves: S13P11A106-31
+## 🛠 기술 스택
+**AI**  
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.112+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4+-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 
-# --- COMMIT END ---  
-#   <타입> 리스트  
-#   feat        : 기능 (새로운 기능)  
-#   fix         : 버그 (버그 수정)  
-#   refactor    : 리팩토링  
-#   design      : CSS 등 사용자 UI 디자인 변경  
-#   comment     : 필요한 주석 추가 및 변경  
-#   style       : 스타일 (코드 형식, 세미콜론 추가: 비즈니스 로직에 변경 없음)  
-#   docs        : 문서 수정 (문서 추가, 수정, 삭제, README)  
-#   test        : 테스트 (테스트 코드 추가, 수정, 삭제: 비즈니스 로직에 변경 없음)  
-#   chore       : 기타 변경사항 (빌드 스크립트 수정, assets, 패키지 매니저 등)  
-#   init        : 초기 생성  
-#   rename      : 파일 혹은 폴더명을 수정하거나 옮기는 작업만 한 경우  
-#   remove      : 파일을 삭제하는 작업만 수행한 경우  
-# ------------------  
-#   <꼬리말>   
-#   Fixes        :이슈 수정중 (아직 해결되지 않은 경우)  
-#   Resolves     : 이슈 해결했을 때 사용  
-#   Ref          : 참고할 이슈가 있을 때 사용  
-#   Related to   : 해당 커밋에 관련된 이슈번호 (아직 해결되지 않은 경우)  
-```
 
-## 깃 사용 가이드
+**Backend**  
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F?logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Redis](https://img.shields.io/badge/Redis-7.x-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+[![Nginx](https://img.shields.io/badge/Nginx-1.x-009639?logo=nginx&logoColor=white)](https://nginx.org/)
+[![AWS](https://img.shields.io/badge/AWS-Cloud-232F3E?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
 
-### 사용자 설정
+**Frontend**  
+[![React](https://img.shields.io/badge/React-19.1.1-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-4.x-010101?logo=socketdotio&logoColor=white)](https://socket.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.x-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
-1. **개요**
-    
-    ![컴퓨터 내부 이름이 아닌 사용자의 이름이 등록되어야한다.](./.gitlab/rd_img/image%202.png)
-    
-    컴퓨터 내부 이름이 아닌 사용자의 이름이 등록되어야한다.
-    
-    깃 저장소를 클론해서 커밋을 하고 푸쉬를 할 때 사용자 설정을 잘못한다면 위와 같이 이상한 이름으로 사용자 표시가 되는 경우가 발생합니다.
-    
-2. **현재 사용자 확인**
-    
-    ![image.png](./.gitlab/rd_img/image%203.png)
-    
-    `git config -l`을 통해 현재 저장소를 사용하는 사용자를 확인 할 수 있습니다.
-    
-    ⇒ 해당 정보가 커밋에도 포함되니 꼭 확인해주세요.
-    
-3. **사용자 설정**
-    
-    ```
-    git config (--global) user.email ‘깃랩 계정 이메일’
-    git config (--global) user.name ‘본인 이름’
-    ```
-    
-    사용자 정보가 등록되어있지 않다면 수정해주세요.
-    
-4. **깃 접근 토큰 발급**
-    
-    
-    ![image.png](./.gitlab/rd_img/image%204.png)
-    
-    ![image.png](./.gitlab/rd_img/image%205.png)
-    
-    클론이나 푸쉬를 할때 인증정보를 입력해야되는 경우 PW에 SSAFY 계정의 PW가 아니라 발급받은 토큰을 입력해야됩니다. 
-    
+**협업**  
+[![GitLab](https://img.shields.io/badge/GitLab-Repo-FC6D26?logo=gitlab&logoColor=white)](https://lab.ssafy.com/s13-mobility-smarthome-sub1/S13P21A503)
+[![Figma](https://img.shields.io/badge/Figma-Design-F24E1E?logo=figma&logoColor=white)](#)
+[![Notion](https://img.shields.io/badge/Notion-Docs-000000?logo=notion&logoColor=white)](#)
 
-### 병합 가이드
 
-1. **기본 가이드**
-    
-    **절대 임의로 자신의 브랜치를 master 브랜치에 병합을 하지 마세요!
-    깃랩의 merge request로 신청해주세요.**
-    
-    master 브랜치를 자신의 브랜치에 merge할때는 merge 커밋 메세지를 기본 merge 커밋 메세지가 아닌 저희 커밋 컨벤션에 맞춰서 작성해주세요.
-    
-2. **merge 커밋 작성 가이드**
-    
-    https://until.blog/@meowbutlerdev/merge-%EC%BB%A4%EB%B0%8B-%EB%A9%94%EC%8B%9C%EC%A7%80-%EC%9E%91%EC%84%B1%EB%B2%95
-    
 
-### 주의사항
+## 💡 서비스 기획 배경
 
-1. **—force 금지**
-    
-    뭔가 안된다고 —force를 사용하면 안됩니다.
-    
-    ⇒ 문제가 생기면 깃 관리자에게 이야기를 해주세요.
+### 목표
+혼자 사는 어르신의 **일상 데이터를 비침습적으로 학습**하고, **이상 패턴을 조기 감지**해 가족과 보호자가 신속히 대응할 수 있도록 돕습니다.
+
+### Pain Point
+- 이상 징후를 늦게 발견
+- 센서 데이터가 분산되어 현황 파악이 어려움
+- 실시간 확인과 커뮤니케이션 채널 부재
+
+### 차별점
+- **실시간 센서 모니터링 + 즉시 알림**
+- **WebRTC** 기반 초저지연 현장 확인
+- **룰 + ML 앙상블 + 래치 정책**으로 **정확도와 안정성** 동시 확보
+
+
+
+## ⭐ 주요 기능
+
+### 실시간 모니터링
+- WebSocket으로 센서 상태와 이벤트를 즉시 반영
+- 문, 움직임, 조명, TV 등 센서 대시보드
+- 상태 변화 시 인앱 알림
+
+### 어르신 관리
+- 목록 조회와 상세 정보
+- 상태별 필터링 (전체, 위험, 주의, 안전)
+- 센서별 최신 상태와 이벤트 히스토리
+
+### 실시간 영상 통신
+- WebRTC 기반 현장 스트리밍
+- 자동 재연결과 품질 관리
+- 보호자 확인 플로우 연동
+
+### 인증과 보안
+- JWT 로그인과 자동 갱신
+- 보호된 라우트 관리
+- HTTPS 통신 필수
+
+
+
+## 🏗️ 시스템 구조
+
+<p align="center">
+  <img src="img/total.png" alt="전체 아키텍처" width="820">
+</p>
+
+<p align="center">
+  <img src="img/FE-BE_arch.png" alt="FE-BE 구조" width="700">
+</p>
+
+<p align="center">
+  <img src="img/AI-BE_arch.png" alt="AI-BE 구조" width="700">
+</p>
+
+<p align="center">
+  <img src="img/HUB-BE_arch.png" alt="HUB-BE 구조" width="700">
+</p>
+
+
+
+## 🔌 인터페이스 요약
+
+### REST API
+- GET  /api/seniors  
+- GET  /api/seniors/{id}  
+- GET  /api/seniors/{id}/profile-image  
+- GET  /api/seniors/{id}/sensors  
+- POST /api/auth/login  
+- POST /api/auth/register  
+
+### WebSocket 이벤트
+- client:request_all_senior_status  
+- client:request_all_sensor_status  
+- server:notify_senior_status_change  
+- server:notify_sensor_status_change  
+- server:emergency_situation  
+
+### AI 엔드포인트
+- POST /ai/tick : 10초 스냅샷 단건 추론  
+- POST /ai/infer : 배치 검증 및 백필  
+- PUT  /seniors/{id}/risk-level : 추론 결과 반영  
+- POST /ai/risk-clear : 래치 해제  
+
+
+
+## 🎨 디자인
+**Figma**: [SST 목업](https://www.figma.com/design/Q96zQS7MvwOBUK3yOVAOo4/SST-%EB%AA%A9%EC%97%85?node-id=0-1&p=f&t=nH5OQ2s9bWxoFT7I-0)
+* 모바일 우선 반응형
+* Tailwind CSS 유틸리티 기반 스타일링
+
+
+## 📚 문서 목록
+| 문서명 | 설명 | 링크 |
+|--------|------|------|
+| 포팅 매뉴얼 | 포지션 별 포팅 메뉴얼 | [📖 보기](포팅메뉴얼) |
+| Notion | 싸파트 503호 노션 | [📖 보기](https://www.notion.so/503-2543cc1e521e8077b0d7fc54fcee756a?source=copy_link)|
+---
