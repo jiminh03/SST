@@ -125,6 +125,7 @@
     - **Redis Pub/Sub:** AI 서버와 백엔드 서버 간의 통신을 분리(Decoupling)하여, 한쪽 서버의 장애가 다른 서버의 긴급 알림 처리 기능에 영향을 주지 않도록 설계.
 
 
+### FE-BE 구조
 
 <p align="center">
   <img src="BackEnd/img/FE-BE_arch.png" alt="FE-BE 구조" width="700">
@@ -139,7 +140,7 @@
 - **WebRTC를 통한 서비스**
     - 응급 현장 스트리밍 서비스 제공
 
-
+### AI-BE 구조
 <p align="center">
   <img src="BackEnd/img/AI-BE_arch.png" alt="AI-BE 구조" width="700">
 </p>
@@ -149,7 +150,7 @@
 - **어르신 위험 감지**
   - 하드룰과 추론 결과를 바탕으로 위험을 감지하고 메세지 큐를 통해 실시간으로 알림
 
-
+### HUB-BE 구조
 <p align="center">
   <img src="BackEnd/img/HUB-BE_arch.png" alt="HUB-BE 구조" width="700">
 </p>
