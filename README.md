@@ -212,6 +212,7 @@
 3. Raspberry Pi 허브가 메시지를 Mosquitto 브로커에 전달  
 4. Backend → AI 서버에서 이벤트 처리 및 위험도 추론  
 5. 결과 알림이 Frontend 대시보드에 반영  
+6. Frontend에서 WebRTC로 실시간 시뮬레이션 화면 송출
 
 ## 🎨 디자인
 **Figma**: [SST 목업](https://www.figma.com/design/Q96zQS7MvwOBUK3yOVAOo4/SST-%EB%AA%A9%EC%97%85?node-id=0-1&p=f&t=nH5OQ2s9bWxoFT7I-0)
