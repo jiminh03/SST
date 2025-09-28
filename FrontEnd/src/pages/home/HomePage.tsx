@@ -4,6 +4,12 @@ import FilterBar, { type FilterValue } from '../../components/layout/FilterBar'
 import { getSeniors, getSeniorById, type Senior } from '../../api/eldersApi'
 import { useSocket } from '../../contexts/SocketContext'
 
+// Senior 타입에 status 속성을 추가해야 합니다. (eldersApi.ts 파일 등에서 수정)
+// export interface Senior {
+//   // ... 기존 속성들
+//   status?: '위험' | '주의' | '안전';
+// }
+
 export default function HomePage() {
   const [filter, setFilter] = useState<FilterValue>('전체')
   const [seniors, setSeniors] = useState<Senior[]>([])
@@ -31,7 +37,7 @@ export default function HomePage() {
     })
   }, [socket, isConnected])
 
-  // Socket 연결 (앱 시작 시점)
+  // Socket 연결 (앱 시작 시점) - 기존과 동일
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (token) {
@@ -347,6 +353,8 @@ export default function HomePage() {
     // 복잡한 getHealthStatus 함수 대신, 객체의 status 속성을 직접 비교합니다.
     return seniors.filter((senior) => senior.status === filter)
   }, [seniors, filter])
+
+  // --- 이하 렌더링(JSX) 부분은 기존 코드와 동일합니다. ---
 
   if (loading) {
     return (

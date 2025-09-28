@@ -1,0 +1,28 @@
+graph TD
+    subgraph 안전 로봇 동작 흐름
+        A["<b>안전 확인 요청 수신</b><br>(이상 패턴 감지)"]
+        B["<b>1. 독거노인 탐색 및 접근</b><br>로봇이 집안을 순회하며<br>사용자 위치 파악 후 접근"]
+        C["<b>2. 안전 확인 시도</b><br>음성 및 화면 터치로<br>사용자 반응 유도"]
+        D{"사용자 응답 확인?"}
+        E["<b>3. 정상 상황</b><br>별도 조치 없이<br>대기 상태로 복귀"]
+        F["<b>4. 응급 상황 판단</b><br>(응답 없음)"]
+        G["보호자에게 긴급 알림 전송"]
+        H["실시간 현장 웹캠 스트리밍 제공"]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+    D -- "응답 있음 (Yes)" --> E
+    D -- "응답 없음 (No)" --> F
+    F --> G & H
+
+    %% Styling
+    style A fill:#FFE0B2,stroke:#EF6C00,color:#000000
+    style B fill:#E3F2FD,stroke:#0277BD,color:#000000
+    style C fill:#E3F2FD,stroke:#0277BD,color:#000000
+    style D fill:#FCE4EC,stroke:#D81B60,color:#000000
+    style E fill:#E8F5E9,stroke:#2E7D32,color:#000000
+    style F fill:#FFCDD2,stroke:#C62828,color:#000000
+    style G fill:#FFEBEE,stroke:#C62828,color:#000000
+    style H fill:#FFEBEE,stroke:#C62828,color:#000000

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>향상된 WebRTC 뷰어</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+        h1 {
+            color: #1a2533;
+            margin-bottom: 20px;
+        }
+        #video-container {
+            border: 1px solid #ddd;
+            background-color: #000;
+            width: 90%;
+            max-width: 640px;
+            min-height: 360px;
+            /* 비디오 로딩 전 최소 높이 유지 */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+        #controls {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+        #status-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 610px;
+            /* 비디오 컨테이너와 너비 맞춤 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-item {
+            font-size: 1em;
+            color: #555;
+            font-weight: 500;
+            padding: 4px 0;
+        }
+
+        .status-item strong {
+            display: inline-block;
+            width: 150px;
+            /* 라벨 너비 고정 */
+            color: #1a2533;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebRTC 스트림 뷰어</h1>
+    <div id="video-container">
+        <video id="video-element" autoplay playsinline></video>
+    </div>
+
+    <div id="controls">
+        <button id="connect-button">연결 시작</button>
+        <button id="disconnect-button" disabled>연결 종료</button>
+    </div>
+
+    <div id="status-container">
+        <div class="status-item"><strong class="label">상태:</strong> <span id="status-message">대기 중</span></div>
+        <div class="status-item"><strong class="label">ICE 연결 상태:</strong> <span id="ice-connection-state">N/A</span>
+        </div>
+        <div class="status-item"><strong class="label">수신 프레임:</strong> <span id="frame-stats">0</span></div>
+    </div>
+
+    <script>
+        // --- 설정 ---
+        const SIGNALING_SERVER_URL = 'https://j13a503.p.ssafy.io:8080';
+
+        // --- HTML 요소 ---
+        const videoElement = document.getElementById('video-element');
+        const connectButton = document.getElementById('connect-button');
+        const disconnectButton = document.getElementById('disconnect-button');
+        const statusMessage = document.getElementById('status-message');
+        const iceConnectionState = document.getElementById('ice-connection-state');
+        const frameStats = document.getElementById('frame-stats');
+
+        let pc = null;
+        let statsInterval = null; // 프레임 통계 확인을 위한 인터벌 ID
+
+        // --- 주요 로직 ---
+
+        // WebRTC 연결 시작 함수
+        async function startWebRTC() {
+            if (pc) {
+                console.warn("이미 RTCPeerConnection이 존재합니다. 기존 연결을 먼저 종료하세요.");
+                return;
+            }
+
+            updateUIForConnection(true);
+            logStatus('WebRTC 피어 연결 설정 중...');
+
+            /// 1. RTCPeerConnection 생성 (STUN 및 TURN 서버 설정 포함)
+            const config = {
+                iceServers: [
+                    // 기존 STUN 서버 (빠른 연결 테스트를 위해 유지)
+                    { urls: 'stun:stun.l.google.com:19302' },
+
+                    // ✨ 우리가 구축한 CoTURN 서버 정보 ✨
+                    {
+                        urls: [
+                            // 보안 연결(TURNS)을 우선적으로 시도합니다.
+                            'turns:j13a503.p.ssafy.io:5349?transport=tcp',
+                            // 일반 연결(TURN)은 대체 옵션으로 사용됩니다.
+                            'turn:j13a503.p.ssafy.io:3478?transport=udp'
+                        ],
+                        username: 'SST_TURN',
+                        credential: 'usGqSEnD6Spu8TxC51bUx9j13SCjPSTk' // 실제 비밀번호
+                    }
+                ]
+            };
+            pc = new RTCPeerConnection(config);
+
+            // 2. 이벤트 핸들러 설정
+            pc.oniceconnectionstatechange = handleICEConnectionStateChange;
+            pc.ontrack = handleTrackEvent;
+            pc.onicecandidate = handleICECandidateEvent; // ✨ 중요: ICE Candidate 핸들러 추가
+
+            // 3. 시그널링 시작 (Offer 수신 -> Answer 생성/전송 -> Candidate 교환)
+            try {
+                // 3-1. 서버로부터 Offer SDP 수신
+                logStatus('서버에서 Offer를 기다리는 중...');
+                const offer = await fetchOfferWithRetry();
+                if (!offer) {
+                    throw new Error("Offer를 수신하지 못했습니다.");
+                }
+                logStatus('Offer 수신 완료. Remote Description 설정 중...');
+                await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+                // 3-2. Answer SDP 생성 및 Local Description으로 설정
+                logStatus('Answer 생성 중...');
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                logStatus('Answer를 서버로 전송 중...');
+
+                // 3-3. Answer SDP를 서버로 전송
+                const answerPayload = {
+                    sdp: pc.localDescription.sdp,
+                    type: pc.localDescription.type,
+                };
+                const answerResponse = await fetch(`${SIGNALING_SERVER_URL}/answer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(answerPayload),
+                });
+
+                if (!answerResponse.ok) {
+                    throw new Error(`Answer 전송 실패: ${answerResponse.status}`);
+                }
+                logStatus('Answer 전송 완료. ICE Candidate 교환을 기다립니다...');
+
+            } catch (error) {
+                console.error('❌ 시그널링 과정에서 오류 발생:', error);
+                logStatus(`오류: ${error.message}`);
+                closeWebRTC();
+            }
+        }
+
+        // WebRTC 연결 종료 함수
+        function closeWebRTC() {
+            if (statsInterval) {
+                clearInterval(statsInterval);
+                statsInterval = null;
+            }
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            videoElement.srcObject = null;
+            logStatus('연결 종료됨');
+            updateUIForConnection(false);
+            frameStats.textContent = '0';
+            iceConnectionState.textContent = 'N/A';
+            console.log("WebRTC 연결이 종료되었습니다.");
+        }
+
+        // --- 이벤트 핸들러 ---
+
+        // ICE 연결 상태 변경 처리
+        function handleICEConnectionStateChange() {
+            if (!pc) return;
+            console.log(`✅ ICE Connection state is -> ${pc.iceConnectionState}`);
+            iceConnectionState.textContent = pc.iceConnectionState;
+
+            switch (pc.iceConnectionState) {
+                case 'connected':
+                    logStatus('스트림 수신 중...');
+                    startFrameStatsMonitoring(); // 연결 완료 시 프레임 통계 모니터링 시작
+                    break;
+                case 'disconnected':
+                    logStatus('연결이 끊어졌습니다. 재연결을 시도할 수 있습니다.');
+                    break;
+                case 'failed':
+                    logStatus('연결 실패.');
+                    closeWebRTC();
+                    break;
+                case 'closed':
+                    logStatus('연결이 종료되었습니다.');
+                    closeWebRTC(); // UI 상태 일관성 유지를 위해 호출
+                    break;
+            }
+        }
+
+        // 미디어 트랙 수신 처리
+        function handleTrackEvent(event) {
+            console.log(`✅ Track ${event.track.kind} received`);
+            if (event.streams && event.streams[0]) {
+                videoElement.srcObject = event.streams[0];
+            }
+        }
+
+        // ✨ 중요: ICE Candidate 생성 시 서버로 전송
+        async function handleICECandidateEvent(event) {
+            if (event.candidate) {
+                console.log('Sending ICE candidate to server:', event.candidate);
+                try {
+                    const response = await fetch(`${SIGNALING_SERVER_URL}/ice-candidate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            candidate: event.candidate.candidate,
+                            sdpMid: event.candidate.sdpMid,
+                            sdpMLineIndex: event.candidate.sdpMLineIndex,
+                        }),
+                    });
+                    if (!response.ok) {
+                        console.error(`ICE candidate 전송 실패: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error('ICE candidate 전송 중 오류 발생:', error);
+                }
+            }
+        }
+
+
+        // --- 유틸리티 함수 ---
+
+        // 5초 간격으로 Offer 수신 시도
+        async function fetchOfferWithRetry(retries = 5, delay = 3000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(`${SIGNALING_SERVER_URL}/offer`);
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                    console.log(`Offer 없음 (상태: ${response.status}). ${delay / 1000}초 후 재시도... (${i + 1}/${retries})`);
+                } catch (error) {
+                    console.error(`Offer 요청 실패: ${error.message}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            return null;
+        }
+
+        // 프레임 수신 통계 모니터링
+        function startFrameStatsMonitoring() {
+            if (statsInterval) clearInterval(statsInterval);
+
+            let lastFramesDecoded = 0;
+            statsInterval = setInterval(async () => {
+                if (!pc) {
+                    clearInterval(statsInterval);
+                    return;
+                }
+                const stats = await pc.getStats(null);
+                stats.forEach(report => {
+                    // 'inbound-rtp'는 수신 미디어 스트림 통계를 나타냄
+                    if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                        const currentFramesDecoded = report.framesDecoded;
+                        // 1초 동안 새로 디코딩된 프레임 수 계산 (FPS와 유사)
+                        const fps = currentFramesDecoded - lastFramesDecoded;
+                        frameStats.textContent = `${currentFramesDecoded} (초당 ${fps} 프레임)`;
+                        lastFramesDecoded = currentFramesDecoded;
+                    }
+                });
+            }, 1000); // 1초마다 통계 업데이트
+        }
+        // 상태 메시지 업데이트 및 로깅
+        function logStatus(message) {
+            console.log(message);
+            statusMessage.textContent = message;
+        }
+        // UI 상태 업데이트
+        function updateUIForConnection(isConnecting) {
+            connectButton.disabled = isConnecting;
+            disconnectButton.disabled = !isConnecting;
+        }
+
+        // --- 이벤트 리스너 ---
+        connectButton.addEventListener('click', startWebRTC);
+        disconnectButton.addEventListener('click', closeWebRTC);
+
+    </script>
+</body>
+</html>

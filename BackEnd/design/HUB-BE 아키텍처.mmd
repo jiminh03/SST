@@ -1,0 +1,21 @@
+---
+config:
+  layout: elk
+---
+flowchart LR
+ subgraph subGraph0["클라우드 백엔드"]
+        A["<b>백엔드 서버 (FastAPI)</b>"]
+  end
+ subgraph subGraph1["어르신 자택 (로컬 네트워크)"]
+        B["<b>IoT 홈 허브</b><br>- WebSocket 클라이언트<br>- <b>MQTT 브로커 역할 포함</b>"]
+        D["홈 센서들"]
+        E["안전 확인 로봇"]
+  end
+    D -- MQTT --> B
+    B -- <b>WebSocket</b><br>(실시간 센서 로그 전송) --> A
+    A -. <b>WebSocket</b><br>(안전 확인 요청) .-> B
+    B -. MQTT<br>(로봇 출동 명령) .-> E
+    E -. MQTT<br>(확인 결과 보고) .-> B
+    B -. <b>WebSocket</b><br>(최종 결과 보고) .-> A
+    style A fill:#ddeeff
+    style B fill:#fff2cc

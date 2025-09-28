@@ -1,0 +1,42 @@
+sequenceDiagram
+    participant Robot as "스트리밍 로봇 (송출자)"
+    participant Backend as "백엔드 서버"
+    participant FE as "FE (수신자)"
+
+    %% 0. 사전 연결: 양쪽 클라이언트가 미리 WebSocket에 연결되어 있음
+    FE->>Backend: 0a. WebSocket 연결 수립 (대시보드 로딩)
+    Robot->>Backend: 0b. WebSocket 연결 수립 (기기 부팅)
+
+    Note over Robot: 1. 응급 상황 감지!
+    
+    %% 2. 로봇이 Offer와 Candidate를 WebSocket을 통해 전송
+    Robot->>Robot: 2. WebRTC Offer 생성
+    
+    loop 로봇 ICE Candidate 생성 및 전송
+        Robot->>Backend: 3. Offer 및 ICE Candidate 메시지 전송 (WebSocket)
+    end
+    
+    %% 3. 백엔드가 Offer/Candidate를 FE에게 즉시 Push
+    activate Backend
+    Note over Backend: 수신한 로봇의 세션 정보를 FE에게 전달할 준비
+    Backend-->>FE: 4. Offer 및 Candidate 푸시 (WebSocket)
+    deactivate Backend
+    
+    %% 4. FE가 Answer와 Candidate를 WebSocket을 통해 전송
+    activate FE
+    FE->>FE: 5. 수신한 정보로 Answer 생성
+    deactivate FE
+
+    loop 양방향 ICE Candidate 교환
+        FE->>Backend: 6. Answer 및 FE의 ICE Candidate 전송 (WebSocket)
+        activate Backend
+        Backend-->>Robot: 7. FE의 Answer 및 Candidate를 로봇에게 전달 (WebSocket)
+        deactivate Backend
+        
+        Robot->>Backend: 8. (추가) 로봇의 ICE Candidate 전송 (WebSocket)
+        activate Backend
+        Backend-->>FE: 9. 로봇의 Candidate를 FE에게 전달 (WebSocket)
+        deactivate Backend
+    end
+    
+    Note over Robot, FE: 10. 최적의 경로로 P2P 연결 수립 완료

@@ -1,0 +1,30 @@
+graph LR
+    subgraph "사용자 환경"
+        A["FE (웹 브라우저)"]
+        B["어르신 자택의 IoT 허브"]
+    end
+
+    subgraph "클라우드 백엔드"
+        C[API Gateway / Nginx]
+        D["백엔드 서버 (FastAPI)</br> - API 로직</br>- WebSocket 핸들러</br>- WebRTC 시그널링"]
+        G["DB (PostgreSQL)</br>- 사용자/기기 정보</br>- 응급 로그 등"]
+    end
+
+    %% --- 1. API 호출 통신 (HTTP) ---
+    A -- "HTTPS API 요청" --> C
+    C -- "라우팅(HTTP)" --> D
+    D -- "데이터 조회/수정" --> G
+
+    %% --- 2. 웹소켓 통신 (WebSocket) ---
+    A -- "WebSocket 연결 (WS)" --> C
+    C -- "프록시(WS)" --> D
+
+    %% --- 3. WebRTC 통신 (P2P) ---
+    A <--"WebRTC 미디어 스트림 (P2P)"--> B
+
+    %% --- 스타일 정의 ---
+    style A fill:#e6f7ff,stroke:#3399ff,stroke-width:2px
+    style B fill:#fff2e6,stroke:#ff6600,stroke-width:2px
+    style C fill:#f0f0f0,stroke:#666,stroke-width:2px
+    style D fill:#e6eeff,stroke:#3366cc,stroke-width:2px
+    style G fill:#f9f0ff,stroke:#9933cc,stroke-width:2px

@@ -1,0 +1,823 @@
+openapi: 3.0.3
+info:
+  title: "Smart Senior care system API"
+  version: "1.0"
+  description: "독거노인 스마트 홈케어 시스템 API 명세서. IoT 센서 데이터와 AI를 활용하여 위급 상황을 감지하고 대응합니다."
+
+servers:
+  - url: "http://127.0.0.1:7000"
+    description: "로컬 개발 서버"
+  - url: "https://j13a503.p.ssafy.io/api"
+    description: "프로덕션 서버"
+
+tags:
+  - name: "인증"
+    description: "인증 및 등록 관련 API"
+  - name: "사용자 관리 및 모니터링"
+    description: "어르신/직원 정보 관리 및 상태 모니터링 API"
+  - name: "실시간 통신 (WebSocket / WebRTC)"
+    description: "실시간 영상 스트리밍 및 알림 관련 API"
+  - name: "IoT"
+    description: "홈 허브, 센서, 로봇 등 IoT 기기 연동 API"
+  - name: "AI"
+    description: "AI 모델 및 분석 관련 API"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "로그인 API를 통해 발급받은 JWT Access Token을 'Bearer ' 접두사와 함께 입력합니다."
+
+  schemas:
+    # 1. Request/Response Models
+    ErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          description: "에러를 식별하는 고유 코드"
+        message:
+          type: string
+          description: "에러에 대한 상세 설명"
+          
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+          format: password
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          
+    StaffRegister:
+      type: object
+      properties:
+        full_name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - full_name
+        - email
+        - password
+    
+    StaffEdit:
+      type: object
+      properties:
+        full_name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+
+    SeniorRegister:
+      type: object
+      properties:
+        full_name:
+          type: string
+          description: "어르신 이름"
+        address:
+          type: string
+          description: "주소"
+        birth_date:
+          type: string
+          format: date
+          description: "생년월일"
+          example: "2000-01-01"
+        guardian_contact:
+          type: string
+          description: "보호자 연락처"
+        profile_img:
+          type: string
+          format: binary
+          description: "어르신 프로필 이미지"
+        device_id:
+          type: string
+          description: "연결할 IoT Hub 기기 ID"
+        health_info:
+          type: string
+          description: "건강 정보 (복용약 리스트 등)"
+      required:
+        - full_name
+        - address
+        - birth_date
+        - device_id
+
+    SeniorEdit:
+      type: object
+      properties:
+        profile_img:
+          type: string
+          format: binary
+          description: "어르신 프로필 이미지"
+        full_name:
+          type: string
+          description: "어르신 이름"
+        address:
+          type: string
+          description: "주소"
+        birth_date:
+          type: string
+          format: date
+          description: "생년월일"
+          example: "2000-01-01"
+        guardian_contact:
+          type: string
+          description: "보호자 연락처"
+        health_info:
+          type: string
+          description: "건강 정보 (복용약 리스트 등)"
+      required:
+        - full_name
+        - address
+        - birth_date
+
+    SeniorSimpleInfo:
+      type: object
+      properties:
+        senior_id:
+          type: integer
+        profile_img:
+          type: string
+          format: uri 
+          description: "어르신 프로필 이미지 URL"
+          example: "https://storage.googleapis.com/my-bucket/senior_profiles/123.jpg"
+        full_name:
+          type: string
+          description: "어르신 이름"
+        address:
+          type: string
+          description: "주소"
+        birth_date:
+          type: string
+          format: date
+          description: "생년월일"
+          example: "2000-01-01"
+      required:
+        - senior_id
+        - full_name
+        - address
+        - birth_date
+
+    
+    SeniorInfo:
+      type: object
+      properties:
+        senior_id:
+          type: integer
+        profile_img:
+          type: string
+          format: uri 
+          description: "어르신 프로필 이미지 URL"
+          example: "https://storage.googleapis.com/my-bucket/senior_profiles/123.jpg"
+        full_name:
+          type: string
+          description: "어르신 이름"
+        address:
+          type: string
+          description: "주소"
+        birth_date:
+          type: string
+          format: date
+          description: "생년월일"
+          example: "2000-01-01"
+        guardian_contact:
+          type: string
+          description: "보호자 연락처"
+        health_info:
+          type: string
+          description: "건강 정보 (복용약 리스트 등)"
+      required:
+        - senior_id
+        - full_name
+        - address
+        - birth_date
+
+    Hub:
+      type: object
+      properties:
+        device_id:
+          type: string
+      required:
+        - device_id
+
+    ApiKey:
+      type: object
+      properties:
+        api_key:
+          type: string
+
+    EmergencyLog:
+      type: object
+      properties:
+        log_id:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: string
+
+    SensorLog:
+      type: object
+      properties:
+        log_id:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        sensor_type:
+          type: string
+        value:
+          type: string
+
+    VisitSchedule:
+      type: object
+      properties:
+        visit_id:
+          type: integer
+        senior_id:
+          type: integer
+        staff_id:
+          type: integer
+        visit_date:
+          type: string
+          format: date-time
+      required:
+        - senior_id
+        - staff_id
+        - visit_date
+
+    WebRTCRobotOffer:
+      type: object
+      required:
+        - api_key
+        - offer_sdp
+      properties:
+        api_key:
+          type: string
+        offer_sdp:
+          type: object
+          description: "로봇에서 생성한 SDP Answer"
+    
+    WebRTCRobotAnswer:
+      type: object
+      required:
+        - api_key
+        - answer_sdp
+      properties:
+        api_key:
+          type: string
+        answer_sdp:
+          type: object
+          description: "로봇에서 생성한 SDP Answer"
+
+    WebRTCFEOffer:
+      type: object
+      required:
+        - senior_id
+        - offer_sdp
+      properties:
+        senior_id:
+          type: integer
+        offer_sdp:
+          type: object
+          description: "FE(수신자)에서 생성한 SDP Answer"
+    
+    WebRTCFEAnswer:
+      type: object
+      required:
+        - senior_id
+        - answer_sdp
+      properties:
+        senior_id:
+          type: integer
+        answer_sdp:
+          type: string
+          description: "FE(수신자)에서 생성한 SDP Answer"
+
+    WebRTCSessionResponse:
+      type: object
+      properties:
+        websocket_url:
+          type: string
+          description: "Answer와 ICE Candidate를 교환할 WebSocket 주소"
+          example: "wss://your-domain.com/ws/webrtc/sess_a1b2c3d4"
+
+    ConnectionInfo:
+      type: object
+      required:
+        - sid
+        - session_type
+      properties:
+        sid:
+          type: string
+        session_type:
+          type: string
+          enum: ["fe", "hub"]
+        hub_id:
+          type: integer
+        staff_id:
+          type: integer
+
+    SensorEventLog:
+      type: object
+      properties:
+        api_key:
+          type: string
+        sensor_data:
+          type: array
+          items:
+            type: object
+            properties:
+              sensor_type:
+                type: string
+                enum: [
+                  "door_bedroom",
+                  "door_bathroom",
+                  "door_livingroom",
+                  "door_entrance",
+                  "door_fridge",
+                  "pir_bedroom",
+                  "pir_livingroom",
+                  "pir_bathroom",
+                  "light_bedroom",
+                  "light_livingroom",
+                  "light_bathroom",
+                  "power_tv",
+                ]
+              sensor_value:
+                type: boolean
+              event_description:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+      required:
+        - api_key
+        - sensor_data
+
+    SafetyCheckResult:
+      type: object
+      properties:
+        result:
+          type: string
+          enum: ["어르신 응답 확인", "응답 없음"]
+      required:
+        - result
+
+    AIWeight:
+      type: object
+      properties:
+        weight_id:
+          type: integer
+        version:
+          type: string
+        path:
+          type: string
+      required:
+        - version
+        - path
+
+    RiskLevel:
+      type: object
+      properties:
+        risk_level:
+          type: string
+          enum: [안전, 주의, 위험]
+        reason:
+          type: string
+          description: 이상치 발생 원인
+      required:
+        - risk_level
+        
+    AIErrorLog:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        error_message:
+          type: string
+      required:
+        - error_message
+
+paths:
+  # 인증
+  /auth/login:
+    post:
+      tags: ["인증"]
+      summary: "직원 로그인 기능"
+      description: "직원의 로그인 이메일와 비밀번호를 받아 인증을 수행하며, 성공 시 시스템 접근에 필요한 인증 토큰(JWT 등)을 발급합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: "로그인 성공"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: "로그인 실패 (이메일 또는 비밀번호 불일치)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /staffs:
+    post:
+      tags: ["인증"]
+      summary: "직원 계정 생성"
+      description: "새로운 직원(복지사)의 계정 정보(이름, email, 역할 등)를 등록합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffRegister"
+      responses:
+        "201":
+          description: "계정 생성 성공"
+        "400":
+          description: "잘못된 요청 형식 (필수 필드 누락 등)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: "email 중복 (이미 존재하는 email)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        
+    put:
+      tags: ["인증"]
+      summary: "직원 계정 정보 수정"
+      description: "특정 직원의 계정 정보(이름, 역할 등)를 수정합니다."
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffEdit"
+      responses:
+        "200":
+          description: "정보 수정 성공"
+        "401":
+          description: "인증 실패 (토큰 없음 또는 유효하지 않은 토큰)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /seniors:
+    post:
+      tags: ["인증"]
+      summary: "어르신 등록"
+      description: "새로운 어르신의 기본 정보(성함, 주소, 건강 정보 등)를 시스템에 등록합니다."
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SeniorRegister"
+      responses:
+        "201":
+          description: "등록 성공"
+          content:
+            application/json:
+              schema:
+                properties:
+                  senior_id:
+                    type: integer
+                    description: "등록된 어르신의 고유 ID"
+                required:
+                  - senior_id
+        "400":
+          description: "잘못된 요청 형식 (필수 필드 누락 등)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: "디바이스 ID 중복 (이미 등록된 디바이스)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags: ["사용자 관리 및 모니터링"]
+      summary: "어르신 리스트 조회"
+      description: "관리자가 담당하는 모든 어르신의 목록과 현재 위험도 상태를 조회합니다."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "조회 성공"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SeniorSimpleInfo"
+
+  /hubs:
+    post:
+      tags: ["인증"]
+      summary: "기기 등록"
+      description: "IoT 홈 허브의 고유 식별 번호(MAC 주소 등)를 시스템에 등록합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Hub"
+      responses:
+        "201":
+          description: "등록 성공"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+    delete:
+      tags: ["인증"]
+      summary: "기기 등록 해지"
+      description: "더 이상 사용하지 않는 홈 허브를 시스템에서 등록 해지합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Hub"
+      responses:
+        "204":
+          description: "해지 성공"
+
+  /seniors/{senior_id}:
+    put:
+      tags: ["인증"]
+      summary: "어르신 정보 수정"
+      description: "기존에 등록된 어르신의 상세 정보를 수정합니다."
+      security:
+        - bearerAuth: []      
+      parameters:
+        - name: senior_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SeniorEdit"
+      responses:
+        "200":
+          description: "수정 성공"
+        "400":
+          description: "잘못된 요청 형식 (필수 필드 누락 등)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: "권한 없음"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags: ["사용자 관리 및 모니터링"]
+      summary: "사용자 세부 정보 조회"
+      description: "특정 어르신 한 명의 상세 정보(기본 정보, 건강 정보, 연결된 기기 등)를 조회합니다."
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: senior_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "조회 성공"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeniorInfo"
+
+  /seniors/{senior_id}/profile-image:
+    get:
+      tags: ["사용자 관리 및 모니터링"]
+      summary: "어르신 프로필 이미지 조회"
+      description: "특정 어르신의 프로필 이미지를 데이터베이스에서 직접 조회하여 반환합니다. 접근 권한이 있는 어르신의 이미지만 조회할 수 있습니다."
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: senior_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: "프로필 이미지를 조회할 어르신의 ID"
+      responses:
+        '200':
+          description: "성공적으로 프로필 이미지를 반환합니다."
+          content:
+            image/png: {}
+            image/jpeg: {}
+            image/gif: {}
+        '403':
+          description: "해당 어르신 정보에 접근할 권한이 없습니다."
+        '404':
+          description: "어르신 또는 프로필 이미지를 찾을 수 없습니다."
+
+
+  /webrtc/sessions/{senior_id}:
+    get:
+      tags: ["실시간 통신 (WebSocket / WebRTC)"]
+      summary: "WebRTC 영상 스트리밍 세션 조회"
+      description: "생성된 WebRTC 세션의 현재 상태(연결 여부 등)를 조회합니다."
+      parameters:
+        - name: senior_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Answer 조회 성공. P2P 연결을 계속 진행합니다."
+        "404":
+          description: "해당 세션 ID에 대한 Answer가 아직 제출되지 않았거나, 세션이 만료되었습니다."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: "인증 실패. 해당 세션의 Answer를 조회할 권한이 없습니다."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ws/staff:
+    get:
+      tags: ["사용자 관리 및 모니터링"]
+      summary: "실시간 알림 수신을 위한 WS 연결"
+      description: "관리자(웹/앱)가 서버와 WebSocket 연결을 맺습니다. 이 채널을 통해 이상치 감지, 기기 연결 해제 등 모든 실시간 알림을 수신합니다. (This endpoint uses the WebSocket protocol)"
+
+  # IoT 
+  /iot/logs:
+    post:
+      tags: ["IoT"]
+      summary: "센서 이벤트 로그 전송"
+      description: "홈 허브가 수집한 센서 데이터들을 묶어 서버로 전송하고 데이터베이스에 저장합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SensorEventLog"
+      responses:
+        "201":
+          description: "로그 전송 성공"
+  /iot/senior_id:
+    get:
+      tags: ["IoT"]
+      summary: "어르신 ID 조회"
+      description: "허브가 담당한 어르신의 id를 조회합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                api_key:
+                  type: string
+      responses:
+        "201":
+          description: "로그 전송 성공"
+          content:
+            application/json:
+              schema:
+                properties:
+                  senior_id:
+                    type: integer
+
+  /ws/hub:
+    get:
+      tags: ["IoT"]
+      summary: "홈허브 상태 발신 및 이상치 감지 알림을 수신하기 위한 WS 연결 요청"
+      description: "홈허브가 서버와 WebSocket 연결을 맺습니다. 이 채널을 통해 서버는 주기적으로 허브의 상태를 확인하고 이상치 발생시 허브에 이를 알립니다. (This endpoint uses the WebSocket protocol)"
+
+
+  # AI
+  /ai/weights/active:
+    get:
+      tags: ["AI"]
+      summary: "가중치 경로 조회"
+      description: "AI 실행 서버가 특정 어르신의 생활 패턴을 분석하기 위해, 현재 활성화된 AI 모델 가중치 파일의 저장 경로를 조회합니다."
+      parameters:
+        - name: senior_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "조회 성공"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIWeight"
+
+  /ai/weights:
+    post:
+      tags: ["AI"]
+      summary: "가중치 등록 신청"
+      description: "AI 학습 서버가 학습을 완료한 새로운 가중치 모델의 정보(버전, 저장 경로 등)를 백엔드에 등록합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIWeight"
+      responses:
+        "201":
+          description: "등록 신청 성공"
+
+  /ai/weights/{weight_id}/activate:
+    put:
+      tags: ["AI"]
+      summary: "가중치 버전 관리 및 활성화"
+      description: "여러 버전의 가중치 중, 실제 이상치 탐지에 사용할 특정 버전을 활성화시킵니다."
+      parameters:
+        - name: weight_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "활성화 성공"
+
+  /seniors/{senior_id}/risk-level:
+    put:
+      tags: ["AI"]
+      summary: "AI 위험도 분석 결과 업데이트"
+      description: "AI 실행 서버가 분석한 어르신의 최신 위험도 상태('안전', '주의', '위험')를 백엔드 서버에 업데이트합니다."
+      parameters:
+        - name: senior_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RiskLevel"
+      responses:
+        "200":
+          description: "업데이트 성공"
+
+  /ai/logs/errors:
+    post:
+      tags: ["AI"]
+      summary: "AI 예외/오류 로그 수집"
+      description: "AI 서버가 분석 과정에서 오류나 비정상적인 결과를 감지했을 때, 해당 내용을 백엔드에 로그로 기록합니다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIErrorLog"
+      responses:
+        "201":
+          description: "로그 기록 성공"

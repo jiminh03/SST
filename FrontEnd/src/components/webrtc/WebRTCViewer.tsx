@@ -73,8 +73,8 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
           'turns:j13a503.p.ssafy.io:5349?transport=tcp',
           'turn:j13a503.p.ssafy.io:3478?transport=udp',
         ],
-        username: 'SST_ROOT',
-        credential: '0olB5NVMTkCpWUnw',
+        username: 'SST_TURN',
+        credential: 'usGqSEnD6Spu8TxC51bUx9j13SCjPSTk',
       },
     ],
     iceCandidatePoolSize: 10, // ICE 풀 활성화 (파이썬 코드와 동일)
@@ -143,7 +143,7 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
       addEventListener('connect', handleConnect);
       addEventListener('disconnect', handleDisconnect);
 
-      const handleNewOffer = async (offerData: string) => {
+      const handleNewOffer = async (offerData: Record<string, any>) => {
         console.log('📨 NEW_OFFER 이벤트 수신:', {
           offerData: offerData ? '데이터 있음' : '데이터 없음',
           offerLength: offerData?.length || 0,
@@ -159,15 +159,17 @@ const WebRTCViewer: React.FC<WebRTCViewerProps> = ({
         }
 
         try {
-          const offer = JSON.parse(offerData);
-          console.log('📋 Offer 파싱 성공:', {
-            type: offer.type,
-            sdpLength: offer.sdp?.length || 0,
-            sdpPreview: offer.sdp?.substring(0, 100) + '...'
-          });
+          const offer = offerData
+          // const offer = JSON.parse(offerData);
+          // console.log('📋 Offer 파싱 성공:', {
+          //   type: offer.type,
+          //   sdpLength: offer.sdp?.length || 0,
+          //   sdpPreview: offer.sdp?.substring(0, 100) + '...'
+          // });
           
           console.log('🔄 Remote Description 설정 중...');
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+          await peerConnection.setRemoteDescription(
+            new RTCSessionDescription(offer as RTCSessionDescriptionInit));
           console.log('✅ Remote Description 설정 완료');
           
           console.log('🔄 Answer 생성 중...');

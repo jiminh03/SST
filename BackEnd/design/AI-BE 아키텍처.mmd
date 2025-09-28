@@ -1,0 +1,24 @@
+---
+config:
+  layout: elk
+---
+flowchart LR
+ subgraph subGraph0["AI 서버 그룹"]
+        A["<b>AI 실행 서버</b><br>"]
+  end
+ subgraph subGraph1["백엔드 인프라"]
+        B["<b>백엔드 서버 (FastAPI)</b>"]
+        D["<b>[Cache/MQ] Redis</b><br>- 실시간 위험도 상태<br>- 메시지 큐"]
+  end
+ subgraph subGraph2["데이터 소스"]
+        E["<b>시계열 DB (TimescaleDB)</b><br>센서 로그 데이터"]
+  end
+    E -- "최신 센서 로그 조회" --> A
+    A -- "생활 패턴 분석" --> A
+    A -- "<b>[상태 저장]</b><br>분석된 위험도를 저장" --> D
+    A -- "<b>[이벤트 발행]</b><br>긴급 상황 알림" --> D
+    D -- <b>[상태 조회]</b><br>위험도 조회 --> B
+    D -- <b>[이벤트 수신]</b><br>긴급 알림 구독 --> B
+    B -- (조회된 상태 또는 수신된 알림을)<br>FE로 WebSocket 전파 --> FE("사용자 환경")
+    style A fill:#fff2cc
+    style B fill:#ddeeff

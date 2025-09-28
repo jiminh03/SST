@@ -1,0 +1,84 @@
+erDiagram
+    %% --- Entities Definition ---
+
+    STAFFS {
+        int staff_id PK "직원 고유 ID"
+        string email UK "로그인 이메인"
+        string password_hash "비밀번호 해시"
+        string full_name "이름"
+        datetime created_at "생성일"
+    }
+
+    SENIORS {
+        int senior_id PK "어르신 고유 ID"
+        data profile_img "어르신 이미지"
+        string full_name "이름"
+        string address "주소"
+        date birth_date "생년월일"
+        string guardian_contact "보호자 연락처"
+        string health_info "건강 정보 (지병, 복용약 등)"
+        datetime created_at "등록일"
+    }
+
+    STAFF_SENIOR_MAP {
+        int map_id PK "맵 고유 ID"
+        int staff_id PK, FK "직원 ID"
+        int senior_id PK, FK "어르신 ID"
+    }
+
+    IOT_HUBS {
+        int hub_id PK "홈 허브 고유 ID"
+        int senior_id FK "연결된 어르신 ID"
+        string device_id UK "기기 고유 번호 (e.g., MAC 주소)"
+        string api_key_hash "발급된 API 키 해시"
+        string status "상태 (e.g., online, offline)"
+        datetime registered_at "등록일"
+    }
+
+    AI_WEIGHTS {
+        int weight_id PK "가중치 고유 ID"
+        int senior_id FK "대상 어르신 ID"
+        int version "버전"
+        string storage_path "가중치 파일 경로 (Object Storage)"
+        boolean is_active "현재 사용 여부"
+        datetime created_at "생성일"
+    }
+
+    EMERGENCY_LOGS {
+        int log_id PK "로그 고유 ID"
+        int senior_id FK "대상 어르신 ID"
+        string event_type "이벤트 종류 (e.g., fall_detection)"
+        string description "상세 내용"
+        datetime occurred_at "발생 시각"
+        datetime resolved_at "조치 완료 시각"
+    }
+
+    VISIT_SCHEDULES_DEPRECATED {
+    int visit_id PK "방문 스케줄 ID"
+    int map_id FK "관리 관계 ID (STAFF_SENIOR_MAP)"
+    datetime visit_datetime "방문 예정 일시"
+    string status "상태 (e.g., scheduled, completed, cancelled)"
+    text report "방문 결과 보고"
+    datetime created_at "생성일"
+    }
+
+    SENSOR_LOGS {
+        datetime timestamp "타임스탬프"
+        enum sensor_type "센서 종류 및 위치"
+        string event_description "이벤트 내용"
+        boolean sensor_value "센서 값 (True/False)"
+        int senior_id FK "로그를 남긴 어르신 ID"
+    }
+
+
+    %% --- Relationships Definition ---
+
+    STAFFS ||--|{ STAFF_SENIOR_MAP : "manages"
+    SENIORS ||--|{ STAFF_SENIOR_MAP : "is managed by"
+
+    SENIORS ||--|| IOT_HUBS : "has one"
+    SENIORS ||--|{ AI_WEIGHTS : "has personal"
+    SENIORS ||--|{ EMERGENCY_LOGS : "has"
+    SENSOR_LOGS }o--|| SENIORS : "logs for"
+    
+    STAFF_SENIOR_MAP ||--|{ VISIT_SCHEDULES_DEPRECATED : "schedules"
