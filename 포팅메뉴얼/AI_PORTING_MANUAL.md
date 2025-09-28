@@ -155,4 +155,4 @@ chmod +x tests/test_ml_safe.sh
   - 코드에서 `settings.back_end_token`을 읽도록 되어 있어, ENV 키는 `BACK_END_TOKEN`가 맞습니다.
 
 - **S3 변수는 어떤 걸 써야 하나요?**
-  - 현재 배포 구성은 `S3_MODEL_PREFIX=s3://bucket/prefix/` 형태를 사용합니다. 다른 키를 쓰려면 `src/models_loader.py` 설정과 맞춰 주세요.
+  - 현재 배포 구성은 `S3_MODEL_PREFIX=s3://bucket/prefix/` 형태를 사용합니다. 다른 키를 쓰려면 `src/models_loader.py` 설정과 맞춰 주세요. 

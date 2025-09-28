@@ -389,4 +389,4 @@ sudo tar czf rpi-hub-backup_$(date +%F).tar.gz \
 
 ---
 
-**끝.** 필요 시 Unity/ROS2/Backend 연동 섹션도 이어서 확장 가능합니다.
+**끝.** 필요 시 Unity/ROS2/Backend 연동 섹션도 이어서 확장 가능합니다. 
