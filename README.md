@@ -107,7 +107,7 @@
 ### 전체 아키텍처
 
 <p align="center">
-  <img src="img/total.png" alt="전체 아키텍처" width="820">
+  <img src="BackEnd/img/total.png" alt="전체 아키텍처" width="820">
 </p>
 
 - **비동기 프레임워크 (FastAPI) 채택**
@@ -127,7 +127,7 @@
 
 
 <p align="center">
-  <img src="img/FE-BE_arch.png" alt="FE-BE 구조" width="700">
+  <img src="BackEnd/img/FE-BE_arch.png" alt="FE-BE 구조" width="700">
 </p>
 
 - **api 제공을 통한 서비스**
@@ -141,7 +141,7 @@
 
 
 <p align="center">
-  <img src="img/AI-BE_arch.png" alt="AI-BE 구조" width="700">
+  <img src="BackEnd/img/AI-BE_arch.png" alt="AI-BE 구조" width="700">
 </p>
 
 - **센서 로그 기반 위험도 추론**
@@ -151,13 +151,15 @@
 
 
 <p align="center">
-  <img src="img/HUB-BE_arch.png" alt="HUB-BE 구조" width="700">
+  <img src="BackEnd/img/HUB-BE_arch.png" alt="HUB-BE 구조" width="700">
 </p>
 
 - **Iot 허브를 통해 센서 로그를 수신받고 로봇과 통신**
 
 ### ERD
-
+<p align="center">
+  <img src="BackEnd/img/ERD.png" alt="ERD" width="700">
+</p>
 
 ## 🔌 인터페이스 요약
 
